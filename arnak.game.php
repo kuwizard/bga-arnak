@@ -707,7 +707,8 @@ class arnak extends Table
 		$card = $this->getObjectFromDB("SELECT * FROM card WHERE idcard = $cardId");
 		$type = $card["card_type"];
 		$num = $card["num"];
-		$deckOrder = (int)$this->getObjectFromDB("SELECT * FROM card WHERE player = $player AND card_position = 'deck' ORDER BY deck_order $order LIMIT 1")["deck_order"] + ($top ? -1 : 1);
+    $deckOrderFromDb = $this->getObjectFromDB("SELECT * FROM card WHERE player = $player AND card_position = 'deck' ORDER BY deck_order $order LIMIT 1");
+		$deckOrder = $deckOrderFromDb ? (int) $deckOrderFromDb["deck_order"] + ($top ? -1 : 1) : 0;
 		$this->dbQuery("UPDATE card SET player = $player, card_position = 'deck', deck_order = $deckOrder WHERE idcard = $cardId");
 		if ($secret) {
 			$this->notifyAllPlayers("newInDeck", clienttranslate('${player_name} puts a card to the ${position} of their deck'),
