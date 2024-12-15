@@ -80,6 +80,7 @@ $machinestates = array(
 			"name" => "nextRound",
 			"type" => "game",
 			"action" => "stNextRoundCont",
+      "description" => clienttranslate('Preparing for next round, please wait...'),
 			"transitions" => array("nextPlayer" => NEXT_PLAYER, "gameEnd" => 98)
 	),
 	
@@ -125,12 +126,14 @@ $machinestates = array(
 	),
 	SITE_EFFECT => array(
 			"name" => "evalLocation",
-			"type" => "game", 
+			"type" => "game",
+      "description" => clienttranslate('Receiving the site\'s bonus...'),
 			"transitions" => array("plane" => EVAL_PLANE, "evalDone" => AFTER_MAIN, "jewelDiscard" => MUST_DISCARD, "jewelDiscardShell" => MUST_DISCARD_SHELL)
 	),
 	EVAL_IDOL => array(
 			"name" => "evalIdol",
 			"type" => "game",
+    "description" => clienttranslate('Digging at the site...'),
 			"transitions" => array("siteEffect" => SITE_EFFECT, "idolAssistant" => IDOL_ASSISTANT, "idolUpgrade" => IDOL_UPGRADE, "idolExile" => IDOL_EXILE, "idolRefresh" => IDOL_REFRESH) 
 	),
 	MUST_DISCARD => array(
@@ -233,6 +236,7 @@ $machinestates = array(
 	ART_EFFECT => array(
 			"name" => "artEffect",
 			"type" => "game",
+      "description" => clienttranslate('Applying artifact\'s effect...'),
 			"transitions" => array("artDone" => ART_DONE, "artExile" => MAY_EXILE, "assistantDiscard" => MUST_DISCARD_FREE, "selectAss" => ART_SELECT_ASS, "activateAss" => ART_ACTIVATE_ASS, "research_bonus" => RESEARCH_BONUS, "earring" => ART_EARRING_SELECT_KEEP, "siteEffect" => SITE_EFFECT, "discardSelect" => ART_SELECT_EXILED, "turn_end" => NEXT_PLAYER, "mustTravel" => MUST_TRAVEL, "mayTravel" => MAY_TRAVEL)
 	),
 	ART_SELECT_ASS => array(
