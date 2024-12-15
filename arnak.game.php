@@ -299,9 +299,9 @@ class arnak extends Table
 
 			}
 		}
-		foreach($positionIds as $i => $spaceId) {
+		foreach($positionIds as $spaceId) {
 			$bonus = array_pop($researchBonus);
-			$this->DbQuery("INSERT INTO research_bonus (idresearch_bonus, track_pos, bonus_type) VALUES ($i, $spaceId, '$bonus')");
+			$this->DbQuery("INSERT INTO research_bonus (track_pos, bonus_type) VALUES ($spaceId, '$bonus')");
 		}
 
 		$amt = count($players);
