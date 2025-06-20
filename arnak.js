@@ -2139,7 +2139,7 @@ function (dojo, declare) {
 			console.log("message", msg, type);
 
 			try {
-				var parsed = JSON.parse(msg);
+				var parsed = JSON.parse(msg.replace(/&quot;/g, '"'));
 				console.log("adding to top bar", parsed);
 				this.travelNeeded = parsed;
 				this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
