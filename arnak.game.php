@@ -938,10 +938,10 @@ class arnak extends Table
 
 	function payTravel($travelReqs, $payment) {
 		$paymentAvailable = [
-		BOOT => max(0, $this->getGameStateValue("discount-boot")),
-		CAR => max(0, $this->getGameStateValue("discount-car")),
-		SHIP => max(0, $this->getGameStateValue("discount-ship")),
-		PLANE => max(0, $this->getGameStateValue("discount-plane"))
+			BOOT => max(0, $this->getGameStateValue("discount-boot")),
+			CAR => max(0, $this->getGameStateValue("discount-car")),
+			SHIP => max(0, $this->getGameStateValue("discount-ship")),
+			PLANE => max(0, $this->getGameStateValue("discount-plane"))
 		];
 
 		foreach([BOOT, SHIP, CAR, PLANE] as $type) {
@@ -1056,31 +1056,102 @@ class arnak extends Table
 			$paymentAvailable = [PLANE => $paymentAvailable[PLANE] + $paymentAvailable[SHIP] + $paymentAvailable[CAR] + $paymentAvailable[BOOT], SHIP => 0, CAR => 0, BOOT => 0];
 		}
 
-
-		$paymentAvailable[PLANE] -= $travelReqs[PLANE];
-		$travelReqs[PLANE] = 0;
-
-		$planeModif = max($paymentAvailable[PLANE], 0);
-		$travelReqs[BOOT] -= $paymentAvailable[BOOT];
-		$shipsNeeded = $travelReqs[SHIP] - $paymentAvailable[SHIP] - $planeModif;
-		$carsNeeded = $travelReqs[CAR] - $paymentAvailable[CAR] - $planeModif;
-		$bootsNeeded = $travelReqs[BOOT] - ($paymentAvailable[SHIP] + $paymentAvailable[CAR] + $planeModif);
-
-		$enough = (($travelReqs[CAR] + $travelReqs[SHIP] <= $paymentAvailable[CAR] + $paymentAvailable[SHIP] + $paymentAvailable[PLANE]) &&
-			($carsNeeded <= 0) &&
-			($shipsNeeded <= 0) &&
-			($travelReqs[BOOT] + $travelReqs[CAR] + $travelReqs[SHIP] - ($paymentAvailable[SHIP] + $paymentAvailable[CAR] + $paymentAvailable[PLANE]) <= 0 &&
-			$paymentAvailable[PLANE] >= 0)
-		);
-
-		if (!$enough) {
-			throw new BgaUserException(JSON_ENCODE(array("car" => $carsNeeded, "ship" => $shipsNeeded, "plane" => -$paymentAvailable[PLANE], "boot" => $bootsNeeded)));
+		$isPaymentPossible = $this->isTravelPaymentPossible($paymentAvailable, $travelReqs, $paymentSpent, $missingPayment);
+		if (!$isPaymentPossible) {
+			throw new BgaUserException(JSON_ENCODE(array(
+				"car" => $missingPayment[CAR],
+				"ship" => $missingPayment[SHIP],
+				"plane" => $missingPayment[PLANE],
+				"boot" => $missingPayment[BOOT]
+			)));
 		}
 
-		$this->setGameStateValue("discount-boot", -max($bootsNeeded, $paymentAvailable[BOOT]));
-		$this->setGameStateValue("discount-car", -max($carsNeeded, $paymentAvailable[CAR]));
-		$this->setGameStateValue("discount-ship", -max($shipsNeeded, $paymentAvailable[SHIP]));
-		//$this->setGameStateValue("discount-plane", max(0, $paymentAvailable[PLANE] - $);
+		// If there are more travel icons than we required for this, they remain until the end
+		// of the player turn
+		$this->setGameStateValue("discount-boot", $paymentAvailable[BOOT] - $paymentSpent[BOOT]);
+		$this->setGameStateValue("discount-car", $paymentAvailable[CAR] - $paymentSpent[CAR]);
+		$this->setGameStateValue("discount-ship", $paymentAvailable[SHIP] - $paymentSpent[SHIP]);
+		$this->setGameStateValue("discount-plane", $paymentAvailable[PLANE] - $paymentSpent[PLANE]);
+	}
+	function isTravelPaymentPossible($paymentAvailable, $travelReqs, &$paymentSpent, &$missingPayment) {
+		// Clone arrays to avoid mutating input
+		$avail = $paymentAvailable;
+		$reqs = $travelReqs;
+		$spent = [BOOT => 0, CAR => 0, SHIP => 0, PLANE => 0];
+		$missingPayment = [BOOT => 0, CAR => 0, SHIP => 0, PLANE => 0];
+
+		// 1. Pay PLANE with PLANE only
+		$usePlane = min($avail[PLANE], $reqs[PLANE]);
+		$spent[PLANE] += $usePlane;
+		$avail[PLANE] -= $usePlane;
+		$reqs[PLANE] -= $usePlane;
+		if ($reqs[PLANE] > 0) {
+			$missingPayment[PLANE] = $reqs[PLANE];
+			return false;
+		}
+
+		// 2. Pay SHIP with SHIP, then PLANE
+		$useShip = min($avail[SHIP], $reqs[SHIP]);
+		$spent[SHIP] += $useShip;
+		$avail[SHIP] -= $useShip;
+		$reqs[SHIP] -= $useShip;
+		if ($reqs[SHIP] > 0) {
+			$usePlane = min($avail[PLANE], $reqs[SHIP]);
+			$spent[PLANE] += $usePlane;
+			$avail[PLANE] -= $usePlane;
+			$reqs[SHIP] -= $usePlane;
+		}
+		if ($reqs[SHIP] > 0) {
+			$missingPayment[SHIP] = $reqs[SHIP];
+			return false;
+		}
+
+		// 3. Pay CAR with CAR, then PLANE
+		$useCar = min($avail[CAR], $reqs[CAR]);
+		$spent[CAR] += $useCar;
+		$avail[CAR] -= $useCar;
+		$reqs[CAR] -= $useCar;
+		if ($reqs[CAR] > 0) {
+			$usePlane = min($avail[PLANE], $reqs[CAR]);
+			$spent[PLANE] += $usePlane;
+			$avail[PLANE] -= $usePlane;
+			$reqs[CAR] -= $usePlane;
+		}
+		if ($reqs[CAR] > 0) {
+			$missingPayment[CAR] = $reqs[CAR];
+			return false;
+		}
+
+		// 4. Pay BOOT with BOOT, then SHIP, then CAR, then PLANE
+		$useBoot = min($avail[BOOT], $reqs[BOOT]);
+		$spent[BOOT] += $useBoot;
+		$avail[BOOT] -= $useBoot;
+		$reqs[BOOT] -= $useBoot;
+		if ($reqs[BOOT] > 0) {
+			$useShip = min($avail[SHIP], $reqs[BOOT]);
+			$spent[SHIP] += $useShip;
+			$avail[SHIP] -= $useShip;
+			$reqs[BOOT] -= $useShip;
+		}
+		if ($reqs[BOOT] > 0) {
+			$useCar = min($avail[CAR], $reqs[BOOT]);
+			$spent[CAR] += $useCar;
+			$avail[CAR] -= $useCar;
+			$reqs[BOOT] -= $useCar;
+		}
+		if ($reqs[BOOT] > 0) {
+			$usePlane = min($avail[PLANE], $reqs[BOOT]);
+			$spent[PLANE] += $usePlane;
+			$avail[PLANE] -= $usePlane;
+			$reqs[BOOT] -= $usePlane;
+		}
+		if ($reqs[BOOT] > 0) {
+			$missingPayment[BOOT] = $reqs[BOOT];
+			return false;
+		}
+
+		$paymentSpent = $spent;
+		return true;
 	}
 	function ocarinaActive() {
 		$playerId = $this->getActivePlayerId();
@@ -2288,6 +2359,11 @@ class arnak extends Table
 		$this->giveExtraTime($this->getActivePlayerId());
 		$this->setGameStateValue("special-research-done", 1);
 		$this->setGameStateValue("research-token-done", 1);
+		$this->setGameStateValue("discount-boot", 0);
+		$this->setGameStateValue("discount-car", 0);
+		$this->setGameStateValue("discount-ship", 0);
+		$this->setGameStateValue("discount-plane", 0);
+
 		$ingameNum = count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1"));
 		//throw new BgaUserException($passedNum);
 		if ($ingameNum == 0) {
