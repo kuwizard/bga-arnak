@@ -1340,7 +1340,7 @@ function (dojo, declare) {
 							case 31:
 								for (var candidate of dojo.query(".guardian-wrap")) {
 									var pos = candidate.parentNode.dataset.position;
-									if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]")[0]) {
+									if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
 										candidate.parentNode.classList.add("highlight-turn");
 									}
 								}
@@ -1348,7 +1348,7 @@ function (dojo, declare) {
 							case 33:
 								for (var candidate of dojo.query(".guardian-wrap")) {
 									var pos = candidate.parentNode.dataset.position;
-									if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]")[0] || dojo.query(".meeple.onboard[data-position=" + pos + "]").length == 0) {
+									if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length == dojo.query(".meeple.onboard[data-position=" + pos + "]").length) {
 										candidate.parentNode.classList.add("highlight-turn");
 									}
 								}
@@ -1396,6 +1396,7 @@ function (dojo, declare) {
 				return;
 			}
 			var playerId = this.player_id;
+			var color = this.playerColor(this.player_id);
 			var stateSet = true;
 			dojo.query(".card[data-cardtype=art][data-cardnum=" + artNum + "] .card.front").addClass("active");
 			switch(+artNum) {
@@ -1418,7 +1419,7 @@ function (dojo, declare) {
 					this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
 					for (var candidate of dojo.query(".guardian-wrap")) {
 						var pos = candidate.parentNode.dataset.position;
-						if (dojo.query(".meeple.onboard[data-position=" + pos + "]")[0]) {
+						if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
 							candidate.classList.add("highlight-turn");
 						}
 					}
@@ -1439,8 +1440,17 @@ function (dojo, declare) {
 					this.setClientState("selectItem", {descriptionmyturn: _("You must select an item from the supply")});
 					dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
 					break;
-				case 13: case 15:
+				case 13:
 					this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
+					break;
+				case 15:
+					this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
+					for (var candidate of dojo.query(".guardian-wrap")) {
+						var pos = candidate.parentNode.dataset.position;
+						if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+							candidate.parentNode.classList.add("highlight-turn");
+						}
+					}
 
 					break;
 				case 14:
@@ -2120,6 +2130,15 @@ function (dojo, declare) {
 						case "free-art":
 							elements = dojo.query(".card.supply[data-cardtype='art']");
 							break;
+						case "guard":
+						var color = this.playerColor(this.player_id);
+						for (var candidate of dojo.query(".guardian-wrap")) {
+							var pos = candidate.parentNode.dataset.position;
+							if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+								candidate.classList.add("highlight-turn");
+							}
+						}
+						break;
 					};
 					break;
 				case "token":
