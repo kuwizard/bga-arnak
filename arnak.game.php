@@ -1086,26 +1086,38 @@ class arnak extends Table
 		$playerId = $this->getActivePlayerId();
 		return $this->getGameStateValue("ocarina-played") == "1" && $this->getObjectFromDB("SELECT * FROM card WHERE num = 13 AND card_type = 'art' AND card_position = 'play' AND player = $playerId");
 	}
-	function freeOvercome($locationId = -1) {
+	function availableGuardians($targetLocation = -1, $notOccupiedbyAnyOtherPlayer = false)
+	{
 		$playerId = $this->getActivePlayerId();
 		$guards = $this->getObjectListFromDb(
 		"SELECT *
 		FROM guardian g
 		INNER JOIN board_position p ON g.at_location = p.idboard_position
-		WHERE p.slot1 = $playerId
 		");
-		switch (count($guards)) {
-			case 0: throw new BgaUserException(clienttranslate("No available guardian to overcome")); break;
-			case 1: $this->overcomeGuard($guards[0]["num"], "", true); break;
-			case 2:
-				$num = -1;
-				foreach($guards as $guard) {
-					if ($guard["at_location"] == $locationId){
-						$num = $guard["num"];
-					}
+		$available_guards = array();
+		foreach ($guards as $guard) {
+			if ($targetLocation >= 0 && $guard["at_location"] != $targetLocation) {
+				continue;
+			}
+			if ($notOccupiedbyAnyOtherPlayer) {
+				if (($guard["slot1"] == $playerId || is_null($guard["slot1"]) ) && ($guard["slot2"] == $playerId || is_null($guard["slot2"]) || $guard["slot2"] == -1)) {
+					$available_guards[count($available_guards)] = $guard;
 				}
-				$this->overcomeGuard($num,"", true);
-			break;
+			}
+			else {
+				if ($guard["slot1"] == $playerId || $guard["slot2"] == $playerId) {
+					$available_guards[count($available_guards)] = $guard;
+				}
+			}
+		}
+		return $available_guards;
+	}
+	function freeOvercome($locationId = -1) {
+		$playerId = $this->getActivePlayerId();
+		$guards = $this->availableGuardians($locationId);
+		switch (count($guards)) {
+			case 0: throw new BgaUserException(clienttranslate("Select a valid guardian")); break;
+			case 1: $this->overcomeGuard($guards[0]["num"], "", true); break;
 			default: throw new BgaUserException(clienttranslate("Incorrect number of guards found"));
 		}
 	}
@@ -1149,13 +1161,16 @@ class arnak extends Table
 	}
 	function moveToSite($siteId, $movePayment, $relocateFrom = null) {
 		$playerId = $this->getActivePlayerId();
-		$guard = null;
+		$guards = array();
 		if ($siteId !== "home") {
-			$guard = $this->getObjectFromDB("SELECT * FROM guardian WHERE at_location = $siteId");
+			$guards = $this->availableGuardians($siteId);
 		}
 		if (is_null($relocateFrom)) {
-			if ($this->gamestate->state()["name"] == "researchBonus" && $this->currentSpecialResearch() == "guard" && $guard) {
-				$this->overcomeGuard($guard["num"], $movePayment, true);
+			if ($this->gamestate->state()["name"] == "researchBonus" && $this->currentSpecialResearch() == "guard" ) {
+				if (count($guards) == 0) {
+					throw new BgaUserException(clienttranslate("Select a valid guardian"));
+				}
+				$this->overcomeGuard($guards[0]["num"], $movePayment, true);
 				$this->setGameStateValue("special-research-done", 1);
 				$this->didResearch();
 				return;
@@ -1171,19 +1186,17 @@ class arnak extends Table
 
 
 		if ($siteId != "home") {
+			if (count($guards) > 0 ) {
+				$this->overcomeGuard($guards[0]["num"], $movePayment);
+				$this->gamestate->nextState("main_action_done");
+				return;
+			}
 			$site = $this->getObjectFromDB("SELECT * FROM board_position WHERE idboard_position = $siteId");
 			$targetSlot = "slot1";
 			if ($site["slot1"]) {
-				if ($guard && ($site["slot1"] == $this->getActivePlayerId() || $site["slot2"] == $this->getActivePlayerId())) {
-					$this->overcomeGuard($guard["num"], $movePayment);
-					$this->gamestate->nextState("main_action_done");
-					return;
-				}
-				else {
-					$targetSlot = "slot2";
-					if ($site["slot2"]) {
-						throw new BgaUserException(clienttranslate("There is no free spot on that site"));
-					}
+				$targetSlot = "slot2";
+				if ($site["slot2"]) {
+					throw new BgaUserException(clienttranslate("There is no free spot on that site"));
 				}
 			}
 
@@ -1833,7 +1846,7 @@ class arnak extends Table
 				$this->setGameStateValue("special-research-done", 0);
 				break;
 			case "guard":
-				$guards = $this->getObjectListFromDb("SELECT * FROM guardian g INNER JOIN board_position p ON g.at_location = p.idboard_position WHERE p.slot1 = $playerId OR p.slot2 = $playerId");
+				$guards = $this->availableGuardians();
 				if (count($guards) == 0) {
 					break;
 				}
