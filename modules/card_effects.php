@@ -513,29 +513,11 @@ class CardEffects extends APP_GameClass {
 				$this->gainCardResource("coins", $playerId, 1);
 				break;
 			case 33:
-				$guards = $game->getObjectListFromDb(
-				"SELECT * 
-				FROM guardian g 
-				INNER JOIN board_position p ON g.at_location = p.idboard_position
-				WHERE (p.slot1 = $playerId OR p.slot1 IS NULL) AND (p.slot2 = $playerId OR p.slot2 = -1 OR p.slot2 IS NULL)
-				");
+				$guards = $game->availableGuardians($arg, true);
 				switch (count($guards)) {
-					case 0: throw new BgaUserException(clienttranslate("No available guardian to overcome"));
+					case 0: throw new BgaUserException(clienttranslate("Select a valid guardian"));
 					case 1: $game->overcomeGuard($guards[0]["num"], "", true); break;
-					default: 
-						$over = false;
-						foreach($guards as $g) {
-							if ($g["at_location"] == $arg) {
-								$game->overcomeGuard(
-								$g["num"],
-								"", true);
-								$over = true;
-								break;
-							}
-						}
-						if (!$over) {
-							throw new BgaUserException(clienttranslate("Select a valid guardian"));
-						}
+					default: throw new BgaUserException(clienttranslate("Incorrect number of guards found"));
 					break;
 				}
 				break;
