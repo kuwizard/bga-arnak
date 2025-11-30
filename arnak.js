@@ -28,7 +28,6 @@ define([
 function (dojo, declare) {
   return declare("bgagame.arnak", ebg.core.gamegui, {
     constructor: function(){
-      console.log('arnak constructor');
 
       // Here, you can init the global variables of your user interface
       // Example:
@@ -198,7 +197,6 @@ function (dojo, declare) {
         this.dontPreloadImage('board-front.jpg');
       }
 
-      console.log( "Starting game setup with", gamedatas );
       var board = dojo.query(".arnak-board")[0];
       dojo.addClass(board, gamedatas.bird_temple ? "front" : "back");
       this.current_player_color = this.playerColor(this.player_id);
@@ -509,8 +507,6 @@ function (dojo, declare) {
 
       // Setup game notifications to handle (see "setupNotifications" method below)
       this.setupNotifications();
-
-      console.log( "Ending game setup" );
     },
     highlightIdol: function() {
       dojo.query(".idol-bonus").addClass("idol-highlight");
@@ -953,7 +949,6 @@ function (dojo, declare) {
     updateSiteTooltips() {
       for (var positionId = 0; positionId < 17; ++positionId) {
         var wrap = dojo.query(".location-wrap[data-position=" + positionId + "]")[0];
-        console.log(wrap);
         var site = undefined;
         var guard = undefined;
         if (wrap) {
@@ -1200,13 +1195,13 @@ function (dojo, declare) {
           this.ajaxcall("/arnak/arnak/discardCard.html", {
             cardId: cardId,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "idolExile": case "mayExile":
           this.ajaxcall("/arnak/arnak/exile.html", {
             cardId: cardId,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           var args = this.gamedatas.gamestate.args;
           var i;
           if (args && args.indexOf && (i = args.indexOf("exile") > -1)) {
@@ -1218,28 +1213,28 @@ function (dojo, declare) {
             tokenId: this.selectedToken,
             arg: btoa(cardId),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa(cardId),
             assNum: 5,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "guardExile":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardArg: btoa(cardId),
             guardNum: this.selectedGuard,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "exileForCard": case "discardForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa(cardId),
             cardId: this.selectedCard,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "hairpinExile":
           this.hairpinExile = cardId;
@@ -1249,7 +1244,7 @@ function (dojo, declare) {
           this.ajaxcall("/arnak/arnak/selectCard.html", {
             cardId: cardId,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "selectKnife":
           this.addKnifeBonus(cardId);
@@ -1267,18 +1262,16 @@ function (dojo, declare) {
           dojo.byId("keep-num").innerHTML = this.keep.length;
           break;
         default:
-          console.log(cardDiv, cardId);
           this.playCard(cardId);
           break;
       }
     },
     selectFromExile: function(evt) {
-      console.log("reviving ", evt.target);
       cardId = evt.target.dataset.cardid;
       this.ajaxcall("/arnak/arnak/getFromExile.html", {
         cardId: cardId,
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     playCard: function(cardId) {
       var cardDiv = dojo.byId("card-" + cardId);
@@ -1364,7 +1357,7 @@ function (dojo, declare) {
             this.ajaxcall("/arnak/arnak/playCard.html", {
               cardId: cardId,
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
             break;
         }
       }
@@ -1374,7 +1367,7 @@ function (dojo, declare) {
           this.ajaxcall("/arnak/arnak/playCard.html", {
             cardId: cardId,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
         }
       }
       else {
@@ -1382,7 +1375,7 @@ function (dojo, declare) {
         this.ajaxcall("/arnak/arnak/playCard.html", {
           cardId: cardId,
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     artClientState(artNum) {
@@ -1489,14 +1482,14 @@ function (dojo, declare) {
             siteId: this.siteSelected,
             movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "assTravel":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assNum: 3,
             assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
       }
     },
@@ -1519,7 +1512,7 @@ function (dojo, declare) {
       this.ajaxcall("/arnak/arnak/displayDeck.html", {
         playerId: targetId,
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     displayDiscard: function(evt) {
       var oldDisplay = dojo.query(".deck-display-wrap")[0];
@@ -1531,7 +1524,7 @@ function (dojo, declare) {
       evt.target.innerHTML = _("Hide discarded items");
       this.ajaxcall("/arnak/arnak/displayDiscard.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     supplyClick: function(evt) {
       // TODO: check state
@@ -1543,20 +1536,20 @@ function (dojo, declare) {
             arg: btoa(cardDiv.dataset.cardid),
             cardId: this.selectedCard,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "selectSupply":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assNum: 10,
             assArg: btoa(cardDiv.dataset.cardid),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         default:
           this.ajaxcall("/arnak/arnak/buyCard.html", {
             cardId: cardDiv.dataset.cardid,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
       }
     },
     siteClick: function(evt) {
@@ -1577,7 +1570,6 @@ function (dojo, declare) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
       if (this.siteSelected > 4 && siteDiscovered) {
         dojo.addClass(siteDiscovered, "selected");
-        console.log(siteDiv);
       }
       else {
         dojo.addClass(evt.target, "selected");
@@ -1595,7 +1587,7 @@ function (dojo, declare) {
             cardId: this.selectedCard,
             arg: btoa(arg),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "selectCardSite1":
           this.chartsSelected = this.siteSelected;
@@ -1611,21 +1603,21 @@ function (dojo, declare) {
             cardId: this.selectedCard,
             arg: btoa(JSON.stringify({from: this.relocateFrom, to: this.siteSelected})),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "hairpinSite":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             cardId: this.selectedCard,
             arg: btoa(JSON.stringify({site: this.siteSelected, exile: this.hairpinExile})),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         default:
           this.ajaxcall("/arnak/arnak/moveToSite.html", {
             siteId: this.siteSelected,
             movePayment: btoa(JSON.stringify(this.travelSelected)),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           //this.setClientState("payTravel", {descriptionmyturn: "Pay travel: <div class='travel-costs'></div>"});
       }
       //todo: set cost to pay
@@ -1646,7 +1638,7 @@ function (dojo, declare) {
             this.ajaxcall("/arnak/arnak/useResearchToken.html", {
               tokenId: id,
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
         }
       }
       else {
@@ -1659,19 +1651,17 @@ function (dojo, declare) {
               cardId: this.selectedCard,
               arg: btoa(arg),
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
             break;
           default:
-            console.log("move to " + id);
             this.ajaxcall("/arnak/arnak/research.html", {
               researchId: id,
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
         }
       }
     },
     templeClick: function(evt) {
-      console.log("click temple", evt.target.dataset.num);
       if (this.gamedatas.gamestate.name == "selectResearch") {
         var args = {temple: evt.target.dataset.num};
         if (this.researchDiscount) {
@@ -1681,13 +1671,13 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa(JSON.stringify(args)),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
       else {
         this.ajaxcall("/arnak/arnak/getTempleTile.html", {
           tileNum: evt.target.dataset.num,
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     assistantClick: function(evt) {
@@ -1703,7 +1693,6 @@ function (dojo, declare) {
       }
       var exhausted = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "exhausted");
       var inHand = dojo.hasClass(evt.target.parentNode, "player-camp");
-      console.log("click assistant", num);
       if (inHand && this.gamedatas.gamestate["name"] == "hornSelectAss") {
         this.hornOld = num;
         this.setClientState("hornSelectNew", {descriptionmyturn: _("Select a new assistant")});
@@ -1715,7 +1704,7 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa(JSON.stringify({oldAss: this.hornOld, newAss: num})),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
         return;
       }
       if (this.gamedatas.gamestate["name"] == "artSelectAss") {
@@ -1723,7 +1712,7 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa(num),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
         return;
       }
       var callAction = false;
@@ -1781,20 +1770,19 @@ function (dojo, declare) {
           assNum: num,
           arg: "",
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     guardEffect: function(evt) {
       var num = evt.target.dataset.num;
       this.selectedGuard = num;
-      console.log("click guard " + num);
       switch(+num) {
         case 7:
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardNum: num,
             arg: "",
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case 2: case 5: case 6: case 11: case 14:
           this.setClientState("guardExile", {descriptionmyturn: _("Select card to exile")});
@@ -1820,7 +1808,7 @@ function (dojo, declare) {
     hardCancelTravel: function(evt) {
       this.ajaxcall("/arnak/arnak/cancelTravel.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     cancelClientstate: function(evt) {
       this.restoreGlobals();
@@ -1834,7 +1822,7 @@ function (dojo, declare) {
         siteId: this.siteSelected,
         movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
         lock: true
-      }, this, function(result) {console.log(result)});*/
+      }, this, function(result) {});*/
       this.paidTravel();
     },
     cancelExile: function(evt) {
@@ -1842,32 +1830,32 @@ function (dojo, declare) {
 
         case "idolExile":
           this.ajaxcall("/arnak/arnak/cancelIdolExile.html", {  lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "mayExile":
           this.ajaxcall("/arnak/arnak/cancelExile.html", {    lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "researchExile":
           this.ajaxcall("/arnak/arnak/useResearchToken.html", {
             tokenId: this.selectedToken,
             arg: btoa("cancel"),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa("cancel"),
             assNum: 5,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "exileForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa("cancel"),
             cardId: this.selectedCard,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "hairpinExile":
           this.hairpinExile = "cancel";
@@ -1878,18 +1866,18 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa("cancel"),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
           break;
       }
     },
     cancelDiscard: function(evt) {
       this.ajaxcall("/arnak/arnak/cancelShellDiscard.html", {    lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     planeCompass: function(evt) {
       this.ajaxcall("/arnak/arnak/planeCompass.html", {lock: true
 
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     upgrade: function(type) {
       switch(this.gamedatas.gamestate.name) {
@@ -1898,34 +1886,34 @@ function (dojo, declare) {
             assNum: 11,
             assArg: btoa(type),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "researchUpgrade":
           this.ajaxcall("/arnak/arnak/useResearchToken.html", {
             tokenId: this.selectedToken,
             arg: btoa(type),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "guardUpgrade":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardArg: btoa(type),
             guardNum: this.selectedGuard,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         case "cardUpgrade":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             cardId: this.selectedCard,
             arg: btoa(type),
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
           break;
         default:
           this.ajaxcall("/arnak/arnak/upgrade.html", {
             type: type,
             lock: true
-          }, this, function(result) {console.log(result)});
+          }, this, function(result) {});
       }
     },
     upgrade1: function(evt) {
@@ -1951,7 +1939,7 @@ function (dojo, declare) {
         cardId: this.selectedCard,
         arg: btoa(amt),
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     getArrowhead: function(evt) {
       this.useJewelArrowheadAssistant("arrowhead");
@@ -1974,7 +1962,7 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa(JSON.stringify(this.knifeBonuses)),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     knifeBonus_coins(evt) {
@@ -1999,18 +1987,18 @@ function (dojo, declare) {
         assNum: 4,
         assArg: btoa(type),
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     clickIdolBonus: function(evt) {
       this.ajaxcall("/arnak/arnak/idolBonus.html", {
         bonusName: evt.target.dataset.bonus,
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     endTurn: function() {
       this.ajaxcall("/arnak/arnak/endTurn.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
       this.turnEnded = true;
     },
     passConfirmString: function(playCard = false) {
@@ -2036,26 +2024,26 @@ function (dojo, declare) {
           this, function() {
             this.ajaxcall("/arnak/arnak/pass.html", {
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
           } )
         );
       }
       else {
         this.ajaxcall("/arnak/arnak/pass.html", {
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     confirmKeep: function() {
       this.ajaxcall("/arnak/arnak/confirmKeep.html", {
         cards: btoa(JSON.stringify(this.keep)),
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     cancelEarring: function() {
       this.ajaxcall("/arnak/arnak/cancelEarring.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     choosePass: function() {
       var confirmString = this.passConfirmString(true);
@@ -2066,7 +2054,7 @@ function (dojo, declare) {
               cardId: this.selectedCard,
               arg: btoa("pass"),
               lock: true
-            }, this, function(result) {console.log(result)});
+            }, this, function(result) {});
           } )
         );
       }
@@ -2075,24 +2063,24 @@ function (dojo, declare) {
           cardId: this.selectedCard,
           arg: btoa("pass"),
           lock: true
-        }, this, function(result) {console.log(result)});
+        }, this, function(result) {});
       }
     },
     chooseNotPass: function() {
       this.ajaxcall("/arnak/arnak/playCard.html", {
         cardId: this.selectedCard,
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     skipArt: function() {
       this.ajaxcall("/arnak/arnak/skipArt.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     undo: function() {
       this.ajaxcall("/arnak/arnak/undo.html", {
         lock: true
-      }, this, function(result) {console.log(result)});
+      }, this, function(result) {});
     },
     highlightTurn: function(toHighlight, arg) {
       var elements;
@@ -2144,11 +2132,9 @@ function (dojo, declare) {
 
     /* @Override */
     showMessage(msg, type) {
-      console.log("message", msg, type);
 
       try {
         var parsed = JSON.parse(msg.replace(/&quot;/g, '"'));
-        console.log("adding to top bar", parsed);
         this.travelNeeded = parsed;
         this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
         var targetEl = dojo.query(".travel-costs")[0];
@@ -2178,7 +2164,6 @@ function (dojo, declare) {
     },
     onEnteringState: function( stateName, args )
     {
-      console.log( 'Entering state: '+stateName );
       dojo.query(".highlight-turn").removeClass("highlight-turn");
       this.highlightTurn(stateName, args);
       switch(stateName) {
@@ -2194,7 +2179,6 @@ function (dojo, declare) {
         case "researchBonus":
           dojo.query(".research-box").addClass("unselectable");
           dojo.query(".research-bonus").addClass("selectable");
-          console.log(args.args);
           for (var r of Object.keys(args.args)) {
             this.highlightTurn(r, args.args[r]);
           }
@@ -2262,8 +2246,6 @@ function (dojo, declare) {
     },
     onLeavingState: function( stateName )
     {
-      console.log( 'Leaving state: '+stateName );
-
       switch(stateName) {
         case "mustDiscard": case "mustDiscardFree": case "assDiscard": case "discardForCard": case "mayDiscard":
           dojo.query(".discardable").removeClass("discardable");
@@ -2293,8 +2275,6 @@ function (dojo, declare) {
     },
     onUpdateActionButtons: function( stateName, args )
     {
-      console.log( 'onUpdateActionButtons: '+stateName );
-
       //this.addActionButton("button_playeraid", _("Display player aid"), 'togglePlayerAid');
       if(this.isCurrentPlayerActive()) {
         if (this.on_client_state) {
@@ -2418,7 +2398,6 @@ function (dojo, declare) {
     onScreenWidthChange() {
       var viewWidth = dojo.query(".arnak-wrap")[0].offsetWidth;
       viewWidth = Math.min(viewWidth, 1600);
-      console.log("resizing", viewWidth);
       var board = dojo.query(".arnak-board")[0];
       var twoCols = viewWidth > 700;
       if (this.forceLayout == "twoCol") {
@@ -2486,7 +2465,6 @@ function (dojo, declare) {
     },
     setupNotifications: function()
     {
-      console.log( 'notifications subscriptions setup' );
       dojo.subscribe("playCard", this, "notif_cardPlayed");
       dojo.subscribe("discardCard", this, "notif_cardPlayed");
       dojo.subscribe("exileCard", this, "notif_exileCard");
@@ -2577,7 +2555,6 @@ function (dojo, declare) {
 
       this.restoreServerGameState();
       this.updatePlayerCards(notif.args.player_id);
-      console.log( notif );
     },
     notif_exileCard: function(notif) {
       var a = notif.args;
@@ -2624,7 +2601,6 @@ function (dojo, declare) {
       dojo.query(".exilable").removeClass("exilable");
     },
     notif_gainRes: function(notif) {
-      console.log(notif);
       var args = notif.args;
       var resNumber = dojo.query("#player_board_" + args.player_id + " .counter-number-" + args.resName)[0];
       this.gamedatas.players[args.player_id][args.resName] = +this.gamedatas.players[args.player_id][args.resName] + args.amt;
@@ -2680,7 +2656,6 @@ function (dojo, declare) {
       }
     },
     notif_gainFear: function(notif) {
-      console.log(notif);
       var a = notif.args;
       this.gamedatas.players[a.player_id].play.push({id: a.fearId, type: "fear", num: null});
       this.updatePlayerCards(a.player_id);
@@ -2724,7 +2699,6 @@ function (dojo, declare) {
     notif_moveWorker: function(notif) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
       var a = notif.args;
-      console.log(a);
       var color = this.playerColor(a.playerId);
       if (!a.from) {
         this.fadeOutAndDestroy(dojo.query("#player_board_" + a.playerId + " .counter-wrap .meeple:not(.onboard)")[0]);
@@ -2804,7 +2778,6 @@ function (dojo, declare) {
     },
     notif_discoverLocation: function(notif) {
       var a = notif.args;
-      console.log("discover", a);
       this.newSite(a.locationSize, a.locationNum, a.boardPosition);
     },
     notif_siteReveal: function(notif) {
@@ -2813,7 +2786,6 @@ function (dojo, declare) {
     },
     notif_newGuardian: function(notif) {
       var a = notif.args;
-      console.log("new guard", a);
       this.newGuard(a.boardPosition, a.guardNum);
       this.updateSiteTooltips();
 
@@ -3055,7 +3027,6 @@ function (dojo, declare) {
     },
     notif_lastStepTokens: function(notif) {
       var tokens = JSON.parse(notif.args.tokens);
-      console.log(tokens);
       this.revealTokens(tokens);
     },
     notif_passStartMarker: function(notif) {
@@ -3070,7 +3041,6 @@ function (dojo, declare) {
       this.sortSupply();
       var args = notif.args;
       var supply = (args.cardType === "item" ? this.itemSupply : this.artSupply);
-      console.log(supply);
       if (supply[0].id != args.cardId) {
         console.log("lowest card id does not match");
       }
