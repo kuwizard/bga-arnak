@@ -592,7 +592,7 @@ class arnak extends Table
           "cardType" => $type,
           "cardNum" => $num,
           "cardId" => $cardId,
-        'preserveArgsInHistory' => [ 'cardType', 'cardNum' ]));
+        'preserve' => [ 'cardType', 'cardNum' ]));
     }
     else {
       $this->setGameStateValue("art-active", -1);
@@ -659,7 +659,7 @@ class arnak extends Table
         "cardType" => "art",
         "cardNum" => $num,
         "cardId" => $cardId,
-        'preserveArgsInHistory' => [ 'cardType', 'cardNum' ]
+        'preserve' => [ 'cardType', 'cardNum' ]
         ));
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
@@ -717,7 +717,7 @@ class arnak extends Table
         "top" => $top,
         "cardType" => $type,
         "cardNum" => $num,
-        'preserveArgsInHistory' => [ 'cardType', 'cardNum' ]
+        'preserve' => [ 'cardType', 'cardNum' ]
       ));
       $this->notifyPlayer($player, "putToDeck", clienttranslate('You put ${itemName} to the ${position} of your deck'),
         array(
@@ -730,7 +730,7 @@ class arnak extends Table
         "top" => $top,
         "cardType" => $type,
         "cardNum" => $num,
-        'preserveArgsInHistory' => [ 'cardType', 'cardNum' ]
+        'preserve' => [ 'cardType', 'cardNum' ]
       ));
 
     }
@@ -747,7 +747,7 @@ class arnak extends Table
         "top" => $top,
         "cardType" => $type,
         "cardNum" => $num,
-        'preserveArgsInHistory' => [ 'cardType', 'cardNum' ]
+        'preserve' => [ 'cardType', 'cardNum' ]
       ));
     }
   }
@@ -852,7 +852,7 @@ class arnak extends Table
         "cardTypeText" => $this->cardTypeText($newCard["card_type"]),
         "cardNum" => $newCard["num"],
         "deckOrder" => $newCard["deck_order"],
-        "preserveArgsInHistory" => ["cardType", "cardNum"]
+        "preserve" => ["cardType", "cardNum"]
       )
     );
     return $newCard;
@@ -872,7 +872,7 @@ class arnak extends Table
         "cardName" => $name,
         "cardType" => $type,
         "cardNum" => $toDelete["num"],
-        "preserveArgsInHistory" => ["cardType", "cardNum"]
+        "preserve" => ["cardType", "cardNum"]
         )
       );
       $this->DbQuery("UPDATE card SET player = NULL, card_position = 'discard' WHERE idcard = $cardId");
