@@ -22,44 +22,39 @@
  */
   
   
-  class action_arnak extends APP_GameAction
-  { 
+class action_arnak extends APP_GameAction
+{ 
   // Constructor: please do not modify
-     public function __default()
+  public function __default()
+  {
+    if( self::isArg( 'notifwindow') )
     {
-      if( self::isArg( 'notifwindow') )
-      {
       $this->view = "common_notifwindow";
-        $this->viewArgs['table'] = self::getArg( "table", AT_posint, true );
-      }
-      else
-      {
+      $this->viewArgs['table'] = self::getArg( "table", AT_posint, true );
+    }
+    else
+    {
       $this->view = "arnak_arnak";
       self::trace( "Complete reinitialization of board game" );
     }
-    } 
-    
+  }
   public function stNextPlayer() {
     $this->game->stNextPlayer();
   }
   public function stNextRound() {
     $this->game->stNextRound();
   }
-  
   public function displayDeck() {
     self::setAjaxMode(); 
     $playerId = self::getArg("playerId", AT_posint, true );
-    
     $this->game->displayDeck($playerId);
     self::ajaxResponse();
   }
-  
   public function displayDiscard() {
     self::setAjaxMode(); 
     $this->game->displayDiscard();
     self::ajaxResponse();
   }
-  
   public function playCard() {
     self::setAjaxMode(); 
     $cardId = self::getArg("cardId", AT_posint, true );
@@ -67,7 +62,6 @@
     $this->game->playCard($cardId, $arg);
     self::ajaxResponse();
   }
-
   public function discardCard() {
     self::setAjaxMode(); 
     $cardId = self::getArg("cardId", AT_posint, true );
@@ -126,7 +120,6 @@
   public function buyCard() {
     self::setAjaxMode(); 
     $cardId = self::getArg( "cardId", AT_posint, true );
-    
     $this->game->buyCard($cardId, false, true, false);
     self::ajaxResponse();
   }
@@ -178,8 +171,7 @@
     self::setAjaxMode(); 
     $siteId = self::getArg( "siteId", AT_posint, true );
     $movePayment = self::getArg( "movePayment", AT_base64, true );
-    //$idolArg = self::getArg( "idolArg", AT_posint);
-    $this->game->moveToSite($siteId, $movePayment/*, $idolArg*/);
+    $this->game->moveToSite($siteId, $movePayment);
     self::ajaxResponse();
   }
   public function skipArt() {
@@ -206,7 +198,5 @@
     $this->game->endTurn();
     self::ajaxResponse();
   }
-
-  }
-  
+}
 
