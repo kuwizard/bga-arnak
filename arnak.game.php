@@ -1742,10 +1742,6 @@ class arnak extends Table
         $this->upgradeAssistant($assNum);
         $this->refreshAssistant($assNum);
       }
-      else if ($assistant["ready"] == 1) {
-        $this->assistantEffect($assNum, $assArg);
-        return;
-      }
       else if ($this->currentSpecialResearch() == "assistant-refresh") {
         $this->refreshAssistant($assNum);
         $this->setGameStateValue("special-research-done", 1);
@@ -1754,6 +1750,10 @@ class arnak extends Table
       else if ($this->gamestate->state()["name"] == "idolRefresh") {
         $this->refreshAssistant($assNum);
         $this->revealLocation();
+      }
+      else if ($assistant["ready"] == 1) {
+        $this->assistantEffect($assNum, $assArg);
+        return;
       }
 
       else {
@@ -1934,11 +1934,6 @@ class arnak extends Table
     $this->didResearch();
   }
   function refreshAssistant($assNum) {
-    if ($assNum == "cancel") {
-      return;
-    }
-    $playerId = $this->getActivePlayerId();
-    $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE in_hand = $playerId AND num = $assNum");
     $this->dbQuery("UPDATE assistant SET ready = 1 WHERE num = $assNum");
     $this->notifyAllPlayers("refreshAss", clienttranslate('${player_name} refreshes his assistant'),
       array(

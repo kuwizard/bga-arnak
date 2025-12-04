@@ -225,7 +225,12 @@ class CardEffects extends APP_GameClass {
         break;
       case 27:
         if (!$arg) {
-          $arg = "cancel";
+          break;
+        }
+
+        $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $arg");
+        if($assistant['in_hand'] != $playerId) {
+          throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
         }
         $game->refreshAssistant($arg);
         break;
