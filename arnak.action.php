@@ -64,9 +64,7 @@
     self::setAjaxMode(); 
     $cardId = self::getArg("cardId", AT_posint, true );
     $arg = base64_decode(self::getArg("arg", AT_base64));
-    $artBuy = self::getArg("artBuy", AT_posint);
-    
-    $this->game->playCard($cardId, $arg, $artBuy);
+    $this->game->playCard($cardId, $arg);
     self::ajaxResponse();
   }
 
