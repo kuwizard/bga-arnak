@@ -2116,6 +2116,9 @@ function (dojo, declare) {
               }
             }
             break;
+            case "assistant-refresh":
+            dojo.query(".camp-" + this.player_id + " .assistant").addClass("highlight-turn");
+            break;
           };
           break;
         case "token":
@@ -2175,6 +2178,9 @@ function (dojo, declare) {
           break;
         case "idolExile": case "researchExile": case "assExile": case "guardExile": case "exileForCard": case "mayExile": case "hairpinExile": case "selectKnife":
           dojo.query(".camp-" + this.getActivePlayerId() + " :is(.hand.card, .play.card)").addClass("exilable");
+          break;
+        case "idolRefresh":
+          dojo.query(".camp-" + this.getActivePlayerId() + " .assistant").addClass("highlight-turn");
           break;
         case "researchBonus":
           dojo.query(".research-box").addClass("unselectable");
