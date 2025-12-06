@@ -1552,6 +1552,12 @@ function (dojo, declare) {
           }, this, function(result) {});
       }
     },
+    cancelBuy : function(evt) {
+      var cardDiv = evt.target;
+      this.ajaxcall("/arnak/arnak/cancelBuy.html", {
+        lock: true
+      }, this, function(result) {});
+    },
     siteClick: function(evt) {
       var siteDiv = evt.target;
 
@@ -2362,7 +2368,14 @@ function (dojo, declare) {
             this.addActionButton("button_confirm_keep", _("Confirm"), "confirmKeep");
             dojo.destroy("button_undo");
             break;
-
+          case "buyArt":
+            this.addActionButton("cancel_buy", _("Don't buy Artefact"), "cancelBuy");
+            dojo.destroy("button_undo");
+            break;
+          case "buyItem":
+            this.addActionButton("cancel_buy", _("Don't buy Item"), "cancelBuy");
+            dojo.destroy("button_undo");
+            break;
         }
         if (this.last_server_state.name == "artWaitArgs" && !["exileForCard", "cardUpgrade"].includes(stateName)) {
           this.addActionButton("button_skip_art", _("Skip artifact effect"), "skipArt", null, false, "red");
@@ -2480,6 +2493,7 @@ function (dojo, declare) {
       dojo.subscribe("nextRound", this, "notif_nextRound");
       dojo.subscribe("putToDeck", this, "notif_putToDeck");
       dojo.subscribe("cardReveal", this, "notif_cardReveal");
+      dojo.subscribe("drawnCardPutBack", this, "notif_drawnCardPutBack");
       dojo.subscribe("shufflePlay", this, "notif_shufflePlay");
       dojo.subscribe("drawCard", this, "notif_drawCard");
       dojo.subscribe("drawSelfCard", this, "notif_drawSelfCard");
@@ -2691,6 +2705,22 @@ function (dojo, declare) {
       else if (a.cardType === "art") {
         this.artSupply.push(cardToPush);
         this.gamedatas.artDeck -= 1;
+      }
+      this.updateSupply();
+    },
+    notif_drawnCardPutBack: function(notif) {
+      var a = notif.args;
+      var supply = (a.cardType === "item" ? this.itemSupply : this.artSupply);
+      for (var i in supply) {
+        if( supply[i].id == a.cardId ) {
+          supply.splice(i, 1);
+          this.gamedatas.itemDeck += 1;
+          var cardDiv = dojo.byId("card-" + a.cardId);
+          if(cardDiv) {
+            dojo.destroy(cardDiv);
+          }
+          break;
+        }
       }
       this.updateSupply();
     },

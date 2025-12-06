@@ -123,6 +123,11 @@ class action_arnak extends APP_GameAction
     $this->game->buyCard($cardId, false, true, false);
     self::ajaxResponse();
   }
+  public function cancelBuy() {
+    self::setAjaxMode(); 
+    $this->game->cancelBuy();
+    self::ajaxResponse();
+  }
   public function planeCompass() {
     self::setAjaxMode(); 
     $this->game->planeCompass();
