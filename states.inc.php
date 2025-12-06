@@ -211,15 +211,15 @@ $machinestates = array(
       "description" => clienttranslate('${actplayer} must buy an artifact'),
       "descriptionmyturn" => clienttranslate('${you} must buy an artifact'),
       "type" => "activeplayer",
-      "possibleactions" => array("", "playCard", "useAssistant", "useIdol", "useGuardPower", "buyArt", "undo"),
-      "transitions" => array("artWaitArgs" => ART_WAIT_ARGS, "playArt" => ART_EFFECT)
+      "possibleactions" => array("", "playCard", "useAssistant", "useIdol", "useGuardPower", "buyArt", "cancelBuy", "undo"),
+      "transitions" => array("artWaitArgs" => ART_WAIT_ARGS, "playArt" => ART_EFFECT, "main_action_done" => AFTER_MAIN)
   ),
   BUY_ITEM => array(
       "name" => "buyItem",
       "description" => clienttranslate('${actplayer} must buy an item'),
       "descriptionmyturn" => clienttranslate('${you} must buy an item'),
       "type" => "activeplayer",
-      "possibleactions" => array("", "playCard", "useAssistant", "useIdol", "useGuardPower", "buyItem", "undo"),
+      "possibleactions" => array("", "playCard", "useAssistant", "useIdol", "useGuardPower", "buyItem", "cancelBuy", "undo"),
       "transitions" => array("main_action_done" => AFTER_MAIN)
   ),
   ART_WAIT_ARGS => array(

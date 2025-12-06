@@ -430,31 +430,15 @@ class CardEffects extends APP_GameClass {
         }
         $game->siteEffect($siteTile["size"], $siteTile["num"]);
         break;
-      case 19: case 20:
-        $type = $num == 20 ? "art" : "item";
-        $resName = $num == 20 ? "compass" : "coins";
-        $newCard = $game->revealCard($type);
-        $cards = $game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'supply' AND card_type = '$type'");
-        $funds = $game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $playerId")[$resName];
-        $possible = false;
-        foreach ($cards as $card) {
-          if (cardCost($type, $card["num"]) <= 3 + $funds) {
-            $possible = true;
-          }
-        }
-        if ($possible) {
-          $game->setGameStateValue("discount-$resName", 3);
-          $game->gamestate->nextState($type == "item" ? "buyItem" : "buyArt");
-          
-        }
-        else {
-          $game->gamestate->nextState("main_action_done");
-          $game->notifyAllPlayers("cantAfford", '${player_name} cannot afford any card. The top card was ${cardName}', array(
-            "player_name" => $game->getActivePlayerName(),
-            "player_id" => $playerId,
-            "cardName" => cardName($type, $newCard["num"])
-          ));
-        }
+      case 19: 
+        $newCard = $game->revealCard("item");
+        $game->setGameStateValue("discount-coins", 3);
+        $game->gamestate->nextState("buyItem");
+        break;
+      case 20:
+        $newCard = $game->revealCard("art");
+        $game->setGameStateValue("discount-compass", 3);
+        $game->gamestate->nextState("buyArt");
         break;
       case 21:
         $guards = $game->getCollectionFromDb(

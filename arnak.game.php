@@ -695,6 +695,35 @@ class arnak extends Table
       $this->placeGuard($siteId);
     }
   }
+  function cancelBuy()
+  {
+    $this->checkAction("cancelBuy");
+    if( $this->gamestate->state()["name"] == "buyArt" ) {
+      $type = "art";
+    }
+    else if( $this->gamestate->state()["name"] == "buyItem" ) {
+      $type = "item";
+    }
+    $drawnCard = $this->getNonEmptyObjectFromDB("SELECT * FROM card WHERE card_type = '$type' AND card_position = 'supply' ORDER BY deck_order DESC LIMIT 1");
+    $cardId = $drawnCard['idcard'];
+    $this->dbQuery("UPDATE card SET card_position = 'deck' WHERE idcard = $cardId");
+  $this->notifyAllPlayers(
+      "drawnCardPutBack",
+      clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'),
+      array(
+        "i18n" => ["cardName", "cardTypeText"],
+        "cardName" => cardName($drawnCard["card_type"], $drawnCard["num"]),
+        "cardId" => $drawnCard['idcard'],
+        "cardType" => $drawnCard["card_type"],
+        "cardTypeText" => $this->cardTypeText($drawnCard["card_type"]),
+        "cardNum" => $drawnCard["num"],
+        "preserve" => ["cardType", "cardNum"]
+      )
+    );
+    
+    $this->gamestate->nextState("main_action_done");
+    $this->resetDiscount();
+  }
   function putCardToDeck($cardId, $top, $secret) {
     $order = "DESC";
     $player = $this->getCurrentPlayerId();
