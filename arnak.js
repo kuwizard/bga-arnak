@@ -2508,7 +2508,6 @@ function (dojo, declare) {
       dojo.subscribe("passStartMarker", this, "notif_passStartMarker");
       dojo.subscribe("endTurn", this, "notif_endTurn");
       dojo.subscribe("earringKeep", this, "notif_earringKeep");
-      dojo.subscribe("discardedItems", this, "notif_discardedItems");
       dojo.subscribe("showAllCards", this, "notif_showAllCards");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
       dojo.subscribe("score", this, "notif_score");
