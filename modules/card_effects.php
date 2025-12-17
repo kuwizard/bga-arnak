@@ -134,8 +134,12 @@ class CardEffects extends APP_GameClass {
         $exile = $arg->exile;
         $game->exile($exile);
         $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $siteId");
+        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
         if (!$site) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
+        }
+        if (!$siteTile) {
+          throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
         $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
         $game->siteEffect("basic", $siteTile["num"]);
@@ -510,8 +514,12 @@ class CardEffects extends APP_GameClass {
         break;
       case 36:
         $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $arg");
+        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         if (!$site) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
+        }
+        if (!$siteTile) {
+          throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
         $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         $this->gainCardResource("compass", $playerId, 1);
