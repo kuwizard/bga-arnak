@@ -1239,6 +1239,12 @@ function (dojo, declare) {
         case "hairpinExile":
           this.hairpinExile = cardId;
           this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate")});
+          for( var site of dojo.query(".location-wrap.basic") ) {
+            var position = dojo.attr(site,"data-position");
+            if( dojo.query(".meeple[data-position=" + position + "]") == 0 ) {
+              site.classList.add("highlight-turn");
+            }
+          }
           break;
         case "artEarringSelectKeep": case "artEarringSelectTopdeck":
           this.ajaxcall("/arnak/arnak/selectCard.html", {
@@ -1342,6 +1348,14 @@ function (dojo, declare) {
                 break;
               case 35:
                 dojo.query(".location-wrap.basic").addClass("highlight-turn");
+                break;
+              case 36:
+                for( var site of dojo.query(".location-wrap.basic") ) {
+                  var position = dojo.attr(site,"data-position");
+                  if( dojo.query(".meeple[data-position=" + position + "]") == 0 ) {
+                    site.classList.add("highlight-turn");
+                  }
+                }
                 break;
             };
             break;
