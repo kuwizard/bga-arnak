@@ -94,7 +94,7 @@ $machinestates = array(
       "descriptionmyturn" => clienttranslate('${you} must select an action'),
       "type" => "activeplayer",
       "updateGameProgression" => true,
-      "possibleactions" => array( "playCard", "buyItem", "buyArt", "research",  "digSite", "discoverSite", "overcome", "useAssistant", "useIdol", "useGuardPower", "getTempleTile", "pass", "undo"),
+      "possibleactions" => array( "playCard", "buyItem", "buyArt", "research",  "digSite", "discoverSite", "overcome", "useAssistant", "useActionAssistant", "useIdol", "useGuardPower", "getTempleTile", "pass", "undo"),
       "transitions" => array("siteEffect" => SITE_EFFECT, "discover" => EVAL_IDOL, "main_action_done" => AFTER_MAIN, "pass" => TURN_END, "turn_end" => NEXT_PLAYER, "research_bonus" => RESEARCH_BONUS, "assistantDiscard" => MUST_DISCARD_FREE, "mustTravel" => MUST_TRAVEL, "mayTravel" => MAY_TRAVEL, "cardExile" => MAY_EXILE, "artWaitArgs" => ART_WAIT_ARGS, "playArt" => ART_EFFECT, "buyItem" => BUY_ITEM, "buyArt" => BUY_ART, "jewelDiscardShell" => MUST_DISCARD_SHELL)
       /* TODO: update remove turn end */ 
   ),

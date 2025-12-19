@@ -1781,6 +1781,9 @@ class arnak extends Table
         $this->revealLocation();
       }
       else if ($assistant["ready"] == 1) {
+        if( $assNum == 10 ) {
+          $this->checkAction("useActionAssistant");
+        }
         $this->assistantEffect($assNum, $assArg);
         return;
       }
