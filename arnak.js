@@ -1743,7 +1743,7 @@ function (dojo, declare) {
       }
       var playInHand = !exhausted && inHand && spec != "assistant-gold";
       var playAtBoard = !inHand && this.gamedatas.gamestate.name == "artActivateAss";
-      if (playInHand || playAtBoard) {
+      if (this.isCurrentPlayerActive() && (playInHand || playAtBoard)) {
         var state = this.gamedatas.gamestate.name;
         if ((state == "payTravel" || state == "assTravel") && [7, 8, 9].indexOf(+num) > -1) {
           this.travelSelected.push({type: "assistant", num: num});
@@ -1772,8 +1772,13 @@ function (dojo, declare) {
               this.setClientState("assExile", {descriptionmyturn: _("Select card to exile")});
               break;
             case 10:
-              this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
-              dojo.query(".card.supply").addClass("highlight-turn");
+              if (playAtBoard || this.gamedatas.gamestate.name == "selectAction") {
+                this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
+                dojo.query(".card.supply").addClass("highlight-turn");
+              }
+              else {
+                callAction = true;
+              }
               break;
             case 11: // choose upgrade
               this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade")});
