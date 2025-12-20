@@ -1325,7 +1325,7 @@ function (dojo, declare) {
               case 18:
                 for (var candidate of dojo.query(".location-wrap")) {
                   var pos = candidate.dataset.position;
-                  if (dojo.query(".meeple[data-position=" + pos + "]")[0]) {
+                  if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]")[0]) {
                     candidate.classList.add("highlight-turn");
                   }
                 }
