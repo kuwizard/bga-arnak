@@ -421,12 +421,15 @@ class CardEffects extends APP_GameClass {
         }
         break;
       case 17:
-        $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
+        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
+        if (!$siteTile) {
+          throw new BgaUserException(clienttranslate("That is not a small discovered site"));
+        }
         $game->siteEffect("small", $siteTile["num"]);
         break;
       case 18:
-        $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
-        if (!$this->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $arg")) {
+        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
+        if (!$siteTile || !$this->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $arg")) {
           throw new BgaUserException(clienttranslate("You must have an archeologist on the site"));
         }
         if ($siteTile["size"] == "big") {
@@ -509,7 +512,10 @@ class CardEffects extends APP_GameClass {
         $game->gamestate->nextState("cardExile");
         break;
       case 35:
-        $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
+        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
+        if (!$siteTile) {
+          throw new BgaUserException(clienttranslate("That is not a camp site"));
+        }
         $game->siteEffect("basic", $siteTile["num"]);
         break;
       case 36:
