@@ -495,7 +495,8 @@ function (dojo, declare) {
         this.newSite(site.size, site.num, site.position);
       }
       for (var guard of Object.values(gamedatas.guardians)) {
-        this.newGuard(guard.at_location, guard.num);
+        if(!guard.in_hand)
+          this.newGuard(guard.at_location, guard.num);
       }
       this.updateSiteTooltips();
 
