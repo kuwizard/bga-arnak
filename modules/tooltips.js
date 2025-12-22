@@ -540,9 +540,7 @@ class Tooltips {
     var effectText = this.effectText(step, bird, type == "book");
     var typeText = type == "book" ? _("notebook") : _("magnifying glass");
     effectText = effectText[0].toUpperCase() + effectText.substr(1);
-    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, bird, type=="book");
-
-    + "</ul>";
+    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, bird, type=="book") + "</ul>";
   }
   assistant(num, gold = false, height) {
     var header = "<h3>" + _("Assistant") + "</h3>";
