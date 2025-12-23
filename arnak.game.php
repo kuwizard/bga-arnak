@@ -1229,6 +1229,11 @@ class arnak extends Table
 
       $targetSlotNo = $targetSlot === "slot1" ? 0 : 1;
     }
+
+    if ($this->getGameStateValue("art-active") == 26 && $siteId > 4) {
+      throw new BgaUserException(clienttranslate("You must travel to a camp site"));
+    }
+
     if (!is_null($relocateFrom)) {
       if ($this->getObjectFromDB("SELECT * FROM board_position WHERE slot1 = $playerId AND slot2 = $playerId AND idboard_position = $relocateFrom")) {
         $this->dbQuery("UPDATE board_position SET slot2 = NULL WHERE idboard_position = $relocateFrom");
@@ -1267,9 +1272,6 @@ class arnak extends Table
     ));
 
     $siteTile = $this->getObjectFromDB("SELECT * FROM location WHERE is_at_position = $siteId");
-    if ($this->getGameStateValue("art-active") == 26 && $siteTile["size"] != "basic") {
-      throw new BgaUserException("You must travel to a camp site");
-    }
     if ($siteTile) {
       $this->siteEffect($siteTile["size"], $siteTile["num"]);
 
