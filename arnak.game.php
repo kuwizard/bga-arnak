@@ -1234,24 +1234,26 @@ class arnak extends Table
       throw new BgaUserException(clienttranslate("You must travel to a camp site"));
     }
 
+    $fromSlot = null;
     if (!is_null($relocateFrom)) {
-      if ($this->getObjectFromDB("SELECT * FROM board_position WHERE slot1 = $playerId AND slot2 = $playerId AND idboard_position = $relocateFrom")) {
-        $this->dbQuery("UPDATE board_position SET slot2 = NULL WHERE idboard_position = $relocateFrom");
-      }
-      else if ($this->getObjectFromDB("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $relocateFrom")) {
-        $this->dbQuery("UPDATE board_position SET slot1 = NULL WHERE idboard_position = $relocateFrom AND slot1 = $playerId");
-        $this->dbQuery("UPDATE board_position SET slot2 = NULL WHERE idboard_position = $relocateFrom AND slot2 = $playerId");
+      $position = $this->getObjectFromDB("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $relocateFrom");
+      if( $position ) {
+        $fromSlot = ( $position['slot2'] == $playerId ) ? 2 : 1;
       }
       else {
         throw new BgaUserException(clienttranslate("You don't have an archaeologist at the location you are trying to move from"));
       }
+      $slotField = 'slot'.$fromSlot;
+      $this->dbQuery("UPDATE board_position SET $slotField = NULL WHERE idboard_position = $relocateFrom");
+
       if ($siteId == "home") {
         $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist back to the camp'),
           array(
           "player_name" => $this->getCurrentPlayerName(),
           "playerId" => $this->getCurrentPlayerId(),
           "siteId" => "home",
-          "from" => $relocateFrom
+          "from" => $relocateFrom,
+          "fromSlot" => $fromSlot
           ));
         return;
       }
@@ -1268,7 +1270,8 @@ class arnak extends Table
     "playerId" => $this->getCurrentPlayerId(),
     "siteId" => $siteId,
     "slot" => $targetSlot === "slot1" ? 1 : 2,
-    "from" => $relocateFrom
+    "from" => $relocateFrom,
+    "fromSlot" => $fromSlot
     ));
 
     $siteTile = $this->getObjectFromDB("SELECT * FROM location WHERE is_at_position = $siteId");
