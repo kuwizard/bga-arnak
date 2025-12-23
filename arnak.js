@@ -372,6 +372,7 @@ function (dojo, declare) {
             var meepleDiv = dojo.create("div");
             dojo.addClass(meepleDiv, "onboard meeple meeple-" + i + " " + this.playerColor(playerId));
             meepleDiv.dataset.position = id;
+            meepleDiv.dataset.slot = (slot === "slot1" ? 1 : 2);
 
             dojo.place(meepleDiv, board);
             var p = this.workerPosition(id, slot === "slot1" ? 1 : 2);
@@ -2758,7 +2759,7 @@ function (dojo, declare) {
       }
       var toMove = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
       if (a.from) {
-        toMove = dojo.query(".onboard.meeple[data-position=" + a.from + "]")[0];
+        toMove = dojo.query(".onboard.meeple[data-position=" + a.from + "][data-slot=" + a.fromSlot + "]")[0];
       }
       dojo.addClass(toMove, "new-meeple");
       var board = dojo.query(".arnak-board")[0];
@@ -2802,6 +2803,7 @@ function (dojo, declare) {
       //this.attachToNewParent(toMove, destination);
       newMeepleDiv = dojo.query(".new-meeple")[0];
       newMeepleDiv.dataset.position = a.siteId;
+      newMeepleDiv.dataset.slot = a.slot;
       dojo.removeClass(newMeepleDiv, "new-meeple");
       dojo.removeClass(newMeepleDiv, "onboard")
       if (a.siteId != "home") {
