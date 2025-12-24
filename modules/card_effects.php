@@ -211,6 +211,9 @@ class CardEffects extends APP_GameClass {
         if ($siteIds[0] == $siteIds[1]) {
           throw new BgaUserException(clienttranslate("You must select 2 different sites"));
         }
+        if ($siteIds[0] > 4 || $siteIds[1] > 4) {
+          throw new BgaUserException(clienttranslate("You must select 2 basic sites"));
+        }
         if ($siteIds[0] == 4) {
           $game->siteEffect("basic", $siteIds[1], true);
           $game->siteEffect("basic", $siteIds[0]);
