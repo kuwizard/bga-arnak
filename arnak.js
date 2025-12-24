@@ -1613,7 +1613,12 @@ function (dojo, declare) {
         case "selectCardSite1":
           this.chartsSelected = this.siteSelected;
           this.setClientState("selectCardSite", {descriptionmyturn: _("Select second camp site to activate")});
-          dojo.query(".location-wrap.basic").addClass("highlight-turn");
+          var sites = dojo.query(".location-wrap.basic");
+          for(var site of sites) {
+            if( dojo.attr(site,"data-position") != this.chartsSelected) {
+               site.classList.add("highlight-turn");
+            }
+          }
           break;
         case "selectRelocateFrom":
           this.relocateFrom = this.siteSelected;
