@@ -34,21 +34,10 @@
     margin: 0 -11px;
 }
 
-.player-camp .meeple.meeple-0 {
-    top: 149px;
-    left: 308px;
-}
-.player-camp .meeple.meeple-1 {
-    top: 177px;
-    left: 453px;
-}
-
-
 .meeple.green {
     width: 339px; height: 323px;
     background: url('../img/meeple2_sprite.png') -10px -10px;
 }
-
 
 .meeple.red {
     width: 339px; height: 323px;
