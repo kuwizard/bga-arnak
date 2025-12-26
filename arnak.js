@@ -172,6 +172,7 @@ function (dojo, declare) {
       this.turnEnded = false;
       this.relocateFrom = undefined;
       this.relocateToArt = undefined;
+      console.log("restoreGlobals");
     },
     setup: function( gamedatas )
     {
@@ -1294,6 +1295,7 @@ function (dojo, declare) {
       }
     },
     selectFromExile: function(evt) {
+      console.log("CardId : " + cardId);
       cardId = evt.target.dataset.cardid;
       this.ajaxcall("/arnak/arnak/getFromExile.html", {
         cardId: cardId,
@@ -1631,6 +1633,7 @@ function (dojo, declare) {
       }
 
       this.siteSelected = siteDiv.dataset.id;
+      console.log(this.gamedatas.gamestate.name);
       switch(this.gamedatas.gamestate.name) {
         case "selectCardSite":
           if (this.chartsSelected) {
@@ -1639,6 +1642,8 @@ function (dojo, declare) {
           else {
             arg = this.siteSelected;
           }
+          console.log("Sending : ");
+          console.log(arg);
           this.ajaxcall("/arnak/arnak/playCard.html", {
             cardId: this.selectedCard,
             arg: btoa(arg),
@@ -1675,6 +1680,8 @@ function (dojo, declare) {
           }, this, function(result) {});
           break;
         default:
+          console.log("moveToSite");
+          console.log(JSON.stringify(this.travelSelected));
           var siteDiscovered = dojo.query(".location-position-" + this.siteSelected)[0];
           if (dojo.hasClass(siteDiv, "selected") || (siteDiscovered && dojo.hasClass(siteDiscovered, "selected"))) {
             this.cancelClientstate();
@@ -2282,6 +2289,8 @@ function (dojo, declare) {
     },
     onEnteringState: function( stateName, args )
     {
+      console.log("Entering state " + stateName);
+      console.log(args);
       dojo.query(".highlight-turn").removeClass("highlight-turn");
       switch(stateName) {
         case "selectAction":
@@ -2639,6 +2648,7 @@ function (dojo, declare) {
       dojo.subscribe("showAllCards", this, "notif_showAllCards");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
       dojo.subscribe("score", this, "notif_score");
+      dojo.subscribe("notif_remi", this, "notif_remi");
 
       this.notifqueue.setSynchronous("drawSelfCard", 800);
       this.notifqueue.setSynchronous("gainRes", 500);
@@ -3216,6 +3226,11 @@ function (dojo, declare) {
         cT.incValue(a.score);
       }
       this.scoreCtrl[a.player_id].incValue(a.score);
+    },
+    notif_remi: function(notif) {
+      console.log(notif.log);
+      console.log(notif.args);
     }
+
    });
 });
