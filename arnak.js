@@ -169,8 +169,6 @@ function (dojo, declare) {
       this.travelSelected = [];
       this.knifeBonuses = [];
       this.keep = [];
-      this.tooltips = new Tooltips();
-      this.tooltipDelay = 700;
       this.turnEnded = false;
     },
     setup: function( gamedatas )
@@ -189,6 +187,8 @@ function (dojo, declare) {
       this.play = [];
       this.artSupply = [];
       this.itemSupply = [];
+      this.tooltips = new Tooltips();
+      this.tooltipDelay = 700;
 
       if (gamedatas.bird_temple) {
         this.dontPreloadImage('board-back.jpg');
@@ -1584,7 +1584,7 @@ function (dojo, declare) {
       this.siteSelected = siteDiv.dataset.id;
       var siteDiscovered = dojo.query(".location-position-" + this.siteSelected)[0];
       if (dojo.hasClass(siteDiv, "selected") || (siteDiscovered && dojo.hasClass(siteDiscovered, "selected"))) {
-        this.cancelTravel();
+        this.cancelClientstate();
         return;
       }
 
@@ -1599,7 +1599,6 @@ function (dojo, declare) {
         case "selectCardSite":
           if (this.chartsSelected) {
             arg = JSON.stringify([this.chartsSelected, this.siteSelected]);
-            this.chartsSelected = undefined;
           }
           else {
             arg = this.siteSelected;
@@ -1608,7 +1607,7 @@ function (dojo, declare) {
             cardId: this.selectedCard,
             arg: btoa(arg),
             lock: true
-          }, this, function(result) {});
+          }, this, function(result) {}, this.cancelClientstate );
           break;
         case "selectCardSite1":
           this.chartsSelected = this.siteSelected;
@@ -1629,7 +1628,7 @@ function (dojo, declare) {
             cardId: this.selectedCard,
             arg: btoa(JSON.stringify({from: this.relocateFrom, to: this.siteSelected})),
             lock: true
-          }, this, function(result) {});
+          }, this, function(result) {}, this.cancelClientstate);
           break;
         case "hairpinSite":
           this.ajaxcall("/arnak/arnak/playCard.html", {
@@ -1831,12 +1830,6 @@ function (dojo, declare) {
       }
     },
     cancelTravel: function(evt) {
-      dojo.query(".site-box.selected, .location.selected").removeClass("selected");
-      this.restoreServerGameState();
-      this.siteSelected = undefined;
-      this.travelSelected = [];
-    },
-    hardCancelTravel: function(evt) {
       this.ajaxcall("/arnak/arnak/cancelTravel.html", {
         lock: true
       }, this, function(result) {});
@@ -2342,7 +2335,7 @@ function (dojo, declare) {
             break;
           case 'mayTravel':
           case 'mustTravel':
-            this.addActionButton("button_cancel_travel", _("I don't want to travel"), 'hardCancelTravel');
+            this.addActionButton("button_cancel_travel", _("I don't want to travel"), 'cancelTravel');
             break;
           case "idolExile": case "researchExile": case "assExile":  case "exileForCard": case "mayExile": case "hairpinExile":
             this.addActionButton("button_cancel_exile", _("I don't want to exile anything"), 'cancelExile');
