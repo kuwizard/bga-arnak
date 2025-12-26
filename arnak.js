@@ -1614,19 +1614,6 @@ function (dojo, declare) {
       }
 
       this.siteSelected = siteDiv.dataset.id;
-      var siteDiscovered = dojo.query(".location-position-" + this.siteSelected)[0];
-      if (dojo.hasClass(siteDiv, "selected") || (siteDiscovered && dojo.hasClass(siteDiscovered, "selected"))) {
-        this.cancelClientstate();
-        return;
-      }
-
-      dojo.query(".site-box.selected, .location.selected").removeClass("selected");
-      if (this.siteSelected > 4 && siteDiscovered) {
-        dojo.addClass(siteDiscovered, "selected");
-      }
-      else {
-        dojo.addClass(evt.target, "selected");
-      }
       switch(this.gamedatas.gamestate.name) {
         case "selectCardSite":
           if (this.chartsSelected) {
@@ -1671,6 +1658,19 @@ function (dojo, declare) {
           }, this, function(result) {});
           break;
         default:
+          var siteDiscovered = dojo.query(".location-position-" + this.siteSelected)[0];
+          if (dojo.hasClass(siteDiv, "selected") || (siteDiscovered && dojo.hasClass(siteDiscovered, "selected"))) {
+            this.cancelClientstate();
+            return;
+          }
+
+          dojo.query(".site-box.selected, .location.selected").removeClass("selected");
+          if (this.siteSelected > 4 && siteDiscovered) {
+            dojo.addClass(siteDiscovered, "selected");
+          }
+          else {
+            dojo.addClass(evt.target, "selected");
+          }
           this.ajaxcall("/arnak/arnak/moveToSite.html", {
             siteId: this.siteSelected,
             movePayment: btoa(JSON.stringify(this.travelSelected)),
