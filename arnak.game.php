@@ -235,7 +235,7 @@ class arnak extends Table
       $this->DbQuery("UPDATE player SET compass = ".$compassGain[$playerOrder].", coins = ".$coinGain[$playerOrder].", idol_slot = 4 WHERE player_id = $playerId");
 
       if ($this->debugMode()) {
-        $this->DbQuery("UPDATE player SET tablet = 50, arrowhead = 50, jewel = 50, coins = 50, compass = 50, idol = 4, research_glass = 12, research_book = 0 WHERE player_id = $playerId");
+        $this->DbQuery("UPDATE player SET tablet = 50, arrowhead = 50, jewel = 50, coins = 50, compass = 50, idol = 4, research_glass = 7, research_book = 0 WHERE player_id = $playerId");
       }
 
     }
@@ -260,7 +260,7 @@ class arnak extends Table
       $slot2 = -1;
       if ($i < 5) {
         $slot2 = "NULL";
-        if (count($players) == 2) {
+        if (count($players) == 2 && !($i < 2 && $this->debugMode())) {
           $slot2 = -1;
         }
         if (count($players) == 3 && in_array($i, $blocked)) {
@@ -317,7 +317,7 @@ class arnak extends Table
     $smallLocationIds = range(1, 10);
     shuffle($smallLocationIds);
     if ($this->debugMode()) {
-      $smallLocationIds = [5, 7, 8, 9, 1, 2, 3, 4];
+      $smallLocationIds = [1, 5, 7, 8, 9, 2, 3, 4];
     }
     foreach($smallLocationIds as $order => $id) {
       $this->DbQuery("INSERT INTO location (size, num, is_open, deck_order) VALUES ('small', $id, 0, $order)");
@@ -339,7 +339,7 @@ class arnak extends Table
     $artIds = range(1, 35);
     shuffle($artIds);
     if ($this->debugMode()) {
-      $artIds = [1, 23, 3, 11, 12, 20, 4];
+      $artIds = [13, 1, 2, 14, 33, 24, 26, 6, 4, 10, 15, 5, 23, 3, 11, 12, 20];
     }
     foreach($artIds as $order => $artId) {
       $this->DbQuery("INSERT INTO card (card_type, num, card_position, deck_order) VALUES ('art', $artId, 'deck', $order)");
@@ -347,7 +347,7 @@ class arnak extends Table
     $itemIds = range(1, 40);
     shuffle($itemIds);
     if ($this->debugMode()) {
-      $itemIds = [40, 2, 11, 18, 31, 33, 35];
+      $itemIds = [16, 33, 35, 17, 18, 31, 36, 20, 19, 4, 3, 12, 18, 20, 27, 2, 11, 31, 33];
     }
     foreach($itemIds as $order => $itemId) {
       $this->DbQuery("INSERT INTO card (card_type, num, card_position, deck_order) VALUES ('item', $itemId, 'deck', $order)");
@@ -876,6 +876,7 @@ class arnak extends Table
       $this->undoSavePoint();
     }
 
+    $this->notifyAllPlayers("notif_remi","",[$newCard]);
     $this->notifyAllPlayers(
       "cardReveal",
       clienttranslate('New ${cardTypeText} ${cardName} is revealed'),
@@ -1594,6 +1595,8 @@ class arnak extends Table
         $this->didResearch();
       }
       else if ($this->gamestate->state()["name"] == "idolRefresh") {
+        $this->notifyAllPlayers("notif_remi", "Is idol refresh ?", array());
+        
         $this->refreshAssistant($assNum);
         $this->revealLocation();
       }
