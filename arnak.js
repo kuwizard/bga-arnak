@@ -170,6 +170,8 @@ function (dojo, declare) {
       this.knifeBonuses = [];
       this.keep = [];
       this.turnEnded = false;
+      this.relocateFrom = undefined;
+      this.relocateToArt = undefined;
     },
     setup: function( gamedatas )
     {
@@ -384,6 +386,7 @@ function (dojo, declare) {
           if (playerId && playerId == -1 && id < 5) {
             var blockDiv = dojo.create("div");
             dojo.addClass(blockDiv, "blocking-tile");
+            blockDiv.dataset.position = id;
             var p = this.workerPosition(id, slot === "slot1" ? 1 : 2);
             dojo.style(blockDiv, "left", (p.x + 2) + "px");
             dojo.style(blockDiv, "top", p.y + "px");
@@ -1405,6 +1408,7 @@ function (dojo, declare) {
       dojo.query(".card[data-cardtype=art][data-cardnum=" + artNum + "] .card.front").addClass("active");
       switch(+artNum) {
         case 1: case 2:
+          this.relocateToArt = artNum;
           var workersOnBoard = dojo.query(".meeple.onboard." + this.playerColor(this.player_id));
           switch(workersOnBoard.length) {
             case 0:
@@ -1413,9 +1417,11 @@ function (dojo, declare) {
             case 1:
               this.relocateFrom = workersOnBoard[0].dataset.position;
               this.setClientState("selectRelocateTo", {descriptionmyturn: _("Select space to relocate to")});
+              this.highlightRelocateTo();
               break;
             default:
               this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select space to relocate from")});
+              this.highlightRelocateFrom();
               break;
           }
           break;
@@ -1446,6 +1452,7 @@ function (dojo, declare) {
           break;
         case 13:
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
+          this.highlightRelocateFrom();
           break;
         case 15:
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
@@ -1491,6 +1498,29 @@ function (dojo, declare) {
           stateSet = false;
       }
       return stateSet;
+    },
+    highlightRelocateFrom() {
+      var color = this.playerColor(this.player_id);
+      for (var candidate of dojo.query(".location-wrap")) {
+        var pos = candidate.dataset.position;
+        if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+          candidate.classList.add("highlight-turn");
+        }
+      }
+    },
+    highlightRelocateTo() {
+      for( var site of dojo.query(".location-wrap.basic") ) {
+        var position = dojo.attr(site,"data-position");
+        if( dojo.query(".meeple[data-position=" + position + "]").length + dojo.query(".blocking-tile[data-position=" + position + "]").length < 2 )
+          site.classList.add("highlight-turn");
+      }
+      if( this.relocateToArt == 2 ) {
+        for( var site of dojo.query(".location-wrap.small") ) {
+          var position = dojo.attr(site,"data-position");
+          if( dojo.query(".meeple[data-position=" + position + "]").length < 1 )
+            site.classList.add("highlight-turn");
+        }
+      }
     },
     paidTravel: function() {
       switch(this.gamedatas.gamestate.name) {
@@ -1624,6 +1654,7 @@ function (dojo, declare) {
         case "selectRelocateFrom":
           this.relocateFrom = this.siteSelected;
           this.setClientState("selectRelocateTo", {descriptionmyturn: _("You must select space to relocate to")});
+          this.highlightRelocateTo();
           break;
         case "selectRelocateTo":
           this.ajaxcall("/arnak/arnak/playCard.html", {
