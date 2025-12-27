@@ -1832,9 +1832,6 @@ class arnak extends Table
     $researchBonus = $this->getCollectionFromDb("SELECT * FROM research_bonus WHERE track_pos = $researchId");
     if ($step == 8) {
       $this->undoSavePoint();
-      $this->notifyPlayer($playerId, "lastStepTokens", "", array(
-        "tokens" => JSON_ENCODE($researchBonus)
-      ));
       $rank = count($this->getCollectionFromDb("SELECT * FROM player WHERE research_glass = 14"));
       $this->dbQuery("UPDATE player SET temple_rank = $rank WHERE player_id = $playerId");
     }
