@@ -798,6 +798,12 @@ class arnak extends Table
     $playerId = $this->getActivePlayerId();
     if ($this->getGameStateValue("special-research-done") == 0) {
       $result["special"] = $this->currentSpecialResearch();
+      if ($result["special"] == "assistant-special") {
+        $result["_private"]["active"]["special_assistants"] = array_map(
+          function($a) {return intval($a["num"]);},
+          $this->getObjectListFromDb("SELECT num FROM assistant WHERE in_offer = 4")
+        );
+      }
     }
     if ($this->getGameStateValue("research-token-done") == 0) {
       $space = $this->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
@@ -1852,13 +1858,6 @@ class arnak extends Table
         $this->gainResource("coins", $playerId, 2, $resArg);
         break;
       case "assistant-special":
-        $this->notifyPlayer($playerId, "specialAssistants", "", array(
-          "assistants" => JSON_ENCODE(
-            array_map(function($a) {return intval($a["num"]);},
-                  $this->getObjectListFromDb("SELECT num FROM assistant WHERE in_offer = 4")
-            )
-          )
-        ));
         $this->undoSavePoint();
         // cascade to next
       case "assistant-silver":

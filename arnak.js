@@ -1082,6 +1082,21 @@ function (dojo, declare) {
         x -= 40;
       }
     },
+    specialAssistants: function(assNums) {
+      var position = 4;
+      for (aNum of assNums) {
+        var assDiv = dojo.query(".assistant[data-num=" + aNum + "]")[0];
+        if (!assDiv) {
+          assDiv = this.assistantDiv(aNum, 0, 0);
+          dojo.connect(assDiv, "click", this, "assistantClick");
+        }
+        var board = dojo.query(".arnak-board")[0];
+        dojo.addClass(assDiv, "position-" + position);
+        dojo.place(assDiv, board);
+        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, false));
+        ++position;
+      }
+    },
     cardToDeck: function(cardId, player, bottom = true) {
       var cardDiv = dojo.byId("card-" + cardId);
       if (!cardDiv) {
@@ -2241,13 +2256,16 @@ function (dojo, declare) {
         case "researchBonus":
           dojo.query(".research-box").addClass("unselectable");
           dojo.query(".research-bonus").addClass("selectable");
-          for (var r of Object.keys(args.args)) {
-            this.highlightTurn(r, args.args[r]);
-          }
           if (args.args._private) {
             if( args.args._private.tokens_left) {
                this.revealTokens(args.args._private.tokens_left);
             }
+            if (args.args._private.special_assistants) {
+              this.specialAssistants(args.args._private.special_assistants);
+            }
+          }
+          for (var r of Object.keys(args.args)) {
+            this.highlightTurn(r, args.args[r]);
           }
           break;
         case "artWaitArgs":
@@ -2564,7 +2582,6 @@ function (dojo, declare) {
       dojo.subscribe("returnAss", this, "notif_returnAssistant");
       dojo.subscribe("upgradeAss", this, "notif_upgradeAss");
       dojo.subscribe("refreshAss", this, "notif_refreshAss");
-      dojo.subscribe("specialAssistants", this, "notif_specialAssistants");
       dojo.subscribe("refreshAll", this, "notif_refreshAll");
       dojo.subscribe("passStartMarker", this, "notif_passStartMarker");
       dojo.subscribe("endTurn", this, "notif_endTurn");
@@ -3060,22 +3077,6 @@ function (dojo, declare) {
     },
     notif_refreshAll: function(notif) {
       dojo.query(".assistant:not(.position-4) .assistant-inner.exhausted").removeClass("exhausted");
-    },
-    notif_specialAssistants: function(notif) {
-      var position = 4;
-      var assNums = JSON.parse(notif.args.assistants);
-      for (aNum of assNums) {
-        var assDiv = dojo.query(".assistant[data-num=" + aNum + "]")[0];
-        if (!assDiv) {
-          assDiv = this.assistantDiv(aNum, 0, 0);
-          dojo.connect(assDiv, "click", this, "assistantClick");
-        }
-        var board = dojo.query(".arnak-board")[0];
-        dojo.addClass(assDiv, "position-" + position);
-        dojo.place(assDiv, board);
-        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, false));
-        ++position;
-      }
     },
     notif_research: function(notif) {
       var a = notif.args;
