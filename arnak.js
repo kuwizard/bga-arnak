@@ -2562,7 +2562,6 @@ function (dojo, declare) {
       dojo.subscribe("research", this, "notif_research");
       dojo.subscribe("getTempleTile", this, "notif_getTempleTile");
       dojo.subscribe("removeResearchToken", this, "notif_removeResearchToken");
-      dojo.subscribe("lastStepTokens", this, "notif_lastStepTokens");
       dojo.subscribe("useAssistant", this, "notif_useAssistant");
       dojo.subscribe("getAssistant", this, "notif_getAssistant");
       dojo.subscribe("returnAss", this, "notif_returnAssistant");
@@ -3112,10 +3111,6 @@ function (dojo, declare) {
         this.fadeOutAndDestroy(bonusDiv);
         this.restoreServerGameState();
       }
-    },
-    notif_lastStepTokens: function(notif) {
-      var tokens = JSON.parse(notif.args.tokens);
-      this.revealTokens(tokens);
     },
     notif_passStartMarker: function(notif) {
       dojo.place(dojo.byId("start-player"), dojo.query("#player_board_" + notif.args.player_id + " .res-wrap")[0]);
