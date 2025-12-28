@@ -802,7 +802,7 @@ class arnak extends Table
     if ($this->getGameStateValue("research-token-done") == 0) {
       $space = $this->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
       $result["token"] = $space;
-      if ($this->getCurrentPlayerId() == $this->getActivePlayerId()) {
+      if( $space == 14 ) {
         $result["_private"]["active"]["tokens_left"] = $this->getCollectionFromDb("SELECT * FROM research_bonus WHERE track_pos = $space");
       }
 

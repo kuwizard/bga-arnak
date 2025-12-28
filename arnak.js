@@ -2225,7 +2225,6 @@ function (dojo, declare) {
     onEnteringState: function( stateName, args )
     {
       dojo.query(".highlight-turn").removeClass("highlight-turn");
-      this.highlightTurn(stateName, args);
       switch(stateName) {
         case "selectAction":
           this.restoreGlobals();
@@ -2245,12 +2244,10 @@ function (dojo, declare) {
           for (var r of Object.keys(args.args)) {
             this.highlightTurn(r, args.args[r]);
           }
-          var tokens;
-          if (args.args && args.args._private) {
-            tokens = args.args._private.tokens_left;
-          }
-          if (tokens && args.args.token == 14) {
-            this.revealTokens(tokens);
+          if (args.args._private) {
+            if( args.args._private.tokens_left) {
+               this.revealTokens(args.args._private.tokens_left);
+            }
           }
           break;
         case "artWaitArgs":
