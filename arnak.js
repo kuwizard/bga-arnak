@@ -167,7 +167,7 @@ function (dojo, declare) {
       this.chartsSelected = undefined;
       this.siteSelected = undefined;
       this.travelSelected = [];
-      this.knifeBonuses = [];
+      this.knifeBonuses = {};
       this.keep = [];
       this.turnEnded = false;
       this.relocateFrom = undefined;
@@ -1274,7 +1274,7 @@ function (dojo, declare) {
           }, this, function(result) {});
           break;
         case "selectKnife":
-          this.addKnifeBonus(cardId);
+          this.addKnifeBonus("exile", cardId);
           break;
 
         case "decideKeep":
@@ -1887,6 +1887,7 @@ function (dojo, declare) {
       this.restoreServerGameState();
       dojo.query(".active").removeClass("active");
       dojo.query(".selected").removeClass("selected");
+      dojo.query(".exiled").removeClass("exiled");
     },
     buyPlane: function(evt) {
       this.travelSelected.push({type: "buyplane"});
@@ -2019,22 +2020,44 @@ function (dojo, declare) {
     getJewel: function(evt) {
       this.useJewelArrowheadAssistant("jewel");
     },
-    addKnifeBonus(resName) {
-      if (!this.knifeBonuses) {
-        this.knifeBonuses = [];
+    addKnifeBonus(resName, cardId) {
+      if (resName == "exile") {
+        var cardDivs = dojo.query(".camp-" + this.getActivePlayerId() + " :is(.hand.card, .play.card)");
+        cardDivs.addClass("exilable").removeClass("exiled");
+        if(this.knifeBonuses.hasOwnProperty("exile") && this.knifeBonuses["exile"] == cardId) {
+          delete this.knifeBonuses["exile"];
+        }
+        else {
+          dojo.query(".camp-" + this.getActivePlayerId() + " .card[data-cardid=" + cardId + "] ").removeClass("exilable").addClass("exiled");
+          this.knifeBonuses["exile"] = cardId;
+        }
       }
-      this.knifeBonuses.push(resName);
-      var button = dojo.byId("button_knife_" + resName);
-      if (button) {
-        dojo.removeClass(button, "bgabutton_blue");
-        dojo.addClass(button, "bgabutton_gray");
+      else {
+        var button = dojo.byId("button_knife_" + resName);
+        if (this.knifeBonuses.hasOwnProperty(resName)) {
+          delete this.knifeBonuses[resName];
+          dojo.removeClass(button,"bgabutton_gray");
+          dojo.addClass(button,"bgabutton_blue");
+        }
+        else {
+          this.knifeBonuses[resName] = 1;
+          dojo.removeClass(button,"bgabutton_blue");
+          dojo.addClass(button,"bgabutton_gray");
+        }
       }
-      if (this.knifeBonuses.length == 2) {
+      if (Object.keys(this.knifeBonuses).length == 2) {
+        var bonuses = [];
+        for(var bonus of Object.keys(this.knifeBonuses)) {
+          if( bonus == "exile" )
+            bonuses.push(parseInt(this.knifeBonuses["exile"]));
+          else
+            bonuses.push(bonus);
+        }
         this.ajaxcall("/arnak/arnak/playCard.html", {
           cardId: this.selectedCard,
-          arg: btoa(JSON.stringify(this.knifeBonuses)),
+          arg: btoa(JSON.stringify(bonuses)),
           lock: true
-        }, this, function(result) {});
+        }, this, function(result) {}, this.cancelClientstate);
       }
     },
     knifeBonus_coins(evt) {
@@ -2282,6 +2305,7 @@ function (dojo, declare) {
           tokens.addClass("reward-hidden");
           dojo.query(".selected").removeClass("selected");
           dojo.query(".active").removeClass("active");
+          dojo.query(".active").removeClass("exiled");
 
           if (this.prefs[102].value == 1 && this.isCurrentPlayerActive() &&
           Object.values(this.gamedatas.players).filter(a => a.passed !== "1").length > 1 &&

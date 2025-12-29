@@ -142,6 +142,11 @@
     box-shadow: inset 0px 0px 110px 1px rgb(255 0 0);
     animation: none;
 }
+
+.card.exiled .card.front {
+    box-shadow: inset 0px 0px 110px 1px rgb(0 255 0);
+}
+
 .card.hand.discardable:hover .card.front {
     /*box-shadow: inset 0px 0px 110px 1px rgb(255 255 0);*/
     filter: grayscale(80%);
