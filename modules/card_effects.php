@@ -410,6 +410,9 @@ class CardEffects extends APP_GameClass {
         break;
       case 16:
         $options = JSON_DECODE($arg);
+        if(count($options) != 2 ) {
+          throw new BgaUserException(clienttranslate("You must select 2 options"));
+        }
         if ($options[0] == $options[1] || (intval($options[0]) && intval($options[1]))) {
           throw new BgaUserException(clienttranslate("The options must be different"));
         }
