@@ -1491,8 +1491,7 @@ function (dojo, declare) {
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
         case 24:
-          this.setClientState("selectCardSite1", {descriptionmyturn: _("Select first site to activate")});
-          dojo.query(".location-wrap.basic").addClass("highlight-turn");
+          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 coin"), args: {cost: "coin"}});
           break;
         case 17:
         case 29:
@@ -1508,6 +1507,9 @@ function (dojo, declare) {
         case 11: case 12:
           this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space (or a temple tile)")});
           //dojo.query(".research-box, .temple-tile").addClass("highlight-turn");
+          break;
+        case 33:
+          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 compass"), args: {cost: "compass"}});
           break;
         default:
           stateSet = false;
@@ -2069,6 +2071,24 @@ function (dojo, declare) {
     knifeBonus_tablet(evt) {
       this.addKnifeBonus("tablet");
     },
+    starChart_coin(evt) {
+      if( this.gamedatas.players[this.player_id].coins <= 0 ) {
+        this.showMessage("Not enough coins", "error");
+        return;
+      }
+      this.setClientState("selectCardSite1", {descriptionmyturn: _("Select first site to activate")});
+      dojo.query(".location-wrap.basic").addClass("highlight-turn");
+    },
+    guidingSkull_compass(evt) {
+      if( this.gamedatas.players[this.player_id].compass <= 0 ) {
+        this.showMessage("Not enough compass", "error");
+        return;
+      }
+      this.ajaxcall("/arnak/arnak/playCard.html", {
+        cardId: this.selectedCard,
+        lock: true
+      }, this, function(result) {}, this.cancelClientstate );
+    },
     discountResearchArrowhead(evt) {
       this.researchDiscount = "arrowhead";
       this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space")});
@@ -2465,6 +2485,12 @@ function (dojo, declare) {
           case "buyItem":
             this.addActionButton("cancel_buy", _("Don't buy Item"), "cancelBuy");
             dojo.destroy("button_undo");
+            break;
+          case "payArtExtra":
+            if( args.cost == "compass" )
+              this.addActionButton("button_artefact_extra_cost", compassIcon, 'guidingSkull_compass');
+            else
+              this.addActionButton("button_artefact_extra_cost", coinIcon, 'starChart_coin');
             break;
         }
         if (this.last_server_state.name == "artWaitArgs" && !["exileForCard", "cardUpgrade"].includes(stateName)) {
