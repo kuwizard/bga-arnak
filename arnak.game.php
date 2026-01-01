@@ -666,7 +666,7 @@ class arnak extends Table
       if ($num == 27 && count($this->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $player")) == 0) {
         $clientArgs = false;
       }
-      if (in_array(intval($num), [3, 4, 8, 9, 18, 19, 20, 21, 23, 25, 26, 30, 32, 33, 34])) {
+      if (in_array(intval($num), [3, 4, 8, 9, 18, 19, 20, 21, 23, 25, 26, 30, 32, 34])) {
         $clientArgs = false;
       }
       if ($clientArgs) {
