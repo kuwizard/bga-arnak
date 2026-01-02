@@ -1,66 +1,66 @@
 @keyframes newItem {
   from { 
-	opacity: 0;
-	transform: translate(100px, -10px) rotateY(-70deg);
+    opacity: 0;
+    transform: translate(100px, -10px) rotateY(-70deg);
   }
   to   { 
-	opacity: 1; 
-	transform: none;
+    opacity: 1; 
+    transform: none;
   }
 }
 
 @keyframes oppPlay {
   from { 
-	opacity: 0;
-	transform: scale(1) translate(100px, -825px);
+    opacity: 0;
+    transform: scale(1) translate(100px, -825px);
   }
   40% {
-	opacity: 1;
-	transform: scale(3) translate(100px, -200px);
+    opacity: 1;
+    transform: scale(3) translate(100px, -200px);
   }
   60% {
-	transform: scale(3) translate(100px, -200px);
+    transform: scale(3) translate(100px, -200px);
   }
   to   { 
-	opacity: 1; 
-	transform: none;
+    opacity: 1; 
+    transform: none;
   }
 }
 
 @keyframes exileAnim {
   from { 
-	box-shadow: inset 0px 0px 110px 1px rgb(255 0 0 / 50%);
+    box-shadow: inset 0px 0px 110px 1px rgb(255 0 0 / 50%);
   }
   to   { 
-	box-shadow: inset 0px 0px 110px 1px rgb(255 0 0 / 30%);
+    box-shadow: inset 0px 0px 110px 1px rgb(255 0 0 / 30%);
   }
 }
 @keyframes discardAnim {
   from { 
-	box-shadow: inset 0px 0px 110px 1px rgb(100 100 100 / 100%);
+    box-shadow: inset 0px 0px 110px 1px rgb(100 100 100 / 100%);
   }
   to   { 
-	box-shadow: inset 0px 0px 110px 1px rgb(100 100 100 / 80%);
+    box-shadow: inset 0px 0px 110px 1px rgb(100 100 100 / 80%);
   }
 }
 
 
 
 .card.supply .card-wrap {
-	animation: 1s newItem;
+    animation: 1s newItem;
 }
 .opp-camp .card.play.just-played .card-wrap {
-	animation: 3s oppPlay;
+    animation: 3s oppPlay;
 }
 
 .card, .card-wrap {
-	width: 341px;
+    width: 341px;
     height: 477px;
-	border-radius: 35px;
-	position: absolute;
-	transform-origin: top left;
-	transition: transform .5s, left 1s, top .5s, opacity .2s;
-	-webkit-transform-style: preserve-3d;
+    border-radius: 35px;
+    position: absolute;
+    transform-origin: top left;
+    transition: transform .5s, left 1s, top .5s, opacity .2s;
+    -webkit-transform-style: preserve-3d;
 }
 
 .card.earring .front {
@@ -68,85 +68,89 @@
 }
 
 .card .card-flip-wrap {
-	-webkit-transform-style: preserve-3d;
-	transform-style: preserve-3d;
-	transition: transform 0.5s;
-	transform-origin: center;
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    transform-origin: center;
 }
 .card .card-rotate-wrap {
-	transform-origin: center;
+    transform-origin: center;
     width: 100%;
     height: 100%;
-	transition: transform .5s;
+    transition: transform .5s;
 }
 
 .card.selected {
-	opacity: 0.8;
+    opacity: 0.8;
 }
 .card.active .card.front {
-	box-shadow: inset 0px 0px 110px 1px rgb(20 50 200);
+    box-shadow: inset 0px 0px 110px 1px rgb(20 50 200);
 }
 
 .card-flip-wrap.flipped {
-	transform: rotateY(180deg);
+    transform: rotateY(180deg);
 }
 
 .card.card-outer {
-	transition: transform .5s, left 1s, top .5s;
+    transition: transform .5s, left 1s, top .5s;
     filter: drop-shadow(2px 4px 6px black);
 }
 
 .card.blank {
-	background: magenta;
+    background: magenta;
 }
 
 .card.front, .card.back {
-	/*backface-visibility: hidden;*/
-	-webkit-backface-visibility: hidden;
+    /*backface-visibility: hidden;*/
+    -webkit-backface-visibility: hidden;
 }
 
 .card.back {
-	transform: rotateY(180deg);
-	transform-origin: center;
+    transform: rotateY(180deg);
+    transform-origin: center;
 }
 
 .card-wrap {
 }
 
 .card.front {
-	z-index: 2;
-	color: white;
-	font-size: 40px;
-	font-weight: bold;
+    z-index: 2;
+    color: white;
+    font-size: 40px;
+    font-weight: bold;
 }
 
 .card-outer.hand:hover, .card-outer.supply:hover {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 .card:not(.back):hover {
-	
 }
 
 .card.exilable {
-	cursor: pointer;
+    cursor: pointer;
 }
 
 .card.exilable .card.front {
-	animation: exileAnim 1s infinite alternate;
+    animation: exileAnim 1s infinite alternate;
 }
 .card.discardable .card.front {
-	animation: discardAnim 1s infinite alternate;
+    animation: discardAnim 1s infinite alternate;
 }
 
 .card.exilable:hover .card.front {
-	box-shadow: inset 0px 0px 110px 1px rgb(255 0 0);
-	animation: none;
+    box-shadow: inset 0px 0px 110px 1px rgb(255 0 0);
+    animation: none;
 }
+
+.card.exiled .card.front {
+    box-shadow: inset 0px 0px 110px 1px rgb(0 255 0);
+}
+
 .card.hand.discardable:hover .card.front {
-	/*box-shadow: inset 0px 0px 110px 1px rgb(255 255 0);*/
-	filter: grayscale(80%);
-	animation: none;
+    /*box-shadow: inset 0px 0px 110px 1px rgb(255 255 0);*/
+    filter: grayscale(80%);
+    animation: none;
 }
 
 
