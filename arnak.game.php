@@ -1151,10 +1151,6 @@ class arnak extends Table
     "guardNum" => $guardNum
     ));
   }
-  function clientMoveToSite($siteId, $movePayment) {
-    $this->checkAction("digSite");
-    $this->moveToSite($siteId, $movePayment);
-  }
   function moveToSite($siteId, $movePayment, $relocateFrom = null) {
     $playerId = $this->getActivePlayerId();
     $guards = array();
@@ -1163,6 +1159,8 @@ class arnak extends Table
     }
     if (is_null($relocateFrom)) {
       if ($this->gamestate->state()["name"] == "researchBonus" && $this->currentSpecialResearch() == "guard" ) {
+        if( $this->getActivePlayerId() != $this->getCurrentPlayerId())
+          throw new BgaUserException(clienttranslate("It is not your turn"));
         if (count($guards) == 0) {
           throw new BgaUserException(clienttranslate("Select a valid guardian"));
         }
