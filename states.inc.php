@@ -106,7 +106,7 @@ $machinestates = array(
 			"description" => clienttranslate('${actplayer} must travel to a site'),
 			"descriptionmyturn" => clienttranslate('${you} must travel to a site'),
 			"possibleactions" => array( "playCard", "digSite", "discoverSite", "useAssistant", "useIdol", "useGuardPower", "pass", "undo"),
-			"transitions" => array("siteEffect" => SITE_EFFECT, "discover" => EVAL_IDOL),
+			"transitions" => array("siteEffect" => SITE_EFFECT, "discover" => EVAL_IDOL, "cancel" => AFTER_MAIN),
 	),
 	MAY_TRAVEL => array(
 			"name" => "mayTravel",
