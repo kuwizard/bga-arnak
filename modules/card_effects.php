@@ -379,13 +379,13 @@ class CardEffects extends APP_GameClass {
 			case 11:
 				$game->setGameStateValue("discount-compass", 3);
 				$game->setGameStateValue("discount-plane", 1);
-				$game->gamestate->nextState("mustTravel");
+				$game->gamestate->nextState("mayTravel");
 				// reset dis
 				break;
 			case 12:
 				$game->setGameStateValue("discount-compass", 2);
 				$game->setGameStateValue("discount-plane", 1);
-				$game->gamestate->nextState("mustTravel");
+				$game->gamestate->nextState("mayTravel");
 				// reset dis
 				break;
 				

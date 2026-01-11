@@ -2319,6 +2319,7 @@ function (dojo, declare) {
 						this.addActionButton("button_buy_plane", coinIcon + coinIcon + arrow + planeIcon, 'buyPlane');
 						break;
 					case 'mayTravel':
+					case 'mustTravel':
 						this.addActionButton("button_cancel_travel", _("I don't want to travel"), 'hardCancelTravel');
 						break;
 					case "idolExile": case "researchExile": case "assExile":  case "exileForCard": case "mayExile": case "hairpinExile":
