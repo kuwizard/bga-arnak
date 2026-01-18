@@ -612,7 +612,7 @@ function (dojo, declare) {
       dojo.place(siteDiv, siteWrap);
 
       if (position.type) {
-        var cardDiv = dojo.query(".card[data-cardtype='art'][data-cardnum=" + position.id + "]")[0];
+        var cardDiv = dojo.query(`.card[data-cardtype='art'][data-cardnum=${position.id}]`)[0];
         var left = dojo.style(cardDiv, "left");
         var top = dojo.style(cardDiv, "top");
         siteWrap.style.left = left + "px";
@@ -642,7 +642,7 @@ function (dojo, declare) {
       return result;
     },
     newGuard: function(position, num) {
-      var siteWrap = dojo.query(".location-wrap[data-position=" + position + "]")[0];
+      var siteWrap = dojo.query(`.location-wrap[data-position=${position}]`)[0];
       if (!siteWrap) {
         console.log("Trying to put guardian to undiscovered location. Weird");
         return;
@@ -758,7 +758,7 @@ function (dojo, declare) {
         }
         this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
 
-        dojo.style(cardDiv, "transform", "scale(" + scaleRatio + ", " + scaleRatio + ")")
+        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
         dojo.style(cardDiv, "left", x + "%");
         dojo.style(cardDiv, "top", y + "%");
         dojo.addClass(cardDiv, "hand");
@@ -885,8 +885,8 @@ function (dojo, declare) {
         var ry = (Math.random()-.5) * 0.2;
         var rr = (Math.random()-.5) * 5;
 
-        dojo.style(cardDiv, "transform", "scale(" + scaleRatio + ", " + scaleRatio + ")");
-        dojo.query(".card-rotate-wrap", cardDiv).style("transform", "rotate(" + rr + "deg)")
+        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
+        dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${rr}deg)`)
         dojo.style(cardDiv, "left", (x + rx) + "%");
         dojo.style(cardDiv, "top", (y + ry) + "%");
         dojo.style(cardDiv, "z-index", z);
@@ -954,7 +954,7 @@ function (dojo, declare) {
     },
     updateSiteTooltips() {
       for (var positionId = 0; positionId < 17; ++positionId) {
-        var wrap = dojo.query(".location-wrap[data-position=" + positionId + "]")[0];
+        var wrap = dojo.query(`.location-wrap[data-position=${positionId}]`)[0];
         var site = undefined;
         var guard = undefined;
         if (wrap) {
@@ -1005,7 +1005,7 @@ function (dojo, declare) {
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num), this.tooltipDelay);
         }
 
-        dojo.style(cardDiv, "transform", "scale(" + scaleRatio + ", " + scaleRatio + ")")
+        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
         dojo.style(cardDiv, "left", x + "%");
         dojo.style(cardDiv, "top", y + "%");
         dojo.addClass(cardDiv, "supply");
@@ -1074,7 +1074,7 @@ function (dojo, declare) {
     revealTokens: function(tokens) {
       var x = 186;
       for (var token of Object.values(tokens)) {
-        var targetToken = dojo.query(".research-bonus[data-id=" + token.idresearch_bonus + "]")[0];
+        var targetToken = dojo.query(`.research-bonus[data-id=${token.idresearch_bonus}]`)[0];
         targetToken.dataset.type = token.bonus_type;
         dojo.removeClass(targetToken, "reward-hidden");
         dojo.addClass(targetToken, "reward-" + targetToken.dataset.type);
@@ -1085,7 +1085,7 @@ function (dojo, declare) {
     specialAssistants: function(assNums) {
       var position = 4;
       for (aNum of assNums) {
-        var assDiv = dojo.query(".assistant[data-num=" + aNum + "]")[0];
+        var assDiv = dojo.query(`.assistant[data-num=${aNum}]`)[0];
         if (!assDiv) {
           assDiv = this.assistantDiv(aNum, 0, 0);
           dojo.connect(assDiv, "click", this, "assistantClick");
@@ -1141,9 +1141,9 @@ function (dojo, declare) {
       var rx = (Math.random() - 0.5) * 2;
       var ry = (Math.random() - 0.5) * 2;
       var rr = (Math.random() - 0.5) * 0.3;
-      dojo.style(cardDiv, "transform", "scale(" + scaleRatio + ", " + scaleRatio + ")");
+      dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
 
-      dojo.query(".card-rotate-wrap", cardDiv).style("transform", "rotate(" + rr + "rad)");
+      dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${rr}rad)`);
 
       dojo.style(cardDiv, "left", (3 + rx) + "%");
       dojo.style(cardDiv, "top", (10 + ry) + "%");
@@ -1262,7 +1262,7 @@ function (dojo, declare) {
           this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate")});
           for( var site of dojo.query(".location-wrap.basic") ) {
             var position = dojo.attr(site,"data-position");
-            if( dojo.query(".meeple[data-position=" + position + "]") == 0 ) {
+            if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
               site.classList.add("highlight-turn");
             }
           }
@@ -1346,7 +1346,7 @@ function (dojo, declare) {
               case 18:
                 for (var candidate of dojo.query(".location-wrap")) {
                   var pos = candidate.dataset.position;
-                  if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]")[0]) {
+                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`)[0]) {
                     candidate.classList.add("highlight-turn");
                   }
                 }
@@ -1354,7 +1354,7 @@ function (dojo, declare) {
               case 31:
                 for (var candidate of dojo.query(".guardian-wrap")) {
                   var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
                     candidate.parentNode.classList.add("highlight-turn");
                   }
                 }
@@ -1362,7 +1362,7 @@ function (dojo, declare) {
               case 33:
                 for (var candidate of dojo.query(".guardian-wrap")) {
                   var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length == dojo.query(".meeple.onboard[data-position=" + pos + "]").length) {
+                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}`).length) {
                     candidate.parentNode.classList.add("highlight-turn");
                   }
                 }
@@ -1373,7 +1373,7 @@ function (dojo, declare) {
               case 36:
                 for( var site of dojo.query(".location-wrap.basic") ) {
                   var position = dojo.attr(site,"data-position");
-                  if( dojo.query(".meeple[data-position=" + position + "]") == 0 ) {
+                  if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
                     site.classList.add("highlight-turn");
                   }
                 }
@@ -1420,7 +1420,7 @@ function (dojo, declare) {
       var playerId = this.player_id;
       var color = this.playerColor(this.player_id);
       var stateSet = true;
-      dojo.query(".card[data-cardtype=art][data-cardnum=" + artNum + "] .card.front").addClass("active");
+      dojo.query(`.card[data-cardtype=art][data-cardnum=${artNum}] .card.front`).addClass("active");
       switch(+artNum) {
         case 1: case 2:
           this.relocateToArt = artNum;
@@ -1444,7 +1444,7 @@ function (dojo, declare) {
           this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
-            if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+            if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
               candidate.classList.add("highlight-turn");
             }
           }
@@ -1473,7 +1473,7 @@ function (dojo, declare) {
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
-            if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+            if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
               candidate.parentNode.classList.add("highlight-turn");
             }
           }
@@ -1520,7 +1520,7 @@ function (dojo, declare) {
       var color = this.playerColor(this.player_id);
       for (var candidate of dojo.query(".location-wrap")) {
         var pos = candidate.dataset.position;
-        if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+        if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
           candidate.classList.add("highlight-turn");
         }
       }
@@ -1528,13 +1528,13 @@ function (dojo, declare) {
     highlightRelocateTo() {
       for( var site of dojo.query(".location-wrap.basic") ) {
         var position = dojo.attr(site,"data-position");
-        if( dojo.query(".meeple[data-position=" + position + "]").length + dojo.query(".blocking-tile[data-position=" + position + "]").length < 2 )
+        if( dojo.query(`.meeple[data-position=${position}]`).length + dojo.query(`.blocking-tile[data-position=${position}]`).length < 2 )
           site.classList.add("highlight-turn");
       }
       if( this.relocateToArt == 2 ) {
         for( var site of dojo.query(".location-wrap.small") ) {
           var position = dojo.attr(site,"data-position");
-          if( dojo.query(".meeple[data-position=" + position + "]").length < 1 )
+          if( dojo.query(`.meeple[data-position=${position}]`).length < 1 )
             site.classList.add("highlight-turn");
         }
       }
@@ -2030,7 +2030,7 @@ function (dojo, declare) {
           delete this.knifeBonuses["exile"];
         }
         else {
-          dojo.query(".camp-" + this.getActivePlayerId() + " .card[data-cardid=" + cardId + "] ").removeClass("exilable").addClass("exiled");
+          dojo.query(`.camp-${this.getActivePlayerId()} .card[data-cardid=${cardId}] `).removeClass("exilable").addClass("exiled");
           this.knifeBonuses["exile"] = cardId;
         }
       }
@@ -2226,7 +2226,7 @@ function (dojo, declare) {
             var color = this.playerColor(this.player_id);
             for (var candidate of dojo.query(".guardian-wrap")) {
               var pos = candidate.parentNode.dataset.position;
-              if (dojo.query(".meeple.onboard." + color + "[data-position=" + pos + "]").length > 0) {
+              if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
                 candidate.classList.add("highlight-turn");
               }
             }
@@ -2237,7 +2237,7 @@ function (dojo, declare) {
           };
           break;
         case "token":
-          elements = dojo.query(".research-box[data-research_id=" + arg + "] .research-bonus");
+          elements = dojo.query(`.research-box[data-research_id=${arg}] .research-bonus`);
           break;
       }
       if (elements) {
@@ -2419,7 +2419,7 @@ function (dojo, declare) {
             break;
           case 'payTravel': case "assTravel":
             var el = dojo.query(".location.selected")[0];
-            if (el && el.nextElementSibling && el.nextElementSibling.dataset.num == 7 && dojo.query(".meeple.onboard[data-position=" + el.parentElement.dataset.position + "]").length > 0) {
+            if (el && el.nextElementSibling && el.nextElementSibling.dataset.num == 7 && dojo.query(`.meeple.onboard[data-position=${el.parentElement.dataset.position}]`).length > 0) {
               // scorpion
               break;
             }
@@ -2854,7 +2854,7 @@ function (dojo, declare) {
       }
       var toMove = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
       if (a.from) {
-        toMove = dojo.query(".onboard.meeple[data-position=" + a.from + "][data-slot=" + a.fromSlot + "]")[0];
+        toMove = dojo.query(`.onboard.meeple[data-position=${a.from}][data-slot=${a.fromSlot}]`)[0];
       }
       dojo.addClass(toMove, "new-meeple");
       var board = dojo.query(".arnak-board")[0];
@@ -2914,8 +2914,8 @@ function (dojo, declare) {
     notif_guardMove: function(notif) {
       var from = notif.args.from;
       var to = notif.args.to;
-      var guardDiv = dojo.query(".location-wrap[data-position=" + from + "] .guardian-wrap")[0];
-      var destination = dojo.query(".location-wrap[data-position=" + to + "]")[0];
+      var guardDiv = dojo.query(`.location-wrap[data-position=${from}] .guardian-wrap`)[0];
+      var destination = dojo.query(`.location-wrap[data-position=${to}]`)[0];
 
       dojo.place(guardDiv, destination);
       this.updateSiteTooltips();
@@ -2985,7 +2985,7 @@ function (dojo, declare) {
       this.restoreServerGameState();
     },
     notif_idolGain: function(notif) {
-      var idols = dojo.query(".arnak-board .idol[data-id=" + notif.args.position + "]");
+      var idols = dojo.query(`.arnak-board .idol[data-id=${notif.args.position}]`);
       for (var idol of idols) {
         dojo.destroy(idol);
       }
@@ -3117,7 +3117,7 @@ function (dojo, declare) {
           assList.splice(i, 1);
         }
       }
-      this.fadeOutAndDestroy(dojo.query(".assistant[data-num=" + a.num + "]")[0], 200);
+      this.fadeOutAndDestroy(dojo.query(`.assistant[data-num=${a.num}]`)[0], 200);
     },
     notif_upgradeAss: function(notif) {
       dojo.query(".assistant-inner.assistant-" + notif.args.assNum).addClass("gold");
@@ -3153,7 +3153,7 @@ function (dojo, declare) {
       this.updateTempleTooltips();
     },
     notif_removeResearchToken: function(notif) {
-      var bonusDiv = dojo.query(".research-bonus[data-id=" + notif.args.tokenId + "]")[0];
+      var bonusDiv = dojo.query(`.research-bonus[data-id=${notif.args.tokenId}]`)[0];
       if (bonusDiv) {
         dojo.style(bonusDiv, "transition", "");
         this.fadeOutAndDestroy(bonusDiv);
