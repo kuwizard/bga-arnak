@@ -38,7 +38,7 @@ $gameinfos = array(
 
 // Discourage players to play with these numbers of players. Must be null if there is no such advice.
 'not_recommend_player_number' => null,
-// 'not_recommend_player_number' => array( 2, 3 ),	  // <= example: this is not recommended to play this game with 2 or 3 players
+// 'not_recommend_player_number' => array( 2, 3 ),  // <= example: this is not recommended to play this game with 2 or 3 players
 
 
 // Estimated game duration, in minutes (used only for the launch, afterward the real duration is computed)
@@ -105,17 +105,17 @@ $gameinfos = array(
 // Note: game interface = space on the left side, without the column on the right
 'game_interface_width' => array(
 
-	// Minimum width
-	//  default: 740
-	//  maximum possible value: 740 (ie: your game interface should fit with a 740px width (correspond to a 1024px screen)
-	//  minimum possible value: 320 (the lowest value you specify, the better the display is on mobile)
-	'min' => 500,
+  // Minimum width
+  //  default: 740
+  //  maximum possible value: 740 (ie: your game interface should fit with a 740px width (correspond to a 1024px screen)
+  //  minimum possible value: 320 (the lowest value you specify, the better the display is on mobile)
+  'min' => 500,
 
-	// Maximum width
-	//  default: null (ie: no limit, the game interface is as big as the player's screen allows it).
-	//  maximum possible value: unlimited
-	//  minimum possible value: 740
-	'max' => null
+  // Maximum width
+  //  default: null (ie: no limit, the game interface is as big as the player's screen allows it).
+  //  maximum possible value: unlimited
+  //  minimum possible value: 740
+  'max' => null
 ),
 
 // Game presentation

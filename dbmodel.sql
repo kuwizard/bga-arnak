@@ -16,14 +16,14 @@
 -- already created and must not be created here
 
 -- Note: The database schema is created from this file when the game starts. If you modify this file,
---	   you have to restart a game to see your changes in database.
+--       you have to restart a game to see your changes in database.
 
 
 CREATE TABLE IF NOT EXISTS `research_bonus` (
-	`idresearch_bonus` INT NOT NULL AUTO_INCREMENT,
-	`bonus_type` VARCHAR(10),
-	`track_pos` INT NOT NULL,
-	PRIMARY KEY (`idresearch_bonus`)
+  `idresearch_bonus` INT NOT NULL AUTO_INCREMENT,
+  `bonus_type` VARCHAR(10),
+  `track_pos` INT NOT NULL,
+  PRIMARY KEY (`idresearch_bonus`)
 )
 ENGINE = InnoDB;
 
