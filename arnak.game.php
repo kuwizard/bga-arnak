@@ -339,7 +339,7 @@ class arnak extends Table
     $artIds = range(1, 35);
     shuffle($artIds);
     if ($this->debugMode()) {
-      $artIds = [13, 1, 2, 14, 33, 24, 26, 6, 4, 10, 15, 5, 23, 3, 11, 12, 20];
+      $artIds = [33, 13, 1, 2, 14, 24, 26, 6, 4, 10, 15, 5, 23, 3, 11, 12, 20];
     }
     foreach($artIds as $order => $artId) {
       $this->DbQuery("INSERT INTO card (card_type, num, card_position, deck_order) VALUES ('art', $artId, 'deck', $order)");
@@ -615,22 +615,118 @@ class arnak extends Table
       $this->gamestate->nextState("researchRemains");
     }
   }
-  function buyCard($cardId, $top = false, $mainAction = true, $force = true) {
+  
+  function buyArt($cardId)
+  {
+    $this->checkAction("buyArt");
+    //buyCard($cardId, false, true);
+    if ($card["card_type"] != "art") {
+      throw new BgaUserException(clienttranslate("Invalid attempt to buy an artefact"));
+    }
     $card = $this->getNonEmptyObjectFromDB("SELECT * FROM card WHERE idcard = $cardId AND card_position = 'supply'");
     $type = $card["card_type"];
     $num = $card["num"];
     $player = $this->getActivePlayerId();
-    if (!$force) {
-      if ($type == "art") {
-        $this->checkAction("buyArt");
-      }
-      else if ($type == "item") {
-        $this->checkAction("buyItem");
+
+    $amt = cardCost($type, $num);
+    $resName = $type == "item" ? "coins" : "compass";
+    if ($this->gamestate->state()["name"] == "researchBonus") {
+      if ($this->currentSpecialResearch() == "free-art") {
+        $this->setGameStateValue("special-research-done", 1);
+        $this->notifyAllPlayers("freeArt", clienttranslate('${player_name} gets the artifact for free'), array("player_name" => $this->getActivePlayerName()));
       }
       else {
-        throw new BgaUserException(clienttranslate("$type card cannot be bought"));
+        throw new BgaUserException("Cannot buy an artifact right now");
       }
     }
+    else {
+      $this->gainResource($resName, $player, -$amt, array("component" => "card", "arg" => $cardId));
+    }
+
+    $this->dbQuery("UPDATE card SET player = $player, card_position = 'play' WHERE idcard = $cardId");
+    $this->notifyAllPlayers("playCard", clienttranslate('${player_name} plays ${cardName}'),
+    array("player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
+      "i18n" => ["cardName"],
+      "cardName" => cardName("art", $num),
+      "player_id" => $player,
+      "cardName" => cardName("art", $num),
+      "cardType" => "art",
+      "cardNum" => $num,
+      "cardId" => $cardId,
+      'preserve' => [ 'cardType', 'cardNum' ]
+      ));
+    $this->setGameStateValue("artifact-mainaction", 1);
+    $clientArgs = true;
+    if ($num == 27 && count($this->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $player")) == 0) {
+      $clientArgs = false;
+    }
+    if (in_array(intval($num), [3, 4, 8, 9, 18, 19, 20, 21, 23, 25, 26, 30, 32, 34])) {
+      $clientArgs = false;
+    }
+    if ($clientArgs) {
+      $this->setGameStateValue("art-active", $num);
+      $this->gamestate->nextState("artWaitArgs");
+    }
+    else {
+      (new CardEffects($this, $this->getActivePlayerId())) -> cardEffect($type, $num, $cardId);
+    }
+
+    //$this->refillCards();
+    $this->incStat(1, "gained-card", $player);
+    $this->incStat(1, "gained-".$type, $player);
+    $this->resetDiscount();
+  }
+
+  function buyItem($cardId)
+  {
+    $this->checkAction("buyItem");
+    $card = $this->getNonEmptyObjectFromDB("SELECT * FROM card WHERE idcard = $cardId AND card_position = 'supply'");
+    if ($card["card_type"] != "item") {
+      throw new BgaUserException(clienttranslate("Invalid attempt to buy an item"));
+    }
+
+    $num = $card["num"];
+    $player = $this->getActivePlayerId();
+
+    $this->gainResource("coins", $player, -cardCost($type, $num), array("component" => "card", "arg" => $cardId));
+    $this->putCardToDeck($cardId, false, false);
+    $this->resetDiscount();
+
+    $this->incStat(1, "gained-card", $player);
+    $this->incStat(1, "gained-item", $player);
+
+    $this->gamestate->nextState("main_action_done");
+  }
+  
+  function buyFreePlaneItem($cardId)
+  {
+    $this->checkAction("buyFreePlaneItem");
+    $card = $this->getNonEmptyObjectFromDB("SELECT * FROM card WHERE idcard = $cardId AND card_position = 'supply'");
+    if ($card["card_type"] != "item") {
+      throw new BgaUserException(clienttranslate("Invalid attempt to buy an item"));
+    }
+
+    $num = $card["num"];
+    $player = $this->getActivePlayerId();
+    $this->notifyAllPlayers("planeFree", clienttranslate('The card is free thanks to the location'), array());
+    $this->putCardToDeck($cardId, false, false);
+
+    $this->incStat(1, "gained-card", $player);
+    $this->incStat(1, "gained-item", $player);
+
+    $siteId = $this->getGameStateValue("guard-buffer");
+    if ($siteId > -1) {
+      $this->placeGuard($siteId);
+    }
+    $this->gamestate->nextState("main_action_done");
+  }
+
+  function buyCard($cardId, $top = false, $mainAction = true) {
+    $card = $this->getNonEmptyObjectFromDB("SELECT * FROM card WHERE idcard = $cardId AND card_position = 'supply'");
+    $type = $card["card_type"];
+    $num = $card["num"];
+    $player = $this->getActivePlayerId();
+
     $amt = cardCost($type, $num);
     $resName = $type == "item" ? "coins" : "compass";
     if ($this->gamestate->state()["name"] == "researchBonus") {

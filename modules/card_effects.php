@@ -91,7 +91,7 @@ class CardEffects extends APP_GameClass {
         break;
       case 10:
         $game->setGameStateValue("discount-coins", 9999);
-        $game->buyCard($arg, true, false, true);
+        $game->buyCard($arg, true, false);
         $game->resetDiscount();
         break;
       case 11:
@@ -466,14 +466,14 @@ class CardEffects extends APP_GameClass {
         break;
       case 23: 
         $game->setGameStateValue("discount-compass", 4);
-        $game->buyCard($arg, false, false, true);
+        $game->buyCard($arg, false, false);
         break;
       case 24:
         $this->gainCardResource("compass", $playerId, 3);
         break;
       case 25:
         $game->setGameStateValue("discount-coins", 999);
-        $game->buyCard($arg, true, false, true);
+        $game->buyCard($arg, true, false);
         $this->gainCardResource("card", $playerId, 1);
         break;
       case 26:

@@ -1611,11 +1611,25 @@ function (dojo, declare) {
             lock: true
           }, this, function(result) {});
           break;
+        case "evalPlane":
+            this.ajaxcall("/arnak/arnak/buyFreePlaneItem.html", {
+              cardId: cardDiv.dataset.cardid,
+              lock: true
+            }, this, function(result) {});
         default:
-          this.ajaxcall("/arnak/arnak/buyCard.html", {
-            cardId: cardDiv.dataset.cardid,
-            lock: true
-          }, this, function(result) {});
+          if( cardDiv.dataset.cardtype == "item" ) {
+            this.ajaxcall("/arnak/arnak/buyItem.html", {
+              cardId: cardDiv.dataset.cardid,
+              lock: true
+            }, this, function(result) {});
+          }
+          else if( cardDiv.dataset.cardtype == "art" ) {
+            this.ajaxcall("/arnak/arnak/buyArt.html", {
+              cardId: cardDiv.dataset.cardid,
+              lock: true
+            }, this, function(result) {});
+          }
+          
       }
     },
     cancelBuy : function(evt) {
