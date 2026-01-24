@@ -117,10 +117,22 @@ class action_arnak extends APP_GameAction
     $this->game->clientUpgrade($type);
     self::ajaxResponse();
   }
-  public function buyCard() {
+  public function buyArt() {
     self::setAjaxMode(); 
     $cardId = self::getArg( "cardId", AT_posint, true );
-    $this->game->buyCard($cardId, false, true, false);
+    $this->game->buyArt($cardId);
+    self::ajaxResponse();
+  }
+  public function buyItem() {
+    self::setAjaxMode(); 
+    $cardId = self::getArg( "cardId", AT_posint, true );
+    $this->game->buyItem($cardId);
+    self::ajaxResponse();
+  }
+  public function buyFreePlaneItem() {
+    self::setAjaxMode(); 
+    $cardId = self::getArg( "cardId", AT_posint, true );
+    $this->game->buyFreePlaneItem($cardId);
     self::ajaxResponse();
   }
   public function cancelBuy() {
