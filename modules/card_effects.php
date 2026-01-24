@@ -1,49 +1,37 @@
 <?php
 
-
 class CardEffects {
   public function __construct($game, $playerId) {
     $this->game = $game;
     $this->playerId = $playerId;
   }
-  public function cardEffect($type, $num, $cardId, $arg = "") {
-    $playerId = $this->playerId;
+  public function cardEffect($card, $cardId, $arg = "") {
     $this->activeCard = $cardId;
-    switch($type) {
-      case "fundcar": case "fundship":
-        $this->gainCardResource("coins", $playerId, 1);
-        break;
-      case "explorecar": case "exploreship":
-        $this->gainCardResource("compass", $playerId, 1);
-        break;
-      case "fear":
-        throw new BgaUserException(clienttranslate("Fear cannot be played"));
-        break;
-      case "art":
-        $this->artEffect($num, $cardId, $arg);
-        break;
-      case "item":
-        $this->itemEffect($num, $cardId, $arg);
-        break;
-      default:
-        throw new BgaUserException("Cannot use card type $type");
-        break;
+    if ($card->type() == "art") {
+      $this->artEffect($card, $arg);
+    }
+    else if ($card->type() == "item") {
+      $this->itemEffect($card, $arg);
+    }
+    else if ($card->type() == "basic") {
+      $this->basicEffect($card);
     }
   }
-  function gainCardResource($resName, $playerId, $amt) {
-    $this->game->gainResource($resName, $playerId, $amt, array("component" => "card", "arg" => $this->activeCard));
+
+  function gainCardResource($resName, $amt) {
+    $this->game->gainResource($resName, $this->playerId, $amt, array("component" => "card", "arg" => $this->activeCard));
   }
-  function artEffect($num, $cardId, $arg) {
+  function artEffect($artefact, $arg) {
     $game = $this->game;
-    $playerId = $this->playerId;
     $game->gamestate->nextState("playArt");
 
-    switch($num) {
-      case 1: case 2:
+    switch($artefact) {
+      case Artefact::Pathfinders_Sandals:
+      case Artefact::Pathfinders_Staff:
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
-        if ($num == 1) {
+        if ($artefact == Artefact::Pathfinders_Sandals) {
           $site = $game->getObjectFromDb("SELECT * FROM location WHERE size='basic' AND is_at_position = $to");
         }
         else {
@@ -54,45 +42,45 @@ class CardEffects {
         }
         $game->moveToSite($to, [], $from);
         break;
-      case 3:
-        $this->gainCardResource("arrowhead", $playerId, 1);
+      case Artefact::War_Mask:
+        $this->gainCardResource("arrowhead", 1);
         $game->setGameStateValue("warmask-played", 1);
         break;
-      case 4:
-        $this->gainCardResource("card", $playerId, 1);
-        $this->gainCardResource("coins", $playerId, 1);
+      case Artefact::Treasure_Chest:
+        $this->gainCardResource("card", 1);
+        $this->gainCardResource("coins", 1);
         break;
-      case 5:
+      case Artefact::Ritual_Dagger:
         $game->exile($arg);
-        $this->gainCardResource("arrowhead", $playerId, 1);
+        $this->gainCardResource("arrowhead", 1);
         break;
-      case 6:
-        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
+      case Artefact::Crystal_Earring:
+        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
           $game->game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
-          $game->drawCard($playerId, false, "earring");
+          $game->drawCard($this->playerId, false, "earring");
         }
         $game->gamestate->nextState("earring");
         break;
-      case 7:
+      case Artefact::Mortar:
         $game->exile($arg);
-        $this->gainCardResource("coins", $playerId, 2);
+        $this->gainCardResource("coins", 2);
         break;
-      case 8:
-        $this->gainCardResource("fear", $playerId, 1);
-        $this->gainCardResource("coins", $playerId, 4);
+      case Artefact::Serpents_Gold:
+        $this->gainCardResource("fear", 1);
+        $this->gainCardResource("coins", 4);
         break;
-      case 9:
-        $this->gainCardResource("fear", $playerId, 1);
-        $this->gainCardResource("jewel", $playerId, 1);
+      case Artefact::Serpent_Idol:
+        $this->gainCardResource("fear", 1);
+        $this->gainCardResource("jewel", 1);
         break;
-      case 10:
+      case Artefact::Monkey_Medallion:
         $game->setGameStateValue("discount-coins", 9999);
         $game->buyCard($arg, true, false, true);
         $game->resetDiscount();
         break;
-      case 11:
+      case Artefact::Idol_of_AraAnu:
         $game->setGameStateValue("discount-jewel", 1);
         $arg = JSON_DECODE($arg);
         if (isset($arg->temple)) {
@@ -104,7 +92,7 @@ class CardEffects {
         }
         $game->resetDiscount();
         break;
-      case 12:
+      case Artefact::Inscribed_Blade:
         $args = JSON_DECODE($arg);
         if ($args->discount == "arrowhead") {
           $game->setGameStateValue("discount-arrowhead", 1);
@@ -122,11 +110,11 @@ class CardEffects {
         }
         $game->resetDiscount();
         break;
-      case 13:
+      case Artefact::Guardians_Ocarina:
         $game->moveToSite("home", "", $arg);
         $game->setGameStateValue("ocarina-played", 1);
         break;
-      case 14:
+      case Artefact::Tigerclaw_Hairpin:
         $arg = JSON_DECODE($arg);
         $siteId = $arg->site;
         $exile = $arg->exile;
@@ -142,47 +130,47 @@ class CardEffects {
         $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
         $game->siteEffect("basic", $siteTile["num"]);
         break;
-      case 15:
+      case Artefact::War_Club:
         $game->freeOvercome($arg);
         break;
-      case 16:
+      case Artefact::Sundial:
         if ($arg == "pass") {
-          $this->gainCardResource("jewel", $playerId, 1);
+          $this->gainCardResource("jewel", 1);
           $game->pass(true);
           return;
         }
         else {
-          $this->gainCardResource("tablet", $playerId, 2);
+          $this->gainCardResource("tablet", 2);
           $game->artDone();
         }
         break;
-      case 17:
+      case Artefact::Traders_Scales:
         $game->upgrade($arg, true);
-        $this->gainCardResource("coins", $playerId, 3);
+        $this->gainCardResource("coins", 3);
         break;
-      case 18:
-        $this->gainCardResource("fear", $playerId, 1);
-        $this->gainCardResource("arrowhead", $playerId, 2);
+      case Artefact::Hunting_Arrows:
+        $this->gainCardResource("fear", 1);
+        $this->gainCardResource("arrowhead", 2);
         break;
-      case 19:
-        $this->gainCardResource("coins", $playerId, 2);
-        $game->setGameStateValue("art-active", $num);
+      case Artefact::Coconut_Flask:
+        $this->gainCardResource("coins", 2);
+        $game->setGameStateValue("art-active", $artefact->value);
         $game->gamestate->nextstate("activateAss");
         break;
-      case 20:
-        $this->gainCardResource("card", $playerId, 1);
+      case Artefact::Cleansing_Cauldron:
+        $this->gainCardResource("card", 1);
         $game->gamestate->nextstate("artExile");
         break;
-      case 21:
-        $this->gainCardResource("coins", $playerId, 1);
-        $game->setGameStateValue("art-active", $num);
+      case Artefact::Ancient_Wine:
+        $this->gainCardResource("coins", 1);
+        $game->setGameStateValue("art-active", $artefact->value);
         $game->gamestate->nextstate("activateAss");
         break;
-      case 22:
+      case Artefact::Decorated_Horn:
         $args = JSON_DECODE($arg);
         $old = $args->oldAss;
         $new = $args->newAss;
-        $oldAss = $game->getNonEmptyObjectFromDb("SELECT * FROM assistant WHERE num = $old AND in_hand = $playerId");
+        $oldAss = $game->getNonEmptyObjectFromDb("SELECT * FROM assistant WHERE num = $old AND in_hand = $this->playerId");
         $newAss = $game->getNonEmptyObjectFromDb("SELECT * FROM assistant WHERE num = $new AND in_hand IS NULL");
         $slot = $newAss["in_offer"];
         $gold = $oldAss["gold"] == 1;
@@ -198,13 +186,13 @@ class CardEffects {
         ));
         $game->getNewAssistant($new, true, $gold);
         break;
-      case 23:
+      case Artefact::Ornate_Hammer:
         $toExile = $game->getObjectFromDb("SELECT * FROM card WHERE card_type = 'item' AND card_position = 'supply' ORDER BY deck_order DESC LIMIT 1");
         $game->exile($toExile["idcard"], true);
         $game->gamestate->nextState("discardSelect");
         break;
-      case 24:
-        $this->gainCardResource("coins", $playerId, -1);
+      case Artefact::Star_Charts:
+        $this->gainCardResource("coins", -1);
         $siteIds = JSON_DECODE($arg);
         if ($siteIds[0] == $siteIds[1]) {
           throw new BgaUserException(clienttranslate("You must select 2 different sites"));
@@ -221,66 +209,67 @@ class CardEffects {
           $game->siteEffect("basic", $siteIds[1]);
         }
         break;
-      case 25:
-        $this->gainCardResource("card", $playerId, 1);
+      case Artefact::Stone_Jar:
+        $this->gainCardResource("card", 1);
         break;
-      case 26:
+      case Artefact::Passage_Shell:
         $game->setGameStateValue("discount-boot", 2);
         $game->gamestate->nextState("mayTravel");
         break;
-      case 27:
+      case Artefact::Ceremonial_Rattle:
         if (!$arg) {
           break;
         }
 
         $assistant = $game->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $arg");
-        if($assistant['in_hand'] != $playerId) {
+        if($assistant['in_hand'] != $this->playerId) {
           throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
         }
         $game->refreshAssistant($arg);
         break;
-      case 28:
+      case Artefact::Sacred_Drum:
         $game->discardCard($arg);
-        $assistants = $game->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $playerId AND ready = 0");
+        $assistants = $game->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $this->playerId AND ready = 0");
         foreach($assistants as $assId => $ass) {
           $game->refreshAssistant($ass["num"]);
         }
         break;
-      case 29:
+      case Artefact::Traders_Coins:
         $game->upgrade($arg, true);
-        $this->gainCardResource("coins", $playerId, 2);
+        $this->gainCardResource("coins", 2);
         break;
-      case 30:
-        if ($game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $playerId")["idol_slot"] >= 4) {
+      case Artefact::Stone_Key:
+        if ($game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $this->playerId")["idol_slot"] >= 4) {
           $game->notifyAllPlayers("cantIdol", "No idols in slots", array());
         }
         else {
-          $this->gainCardResource("idol_slot", $playerId, 1);
-          $this->gainCardResource("idol", $playerId, 1);
+          $this->gainCardResource("idol_slot", 1);
+          $this->gainCardResource("idol", 1);
         }
         break;
-      case 31:
-        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
+      case Artefact::Obsidian_Earring:
+        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
           $game->game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
-          $game->drawCard($playerId, true, "earring");
+          $game->drawCard($this->playerId, true, "earring");
         }
         $game->gamestate->nextState("earring");
         break;
-      case 32: case 33:
+      case Artefact::Guiding_Stone:
+      case Artefact::Guiding_Skull:
         $size = "small";
-        if ($num == 33) {
+        if ($artefact == Artefact::Guiding_Skull) {
           $size = "big";
-          $this->gainCardResource("compass", $playerId, -1);
+          $this->gainCardResource("compass", -1);
         }
         $newSite = $game->getObjectFromDB("SELECT * FROM location WHERE size = '$size' AND is_open = 0  ORDER BY deck_order LIMIT 1");
         $game->notifyAllPlayers("siteReveal", clienttranslate('${player_name} reveals a ${size} location from the deck'), array(
           "size" => $size,
           "player_name" => $game->getActivePlayerName(),
-          "player_id" => $playerId,
+          "player_id" => $this->playerId,
           "num" => $newSite["num"],
-          "cardNum" => $num
+          "cardNum" => $artefact
         ));
         $deckOrder = $game->getObjectFromDB("SELECT * FROM location WHERE size = '$size' ORDER BY deck_order DESC LIMIT 1")["deck_order"] + 1;
         $siteId = $newSite["idlocation"];
@@ -288,17 +277,17 @@ class CardEffects {
         $game->undoSavePoint();
         $game->siteEffect($size, $newSite["num"]);
         break;
-      case 34:
-        $this->gainCardResource("fear", $playerId, 1);
-        $this->gainCardResource("coins", $playerId, 1);
-        $this->gainCardResource("tablet", $playerId, 3);
+      case Artefact::Runes_of_the_Dead:
+        $this->gainCardResource("fear", 1);
+        $this->gainCardResource("coins", 1);
+        $this->gainCardResource("tablet", 3);
         break;
-      case 35:
+      case Artefact::Guardians_Crown:
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
         $siteFrom = $game->getObjectFromDb("
-        SELECT * FROM location loc INNER JOIN board_position pos ON loc.is_at_position = pos.idboard_position INNER JOIN guardian g ON g.at_location = pos.idboard_position WHERE g.at_location = $from AND (slot1 = $playerId OR slot2 = $playerId)");
+        SELECT * FROM location loc INNER JOIN board_position pos ON loc.is_at_position = pos.idboard_position INNER JOIN guardian g ON g.at_location = pos.idboard_position WHERE g.at_location = $from AND (slot1 = $this->playerId OR slot2 = $this->playerId)");
 
         if (!$siteFrom) {
           throw new BgaUserException(clienttranslate("You did not select a valid guardian"));
@@ -322,91 +311,107 @@ class CardEffects {
         $game->siteEffect($siteTo["size"], $siteTo["num"]);
         break;
     }
-    if (in_array(intval($num), [3, 4, 5, 7, 8, 9, 10, 13, 15, 17, 18, 22, 25, 27, 28, 29, 30, 34])) {
+    if( $artefact == Artefact::War_Mask ||
+        $artefact == Artefact::Treasure_Chest ||
+        $artefact == Artefact::Ritual_Dagger ||
+        $artefact == Artefact::Mortar ||
+        $artefact == Artefact::Serpents_Gold ||
+        $artefact == Artefact::Serpent_Idol ||
+        $artefact == Artefact::Monkey_Medallion ||
+        $artefact == Artefact::Guardians_Ocarina ||
+        $artefact == Artefact::War_Club ||
+        $artefact == Artefact::Traders_Scales ||
+        $artefact == Artefact::Hunting_Arrows ||
+        $artefact == Artefact::Decorated_Horn ||
+        $artefact == Artefact::Stone_Jar ||
+        $artefact == Artefact::Ceremonial_Rattle ||
+        $artefact == Artefact::Sacred_Drum ||
+        $artefact == Artefact::Traders_Coins ||
+        $artefact == Artefact::Stone_Key ||
+        $artefact == Artefact::Runes_of_the_Dead ) {
       $game->artDone();
     }
     else {
-      $game->setGameStateValue("art-active", $num);
+      $game->setGameStateValue("art-active", $artefact->value);
     }
   }
-  function itemEffect($num, $cardId, $arg) {
+  function itemEffect($item, $arg) {
     $game = $this->game;
-    $playerId = $this->playerId;
-    if (in_array(intval($num), [11, 13, 23, 24, 25, 26, 33])) {
-      $game->exile($cardId);
+    if ($game->gameData->cardExileItself($item)) {
+      $game->exile($this->activeCard);
     }
-    switch($num) {
-      case 1:
-        $this->gainCardResource("card", $playerId, 1);
+    switch($item) {
+      case Item::Sea_Turtle:
+        $this->gainCardResource("card", 1);
         $game->setGameStateValue("discount-ship", 1);
         $game->gamestate->nextState("mayTravel");
         break;
-      case 2:
-        $this->gainCardResource("card", $playerId, 1);
+      case Item::Ostrich:
+        $this->gainCardResource("card", 1);
         $game->setGameStateValue("discount-car", 1);
         $game->gamestate->nextState("mayTravel");
         break;
-      case 3:
-        $this->gainCardResource("card", $playerId, 2);
+      case Item::Pack_Donkey:
+        $this->gainCardResource("card", 2);
         break;
-      case 4:
-        $this->gainCardResource("card", $playerId, 1);
-        $this->gainCardResource("coins", $playerId, 1);
-        $this->gainCardResource("compass", $playerId, 1);
+      case Item::Horse:
+        $this->gainCardResource("card", 1);
+        $this->gainCardResource("coins", 1);
+        $this->gainCardResource("compass", 1);
         break;
-      case 5:
-        $this->gainCardResource("compass", $playerId, 2);
+      case Item::Steam_Boat:
+        $this->gainCardResource("compass", 2);
         break;
-      case 6: 
-        $this->gainCardResource("compass", $playerId, 2);
+      case Item::Automobile:
+        $this->gainCardResource("compass", 2);
         break;
-      case 7:
-        $this->gainCardResource("compass", $playerId, 1);
+      case Item::Sturdy_Boots:
+        $this->gainCardResource("compass", 1);
         $game->setGameStateValue("discount-boot", 2);
         $game->gamestate->nextState("mayTravel");
         break;
-      case 8: 
-        $this->gainCardResource("coins", $playerId, 2);
+      case Item::Gold_Pan:
+        $this->gainCardResource("coins", 2);
         break;
-      case 9:
-        $this->gainCardResource("compass", $playerId, -1);
-        $this->gainCardResource("jewel", $playerId, 1);
+      case Item::Trowel:
+        $this->gainCardResource("compass", -1);
+        $this->gainCardResource("jewel", 1);
         break;
-      case 10:
-        $this->gainCardResource("compass", $playerId, -1);
-        $this->gainCardResource("tablet", $playerId, 1);
-        $this->gainCardResource("arrowhead", $playerId, 1);
+      case Item::Pickaxe:
+        $this->gainCardResource("compass", -1);
+        $this->gainCardResource("tablet", 1);
+        $this->gainCardResource("arrowhead", 1);
         break;
-      case 11:
+      case Item::Hot_Air_Balloon:
         $game->setGameStateValue("discount-compass", 3);
         $game->setGameStateValue("discount-plane", 1);
         $game->gamestate->nextState("mayTravel");
         // reset dis
         break;
-      case 12:
+      case Item::Aeroplane:
         $game->setGameStateValue("discount-compass", 2);
         $game->setGameStateValue("discount-plane", 1);
         $game->gamestate->nextState("mayTravel");
         // reset dis
         break;
-      case 13:
+      case Item::Journal:
         $game->research($arg, true, "book");
         break;
-      case 14:
+      case Item::Parrot:
         $game->discardCard($arg);
-        $this->gainCardResource("jewel", $playerId, 1);
+        $this->gainCardResource("jewel", 1);
         break;
-      case 15:
+      case Item::Watch:
         if ($arg == "pass") {
-          $this->gainCardResource("coins", $playerId, 3);
+          $this->gainCardResource("coins", 3);
           $game->pass();
           return;
         }
         else {
-          $this->gainCardResource("coins", $playerId, 2);
+          $this->gainCardResource("coins", 2);
         }
         break;
-      case 16:
+      case Item::Army_Knife:
         $options = JSON_DECODE($arg);
         if(count($options) != 2 ) {
           throw new BgaUserException(clienttranslate("You must select 2 options"));
@@ -417,91 +422,91 @@ class CardEffects {
         foreach ($options as $option) {
           switch($option) {
             case "compass": case "coins": case "tablet":
-              $this->gainCardResource($option, $playerId, 1);
+              $this->gainCardResource($option, 1);
               break;
             default:
               $game->exile($option);
           }
         }
         break;
-      case 17:
+      case Item::Binoculars:
         $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a small discovered site"));
         }
         $game->siteEffect("small", $siteTile["num"]);
         break;
-      case 18:
+      case Item::Tent:
         $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
-        if (!$siteTile || !$game->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $arg")) {
+        if (!$siteTile || !$game->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $this->playerId OR slot2 = $this->playerId) AND idboard_position = $arg")) {
           throw new BgaUserException(clienttranslate("You must have an archeologist on the site"));
         }
         if ($siteTile["size"] == "big") {
-          $this->gainCardResource("compass", $playerId, -2);
+          $this->gainCardResource("compass", -2);
         }
         $game->siteEffect($siteTile["size"], $siteTile["num"]);
         break;
-      case 19: 
+      case Item::Fishing_Rod:
         $newCard = $game->revealCard("item");
         $game->setGameStateValue("discount-coins", 3);
         $game->gamestate->nextState("buyItem");
         break;
-      case 20:
+      case Item::Precision_Compass:
         $newCard = $game->revealCard("art");
         $game->setGameStateValue("discount-compass", 3);
         $game->gamestate->nextState("buyArt");
         break;
-      case 21:
+      case Item::Bow_and_Arrows:
         $guards = $game->getCollectionFromDb(
         "SELECT * FROM guardian g
         LEFT JOIN board_position p ON g.at_location = p.idboard_position 
-        WHERE g.in_hand = $playerId OR p.slot1 = $playerId OR p.slot2 = $playerId");
+        WHERE g.in_hand = $this->playerId OR p.slot1 = $this->playerId OR p.slot2 = $this->playerId");
 
-        $this->gainCardResource("compass", $playerId, min(3, count($guards)));
+        $this->gainCardResource("compass", min(3, count($guards)));
         break;
-      case 22:
-        $this->gainCardResource("tablet", $playerId, 2);
+      case Item::Carrier_Pigeon:
+        $this->gainCardResource("tablet", 2);
         break;
-      case 23: 
+      case Item::Whip:
         $game->setGameStateValue("discount-compass", 4);
         $game->buyCard($arg, false, false, true);
         break;
-      case 24:
-        $this->gainCardResource("compass", $playerId, 3);
+      case Item::Rough_Map:
+        $this->gainCardResource("compass", 3);
         break;
-      case 25:
+      case Item::Airdrop:
         $game->setGameStateValue("discount-coins", 999);
         $game->buyCard($arg, true, false, true);
-        $this->gainCardResource("card", $playerId, 1);
+        $this->gainCardResource("card", 1);
         break;
-      case 26:
-        $this->gainCardResource("card", $playerId, 3);
+      case Item::Flask:
+        $this->gainCardResource("card", 3);
         break;
-      case 27:
+      case Item::Machete:
         $game->exile($arg);
-        $this->gainCardResource("compass", $playerId, 2);
+        $this->gainCardResource("compass", 2);
         break;
-      case 28:
+      case Item::Torch:
         $game->exile($arg);
-        $this->gainCardResource("tablet", $playerId, 1);
+        $this->gainCardResource("tablet", 1);
         break;
-      case 29:
-        $this->gainCardResource("coins", $playerId, 1);
-        $game->drawCard($playerId, true);
+      case Item::Large_Backpack:
+        $this->gainCardResource("coins", 1);
+        $game->drawCard($this->playerId, true);
         break;
-      case 30:
+      case Item::Rope:
         $game->discardCard($arg);
-        $this->gainCardResource("card", $playerId, 2);
+        $this->gainCardResource("card", 2);
         break;
-      case 31:
-        $this->gainCardResource("compass", $playerId, -1);
+      case Item::Revolver:
+        $this->gainCardResource("compass", -1);
         $game->freeOvercome($arg);
         break;
-      case 32:
-        $this->gainCardResource("compass", $playerId, 1);
-        $this->gainCardResource("coins", $playerId, 1);
+      case Item::Hat:
+        $this->gainCardResource("compass", 1);
+        $this->gainCardResource("coins", 1);
         break;
-      case 33:
+      case Item::Bear_Trap:
         $guards = $game->availableGuardians($arg, true);
         switch (count($guards)) {
           case 0: throw new BgaUserException(clienttranslate("Select a valid guardian"));
@@ -510,19 +515,19 @@ class CardEffects {
           break;
         }
         break;
-      case 34:
+      case Item::Grappling_Hook:
         $game->discardCard($arg);
-        $this->gainCardResource("card", $playerId, 1);
+        $this->gainCardResource("card", 1);
         $game->gamestate->nextState("cardExile");
         break;
-      case 35:
+      case Item::Lantern:
         $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
         $game->siteEffect("basic", $siteTile["num"]);
         break;
-      case 36:
+      case Item::Dog:
         $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $arg");
         $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         if (!$site) {
@@ -532,37 +537,54 @@ class CardEffects {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
         $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
-        $this->gainCardResource("compass", $playerId, 1);
+        $this->gainCardResource("compass", 1);
         $game->siteEffect("basic", $siteTile["num"]);
         break;
-      case 37:
-        $player =  $game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $playerId");
+      case Item::Brush:
+        $player =  $game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $this->playerId");
         $idols = $player["idol"] + 4 - $player["idol_slot"];
-        $this->gainCardResource("compass", $playerId, min($idols, 3));
+        $this->gainCardResource("compass", min($idols, 3));
         break;
-      case 38:
+      case Item::Axe:
         $game->exile($arg);
-        $this->gainCardResource("compass", $playerId, 1);
+        $this->gainCardResource("compass", 1);
         break;
-      case 39:
+      case Item::Chronometer:
         if ($arg == "pass") {
-          $this->gainCardResource("compass", $playerId, 3);
+          $this->gainCardResource("compass", 3);
           $game->pass();
         }
         else {
-          $this->gainCardResource("coins", $playerId, 1);
-          $this->gainCardResource("compass", $playerId, 1);
+          $this->gainCardResource("coins", 1);
+          $this->gainCardResource("compass", 1);
         }
         break;
-      case 40:
-        $this->gainCardResource("coins", $playerId, 1);
-        $this->gainCardResource("compass", $playerId, 2 - $game->freeWorkerAmt($playerId)); 
+      case Item::Theodolite:
+        $this->gainCardResource("coins", 1);
+        $this->gainCardResource("compass", 2 - $game->freeWorkerAmt($this->playerId)); 
         break;
       default:
-        throw new BgaUserException("cannot use item $num");
+        throw new BgaUserException("cannot use item ".$item->value());
     }
-    if (in_array(intval($num), [3, 4, 9, 10, 14, 16, 21, 24, 25, 26, 27, 28, 29, 30, 31, 33, 37, 38, 40])) {
+    if ($game->gameData->cardAction($item) == "main") {
       $game->gamestate->nextState("main_action_done");
+    }
+  }
+  function basicEffect($basic) {
+    switch($basic) {
+      case Basic::Funding_Car:
+      case Basic::Funding_Ship:
+        $this->gainCardResource("coins", 1);
+        break;
+      case Basic::Explore_Car:
+      case Basic::Explore_Ship:
+        $this->gainCardResource("compass", 1);
+        break;
+      case Basic::Fear:
+        throw new BgaUserException(clienttranslate("Fear cannot be played"));
+        break;
+      default:
+        throw new BgaUserException("Invalid Basic typr");
     }
   }
 }
