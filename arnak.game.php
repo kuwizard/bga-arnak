@@ -512,7 +512,7 @@ class arnak extends Table
     $this->notifyPlayer($playerId, "drawSelfCard", clienttranslate('You draw ${card_name}'),
     array(
       'i18n' => ["card_name"],
-      'card_name' => cardName($cardType, $cardNo),
+      'card_name' => cardInfo($cardToDraw)->name(),
       'card_type' => $cardType,
       'card_no' => $cardNo,
       'card_id' => $cardId,
@@ -533,7 +533,7 @@ class arnak extends Table
         $this->notifyPlayer($this->getActivePlayerId(), "earringKeep", clienttranslate('You keep ${cardName} in your hand'), array(
           "i18n" => ["cardName"],
           "cardId" => $cardId,
-          "cardName" => cardName($card["card_type"], $card["num"]),
+          "cardName" => cardInfo($card)->name(),
 
           ));
         $this->dbQuery("UPDATE card SET card_position = 'hand' WHERE idcard = $cardId");
@@ -588,7 +588,7 @@ class arnak extends Table
       array("player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
           "i18n" => ["cardName"],
           "player_id" => $playerId,
-          "cardName" => cardName($type, $num),
+          "cardName" => cardInfo($card)->name(),
           "cardType" => $type,
           "cardNum" => $num,
           "cardId" => $cardId,
@@ -631,7 +631,7 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("$type card cannot be bought"));
       }
     }
-    $amt = cardCost($type, $num);
+    $amt = cardInfo($card)->cost();
     $resName = $type == "item" ? "coins" : "compass";
     if ($this->gamestate->state()["name"] == "researchBonus") {
       if ($this->currentSpecialResearch() == "free-art") {
@@ -653,9 +653,8 @@ class arnak extends Table
       $this->notifyAllPlayers("playCard", clienttranslate('${player_name} plays ${cardName}'),
       array("player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
         "i18n" => ["cardName"],
-        "cardName" => cardName("art", $num),
+        "cardName" => cardInfo($card)->name(),
         "player_id" => $player,
-        "cardName" => cardName("art", $num),
         "cardType" => "art",
         "cardNum" => $num,
         "cardId" => $cardId,
@@ -712,7 +711,7 @@ class arnak extends Table
       clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'),
       array(
         "i18n" => ["cardName", "cardTypeText"],
-        "cardName" => cardName($drawnCard["card_type"], $drawnCard["num"]),
+        "cardName" => cardInfo($drawnCard)->name(),
         "cardId" => $drawnCard['idcard'],
         "cardType" => $drawnCard["card_type"],
         "cardTypeText" => $this->cardTypeText($drawnCard["card_type"]),
@@ -753,7 +752,7 @@ class arnak extends Table
         "i18n" => ["itemName", "position"],
         "playerId" => $player,
         "player_name" => $this->getActivePlayerName(),
-        "itemName" => cardName($type, $num),
+        "itemName" => cardInfo($card)->name(),
         "cardId" => $cardId,
         "position" => $top ? clienttranslate("top") : clienttranslate("bottom"),
         "top" => $top,
@@ -769,9 +768,8 @@ class arnak extends Table
         "i18n" => ["itemName", "position"],
         "playerId" => $player,
         "player_name" => $this->getActivePlayerName(),
-        "itemName" => cardName($type, $num),
+        "itemName" => cardInfo($card)->name(),
         "cardId" => $cardId,
-
         "position" => $top ? clienttranslate("top") : clienttranslate("bottom"),
         "top" => $top,
         "cardType" => $type,
@@ -829,7 +827,7 @@ class arnak extends Table
     $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
     array("i18n" => ["cardName"],
         "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
-        "cardName" => cardName($type, $num),
+        "cardName" => cardInfo($card)->name(),
         "player_id" => $playerId,
         "cardType" => $type,
         "cardNum" => $num,
@@ -882,7 +880,7 @@ class arnak extends Table
       clienttranslate('New ${cardTypeText} ${cardName} is revealed'),
       array(
         "i18n" => ["cardName", "typeText", "cardTypeText"],
-        "cardName" => cardName($newCard["card_type"], $newCard["num"]),
+        "cardName" => cardInfo($newCard)->name(),
         "cardId" => $newCard['idcard'],
         "cardType" => $newCard["card_type"],
         "cardTypeText" => $this->cardTypeText($newCard["card_type"]),
@@ -900,7 +898,7 @@ class arnak extends Table
         continue;
       }
       $cardId = $toDelete["idcard"];
-      $name = cardName($type, $toDelete["num"]);
+      $name = cardInfo($toDelete)->name();
       $this->notifyAllPlayers("removeStaffCard", clienttranslate('Removing ${cardName} from the supply'),
         array(
         "i18n" => ["cardName"],
@@ -993,7 +991,7 @@ class arnak extends Table
           $card = $this->getObjectFromDB("SELECT * FROM card WHERE idcard = $id AND player = $playerId AND card_position = 'hand'");
           if ($card) {
             $useful = false;
-            foreach(cardTravel($card["card_type"], $card["num"]) as $i => $travelType) {
+            foreach(cardInfo($card)->travel() as $i => $travelType) {
               $paymentAvailable[$travelType] += 1;
               if ($this->travelUseful($travelReqs, $travelType)) {
                 $useful = true;
@@ -1009,7 +1007,7 @@ class arnak extends Table
               "player_id" => $this->getActivePlayerId(),
               "cardType" => $card["card_type"],
               "cardNum" => $card["num"],
-              "cardName" => cardName($card["card_type"], $card["num"]),
+              "cardName" => cardInfo($card)->name(),
               "cardId" => $card["idcard"],
               "i18n" => ["cardName"]
             ));
@@ -1519,7 +1517,7 @@ class arnak extends Table
       array(
       "i18n" => ["cardName"],
       "player_name" => $this->getActivePlayerName(),
-      "cardName" => cardName($card["card_type"], $card["num"]),
+      "cardName" => cardInfo($card)->name(),
       "player_id" => $this->getActivePlayerId(),
       "cardId" => $cardId,
       "cardType" => $card["card_type"],
@@ -2140,7 +2138,7 @@ class arnak extends Table
         $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
         array("player_name" => $playerName,
             "i18n" => ["cardName"],
-            "cardName" => cardName($type, $num),
+            "cardName" => cardInfo($card)->name(),
             "player_id" => $playerId,
             "cardType" => $type,
             "cardNum" => $num,
@@ -2246,12 +2244,12 @@ class arnak extends Table
 
       $cost = 0;
       foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'item'") as $cardId => $card) {
-          $cost += cardCost($card["card_type"], $card["num"]);
+          $cost += cardInfo($card)->cost();
         }
       $this->setStat($cost, "cost-item", $playerId);
       $cost = 0;
       foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'art'") as $cardId => $card) {
-          $cost += cardCost($card["card_type"], $card["num"]);
+          $cost += cardInfo($card)->cost();
         }
       $this->setStat($cost, "cost-art", $playerId);
 
@@ -2286,7 +2284,7 @@ class arnak extends Table
         break;
       case "cards":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type != 'fear'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += cardInfo($card)->points();
         }
         break;
       case "fear":
@@ -2294,12 +2292,12 @@ class arnak extends Table
         break;
       case "item":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'item'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += cardInfo($card)->points();
         }
         break;
       case "art":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'art'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += cardInfo($card)->points();
         }
         break;
     }
@@ -2318,55 +2316,6 @@ class arnak extends Table
   }
 
   function stNextPlayer() {
-      foreach (Item::cases() as $item) { 
-      if( $item->name() != cardName("item",$item->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in item name (".$item->value.")", array());
-      }
-      if( $item->cost() != cardCost("item",$item->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in item cost(".$item->value.")", array());
-      }
-      if( $item->points() != cardPoints("item",$item->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in item points(".intval($item).")", array());
-      }
-      $travel = $item->travel();
-      $old_travel = cardTravel("item",$item->value);
-      if( count($old_travel) != count($travel) ) {
-        $this->notifyAllPlayers("notif_remi", "Error in item travel size(".$item->value.")", array());
-      }
-      else {
-        foreach ($travel as $key => $value) {
-          if( $old_travel[$key] != $value ) {
-            $this->notifyAllPlayers("notif_remi", "Error in item travel size(".$item->value.")", array());
-          }
-        }
-      }
-    }
-    
-    foreach (Artefact::cases() as $artefact) { 
-      if( $artefact->name() != cardName("art",$artefact->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in art name (".$artefact->value.")", array());
-      }
-      if( $artefact->cost() != cardCost("art",$artefact->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in art cost(".$artefact->value.")", array());
-      }
-      if( $artefact->points() != cardPoints("art",$artefact->value)) {
-        $this->notifyAllPlayers("notif_remi", "Error in art points(".$artefact->value.")", array());
-      }
-      $travel = $artefact->travel();
-      $old_travel = cardTravel("art",$artefact->value);
-      if( count($old_travel) != count($travel) ) {
-        $this->notifyAllPlayers("notif_remi", "Error in item travel size (".$artefact->value.")", array());
-      }
-      else {
-        foreach ($travel as $key => $value) {
-          if( $old_travel[$key] != $value ) {
-            $this->notifyAllPlayers("notif_remi", "Error in art travel(".$artefact->value.")", array());
-          }
-        }
-      }
-    }
-
-
     $this->setGameStateValue("art-active", -1);
     $this->refillCards();
     $this->resetDiscount(true);
