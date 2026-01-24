@@ -234,11 +234,11 @@ enum Basic: int {
 
   private function data(): array {
     return match($this) {
-      Funding_Car =>  array(0,  [CAR],  clienttranslate("Funding")),
-      Funding_Ship => array(0,  [SHIP], clienttranslate("Funding")),
-      Explore_Car =>  array(0,  [CAR],  clienttranslate("Exploration")),
-      Explore_Ship => array(0,  [SHIP], clienttranslate("Exploration")),
-      Fear =>         array(-1, [BOOT], clienttranslate("Fear"))
+      Basic::Funding_Car =>  array(0,  [CAR],  clienttranslate("Funding")),
+      Basic::Funding_Ship => array(0,  [SHIP], clienttranslate("Funding")),
+      Basic::Explore_Car =>  array(0,  [CAR],  clienttranslate("Exploration")),
+      Basic::Explore_Ship => array(0,  [SHIP], clienttranslate("Exploration")),
+      Basic::Fear =>         array(-1, [BOOT], clienttranslate("Fear"))
     };
   }
 
@@ -265,15 +265,22 @@ function cardInfo($cardData)
     return Item::from($cardData["num"]);
   }
   else {
+    return Basic::Fear;
     switch ($type) {
-      case "fundcar" : return Basic::Funding_Car;
-      case "fundship" : return Basic::Funding_Ship;
-      case "explorecar" : return Basic::Explore_Car;
-      case "exploreship" : return Basic::Explore_Ship;
-      case "fear" : return Basic::Fear;
+      case "fundcar" : 
+        return Basic::Funding_Car;
+      case "fundship" : 
+        return Basic::Funding_Ship;
+      case "explorecar" : 
+        return Basic::Explore_Car;
+      case "exploreship" : 
+        return Basic::Explore_Ship;
+      case "fear" : 
+        return Basic::Fear;
     }
     throw new BgaUserException("Unexpected type");
   }
+  return Basic::Fear;
 }
 
 function siteTravelCost($no, $slot, $birdSide) {
