@@ -2073,27 +2073,6 @@ class arnak extends Table
   }
 
   function stNextRound() {
-
-    foreach (Item::cases() as $item) { 
-      
-      if( $item->name() != cardName("item",int($item))) {
-        $this->notifyAllPlayers("notif_remi", "Error in item name (".int($item).")", array());
-      }
-      if( $item->cost() != cardCost("item",int($item))) {
-        $this->notifyAllPlayers("notif_remi", "Error in item cost(".int($item).")", array());
-      }
-      if( $item->points() != cardPoints("item",int($item))) {
-        $this->notifyAllPlayers("notif_remi", "Error in item points(".int($item).")", array());
-      }
-      $travel = $item->travel();
-      foreach ($travel as $key => $value) {
-        if( cardTravel[$key] != $value ) {
-          $this->notifyAllPlayers("notif_remi", "Error in item travel(".int($item).")", array());
-        }
-      }
-    }
-
-    
     $this->notifyAllPlayers("nextRound", clienttranslate("Setting up next round"), array());
     //$this->activeNextPlayer();
 
@@ -2339,6 +2318,55 @@ class arnak extends Table
   }
 
   function stNextPlayer() {
+      foreach (Item::cases() as $item) { 
+      if( $item->name() != cardName("item",$item->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in item name (".$item->value.")", array());
+      }
+      if( $item->cost() != cardCost("item",$item->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in item cost(".$item->value.")", array());
+      }
+      if( $item->points() != cardPoints("item",$item->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in item points(".intval($item).")", array());
+      }
+      $travel = $item->travel();
+      $old_travel = cardTravel("item",$item->value);
+      if( count($old_travel) != count($travel) ) {
+        $this->notifyAllPlayers("notif_remi", "Error in item travel size(".$item->value.")", array());
+      }
+      else {
+        foreach ($travel as $key => $value) {
+          if( $old_travel[$key] != $value ) {
+            $this->notifyAllPlayers("notif_remi", "Error in item travel size(".$item->value.")", array());
+          }
+        }
+      }
+    }
+    
+    foreach (Artefact::cases() as $artefact) { 
+      if( $artefact->name() != cardName("art",$artefact->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in art name (".$artefact->value.")", array());
+      }
+      if( $artefact->cost() != cardCost("art",$artefact->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in art cost(".$artefact->value.")", array());
+      }
+      if( $artefact->points() != cardPoints("art",$artefact->value)) {
+        $this->notifyAllPlayers("notif_remi", "Error in art points(".$artefact->value.")", array());
+      }
+      $travel = $artefact->travel();
+      $old_travel = cardTravel("art",$artefact->value);
+      if( count($old_travel) != count($travel) ) {
+        $this->notifyAllPlayers("notif_remi", "Error in item travel size (".$artefact->value.")", array());
+      }
+      else {
+        foreach ($travel as $key => $value) {
+          if( $old_travel[$key] != $value ) {
+            $this->notifyAllPlayers("notif_remi", "Error in art travel(".$artefact->value.")", array());
+          }
+        }
+      }
+    }
+
+
     $this->setGameStateValue("art-active", -1);
     $this->refillCards();
     $this->resetDiscount(true);
