@@ -1,4 +1,261 @@
 <?php
+
+enum Artefact: int {
+  case Pathfinders_Sandals = 1;
+  case Pathfinders_Staff = 2; 
+  case War_Mask = 3; 
+  case Treasure_Chest = 4; 
+  case Ritual_Dagger = 5; 
+
+  case Crystal_Earring = 6;
+  case Mortar = 7;
+  case Serpents_Gold = 8;
+  case Serpent_Idol = 9;
+  case Monkey_Medallion = 10;
+
+  case Idol_of_AraAnu = 11;
+  case Inscribed_Blade = 12;
+  case Guardians_Ocarina = 13;
+  case Tigerclaw_Hairpin = 14;
+  case War_Club = 15;
+
+  case Sundial = 16;
+  case Traders_Scales = 17;
+  case Hunting_Arrows = 18;
+  case Coconut_Flask = 19;
+  case Cleansing_Cauldron = 20;
+
+  case Ancient_Wine = 21;
+  case Decorated_Horn = 22;
+  case Ornate_Hammer = 23;
+  case Star_Charts = 24;
+  case Stone_Jar = 25;
+
+  case Passage_Shell = 26;
+  case Ceremonial_Rattle = 27;
+  case Sacred_Drum = 28;
+  case Traders_Coins = 29;
+  case Stone_Key = 30;
+
+  case Obsidian_Earring = 31;
+  case Guiding_Stone = 32;
+  case Guiding_Skull = 33;
+  case Runes_of_the_Dead = 34;
+  case Guardians_Crown = 35;
+
+  private function data(): array {
+    return match($this) {
+      Pathfinders_Sandals => array(3, 1, [PLANE],       clienttranslate("Pathfinder's Sandals"));
+      Pathfinders_Staff =>   array(4, 1, [PLANE],       clienttranslate("Pathfinder's Staff")); 
+      War_Mask =>            array(3, 1, [PLANE],       clienttranslate("War Mask")); 
+      Treasure_Chest =>      array(4, 3, [PLANE],       clienttranslate("Treasure Chest")); 
+      Ritual_Dagger =>       array(4, 2, [PLANE],       clienttranslate("Ritual Dagger")); 
+
+      Crystal_Earring =>     array(4, 2, [PLANE],       clienttranslate("Crystal Earring"));
+      Mortar =>              array(3, 1, [PLANE],       clienttranslate("Mortar"));
+      Serpents_Gold =>       array(3, 2, [PLANE],       clienttranslate("Serpent's Gold"));
+      Serpent_Idol =>        array(2, 1, [PLANE],       clienttranslate("Serpent Idol"));
+      Monkey_Medallion =>    array(4, 2, [PLANE],       clienttranslate("Monkey Medallion"));
+
+
+      Idol_of_AraAnu =>      array(3, 1, [PLANE],       clienttranslate("Idol of Ara-Anu"));
+      Inscribed_Blade =>     array(2, 1, [PLANE],       clienttranslate("Inscribed Blade"));
+      Guardians_Ocarina =>   array(4, 2, [PLANE,PLANE], clienttranslate("Guardian's Ocarina"));
+      Tigerclaw_Hairpin =>   array(4, 2, [PLANE],       clienttranslate("Tigerclaw Hairpin"));
+      War_Club =>            array(4, 1, [PLANE],       clienttranslate("War Club"));
+
+      Sundial =>             array(2, 1, [PLANE],       clienttranslate("Sundial"));
+      Traders_Scales =>      array(4, 2, [PLANE],       clienttranslate("Traders' Scales"));
+      Hunting_Arrows =>      array(4, 1, [PLANE],       clienttranslate("Hunting Arrows"));
+      Coconut_Flask =>       array(3, 2, [PLANE],       clienttranslate("Coconut Flask"));
+      Cleansing_Cauldron =>  array(3, 1, [PLANE],       clienttranslate("Cleansing Cauldron"));
+
+      Ancient_Wine =>        array(3, 1, [PLANE],       clienttranslate("Ancient Wine"));
+      Decorated_Horn =>      array(2, 1, [PLANE],       clienttranslate("Decorated Horn"));
+      Ornate_Hammer =>       array(4, 2, [PLANE],       clienttranslate("Ornate Hammer"));
+      Star_Charts =>         array(4, 2, [PLANE],       clienttranslate("Star Charts"));
+      Stone_Jar =>           array(2, 1, [PLANE],       clienttranslate("Stone Jar"));
+
+      Passage_Shell =>       array(3, 1, [PLANE],       clienttranslate("Passage Shell"));
+      Ceremonial_Rattle =>   array(3, 2, [PLANE],       clienttranslate("Ceremonial Rattle"));
+      Sacred_Drum =>         array(4, 1, [PLANE],       clienttranslate("Sacred Drum"));
+      Traders_Coins =>       array(3, 1, [PLANE],       clienttranslate("Trader's Coins"));
+      Stone_Key =>           array(3, 2, [PLANE],       clienttranslate("Stone Key"));
+
+      Obsidian_Earring =>    array(4, 2, [PLANE],       clienttranslate("Obsidian Earring"));
+      Guiding_Stone =>       array(3, 1, [PLANE],       clienttranslate("Guiding Stone"));
+      Guiding_Skull =>       array(4, 1, [PLANE],       clienttranslate("Guiding Skull"));
+      Runes_of_the_Dead =>   array(4, 1, [PLANE],       clienttranslate("Runes of the Dead"));
+      Guardians_Crown =>     array(4, 2, [PLANE],       clienttranslate("Guardian's Crown"));
+    };
+  }
+
+  public function cost(): int {
+    return data($this)[0]:
+  }
+
+  public function points(): int {
+    return data($this)[1]:
+  }
+
+  public function travel(): array {
+    return data($this)[2]:
+  }
+
+  public function name(): string {
+    return data($this)[3]:
+  }
+}
+
+enum Item: int {
+  case: Sea_Turtle = 1;
+  case: Ostrich = 2;
+  case: Pack_Donkey = 3;
+  case: Horse = 4;
+  case: Steam_Boat = 5;
+
+  case: Automobile = 6;
+  case: Sturdy_Boots = 7;
+  case: Gold_Pan = 8;
+  case: Trowel = 9;
+  case: Pickaxe = 10;
+
+  case: Hot_Air_Balloon = 11;
+  case: Aeroplane = 12;
+  case: Journal = 13;
+  case: Parrot = 14;
+  case: Watch = 15;
+
+  case: Army_Knife = 16;
+  case: Binoculars = 17;
+  case: Tent = 18;
+  case: Fishing_Rod = 19;
+  case: Precision_Compass = 20;
+
+  case: Bow_and_Arrows = 21;
+  case: Carrier_Pigeon = 22;
+  case: Whip = 23;
+  case: Rough_Map = 24;
+  case: Airdrop = 25;
+
+  case: Flask = 26;
+  case: Machete = 27;
+  case: Torch = 28;
+  case: Large_Backpack = 29;
+  case: Rope = 30;
+
+  case: Revolver = 31;
+  case: Hat = 32;
+  case: Bear_Trap = 33;
+  case: Grappling_Hook = 34;
+  case: Lantern = 35;
+
+  case: Dog = 36;
+  case: Brush = 37;
+  case: Axe = 38;
+  case: Chronometer = 39;
+  case: Theodolite = 40;
+
+  private function data(): array {
+    return match($this) {
+      Sea_Turtle =>        array(3, 1, [SHIP, SHIP],   clienttranslate("Sea Turtle"));
+      Ostrich =>           array(3, 1, [CAR, CAR],     clienttranslate("Ostrich"));
+      Pack_Donkey =>       array(4, 1, [CAR, CAR],     clienttranslate("Pack Donkey"));
+      Horse =>             array(4, 1, [CAR, CAR],     clienttranslate("Horse"));
+      Steam_Boat =>        array(3, 3, [SHIP, SHIP],   clienttranslate("Steam Boat"));
+
+      Automobile =>        array(3, 3, [CAR, CAR],     clienttranslate("Automobile"));
+      Sturdy_Boots =>      array(1, 1, [CAR, CAR],     clienttranslate("Sturdy Boots"));
+      Gold_Pan =>          array(1, 1, [SHIP, SHIP],   clienttranslate("Gold Pan"));
+      Trowel =>            array(1, 1, [CAR],          clienttranslate("Trowel"));
+      Pickaxe =>           array(1, 1, [CAR],          clienttranslate("Pickaxe"));
+
+      Hot_Air_Balloon =>   array(2, 1, [PLANE],        clienttranslate("Hot Air Balloon"));
+      Aeroplane =>         array(4, 3, [PLANE, PLANE], clienttranslate("Aeroplane"));
+      Journal =>           array(3, 1, [CAR, SHIP],    clienttranslate("Journal"));
+      Parrot =>            array(2, 2, [SHIP],         clienttranslate("Parrot"));
+      Watch =>             array(1, 1, [SHIP],         clienttranslate("Watch"));
+
+      Army_Knife =>        array(3, 1, [CAR, SHIP],    clienttranslate("Army Knife"));
+      Binoculars =>        array(4, 1, [SHIP],         clienttranslate("Binoculars"));
+      Tent =>              array(4, 2, [CAR],          clienttranslate("Tent"));
+      Fishing_Rod =>       array(2, 2, [SHIP],         clienttranslate("Fishing Rod"));
+      Precision_Compass => array(4, 1, [SHIP],         clienttranslate("Precision Compass"));
+
+      Bow_and_Arrows =>    array(2, 2, [CAR],          clienttranslate("Bow and Arrows"));
+      Carrier_Pigeon =>    array(2, 1, [SHIP],         clienttranslate("Carrier Pigeon"));
+      Whip =>              array(2, 1, [CAR],          clienttranslate("Whip"));
+      Rough_Map =>         array(1, 1, [SHIP],         clienttranslate("Rough Map"));
+      Airdrop =>           array(2, 1, [PLANE],        clienttranslate("Airdrop"));
+
+      Flask =>             array(2, 1, [SHIP],         clienttranslate("Flask"));
+      Machete =>           array(4, 1, [CAR],          clienttranslate("Machete"));
+      Torch =>             array(2, 2, [SHIP],         clienttranslate("Torch"));
+      Large_Backpack =>    array(3, 1, [CAR],          clienttranslate("Large Backpack"));
+      Rope =>              array(2, 1, [SHIP],         clienttranslate("Rope"));
+
+      Revolver =>          array(4, 1, [SHIP, SHIP],   clienttranslate("Revolver"));
+      Hat =>               array(1, 1, [SHIP],         clienttranslate("Hat"));
+      Bear_Trap =>         array(2, 1, [CAR],          clienttranslate("Bear Trap"));
+      Grappling_Hook =>    array(2, 2, [CAR],          clienttranslate("Grappling Hook"));
+      Lantern =>           array(3, 2, [CAR],          clienttranslate("Lantern"));
+
+      Dog =>               array(3, 1, [CAR],          clienttranslate("Dog"));
+      Brush =>             array(3, 3, [CAR],          clienttranslate("Brush"));
+      Axe =>               array(2, 2, [SHIP],         clienttranslate("Axe"));
+      Chronometer =>       array(3, 2, [SHIP, SHIP],   clienttranslate("Chronometer"));
+      Theodolite =>        array(3, 1, [SHIP],         clienttranslate("Theodolite")
+    };
+  }
+
+  public function cost(): int {
+    return data($this)[0]:
+  }
+
+  public function points(): int {
+    return data($this)[1]:
+  }
+
+  public function travel(): array {
+    return data($this)[2]:
+  }
+
+  public function name(): string {
+    return data($this)[3]:
+  }
+
+}
+
+enum Basic: int {
+  Funding_Car = 1;
+  Funding_Ship = 2;
+  Explore_Car = 3;
+  Explore_Ship = 4;
+  Fear = 5;
+
+  private function data(): array {
+    return match($this) {
+      Funding_Car =>  array(0,  [CAR],  clienttranslate("Funding"));
+      Funding_Ship => array(0,  [SHIP], clienttranslate("Funding"));
+      Explore_Car =>  array(0,  [CAR],  clienttranslate("Exploration"));
+      Explore_Ship => array(0,  [SHIP], clienttranslate("Exploration"));
+      Fear =>         array(-1, [BOOT], clienttranslate("Fear"));
+    };
+  }
+
+  public function points(): int {
+    return data($this)[0]:
+  }
+
+  public function travel(): array {
+    return data($this)[1]:
+  }
+
+  public function name(): string {
+    return data($this)[2]:
+  }
+}
+
 function cardName($type, $no) {
   $basicNames = array(
     "fundship" => clienttranslate("Funding"),

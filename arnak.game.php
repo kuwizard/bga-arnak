@@ -2071,7 +2071,26 @@ class arnak extends Table
 
   function stNextRound() {
 
+    foreach (Item::cases() as $item) { 
+      
+      if( $item->name() != cardName("item",int($item))) {
+        $this->notifyAllPlayers("notif_remi", "Error in item name (".int($item).")", array());
+      }
+      if( $item->cost() != cardCost("item",int($item))) {
+        $this->notifyAllPlayers("notif_remi", "Error in item cost(".int($item).")", array());
+      }
+      if( $item->points() != cardPoints("item",int($item))) {
+        $this->notifyAllPlayers("notif_remi", "Error in item points(".int($item).")", array());
+      }
+      $travel = $item->travel();
+      foreach ($travel as $key => $value) {
+        if( cardTravel[$key] != $value ) {
+          $this->notifyAllPlayers("notif_remi", "Error in item travel(".int($item).")", array());
+        }
+      }
+    }
 
+    
     $this->notifyAllPlayers("nextRound", clienttranslate("Setting up next round"), array());
     //$this->activeNextPlayer();
 
