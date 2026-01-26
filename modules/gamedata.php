@@ -255,17 +255,16 @@ enum Basic: int {
   }
 }
 
-function cardInfo($cardData)
+function cardFromDb($cardData)
 {
   $type = $cardData["card_type"];
   if ($type == "art") {
     return Artefact::from($cardData["num"]);
   }
-  else if ($type == "art") {
+  else if ($type == "item") {
     return Item::from($cardData["num"]);
   }
   else {
-    return Basic::Fear;
     switch ($type) {
       case "fundcar" : 
         return Basic::Funding_Car;
@@ -280,7 +279,6 @@ function cardInfo($cardData)
     }
     throw new BgaUserException("Unexpected type");
   }
-  return Basic::Fear;
 }
 
 function siteTravelCost($no, $slot, $birdSide) {
