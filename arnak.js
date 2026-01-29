@@ -2902,7 +2902,7 @@ function (dojo, declare) {
       newMeepleDiv.dataset.slot = fromHome ? '' : a.slot;
       dojo.removeClass(newMeepleDiv, "new-meeple");
       dojo.removeClass(newMeepleDiv, "onboard")
-      if (fromHome) {
+      if (!fromHome) {
         dojo.addClass(newMeepleDiv, "onboard");
       }
 
