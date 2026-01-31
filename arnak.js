@@ -1362,7 +1362,7 @@ function (dojo, declare) {
               case 33:
                 for (var candidate of dojo.query(".guardian-wrap")) {
                   var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}`).length) {
+                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}]`).length) {
                     candidate.parentNode.classList.add("highlight-turn");
                   }
                 }
