@@ -1441,6 +1441,7 @@ function (dojo, declare) {
           }
           break;
         case 35:
+          this.relocateToArt = 35;
           this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
@@ -1526,10 +1527,24 @@ function (dojo, declare) {
       }
     },
     highlightRelocateTo() {
-      for( var site of dojo.query(".location-wrap.basic") ) {
-        var position = dojo.attr(site,"data-position");
-        if( dojo.query(`.meeple[data-position=${position}]`).length + dojo.query(`.blocking-tile[data-position=${position}]`).length < 2 )
-          site.classList.add("highlight-turn");
+      if( this.relocateToArt == 35 ) {
+        var guardianPositions = []
+        for (var candidate of dojo.query(".guardian-wrap")) {
+          guardianPositions.push(candidate.parentNode.dataset.position);
+        }
+
+        for( var site of dojo.query(".location-wrap.basic, .location-wrap.small") ) {
+          var position = dojo.attr(site,"data-position");
+          if( dojo.query(`.meeple[data-position=${position}]`).length < 1 && !guardianPositions.includes(position))
+            site.classList.add("highlight-turn");
+        }
+      }
+      if( this.relocateToArt == 1 || this.relocateToArt == 2) {
+        for( var site of dojo.query(".location-wrap.basic") ) {
+          var position = dojo.attr(site,"data-position");
+          if( dojo.query(`.meeple[data-position=${position}], .blocking-tile[data-position=${position}]`).length < 2 )
+            site.classList.add("highlight-turn");
+        }
       }
       if( this.relocateToArt == 2 ) {
         for( var site of dojo.query(".location-wrap.small") ) {
