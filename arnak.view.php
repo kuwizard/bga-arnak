@@ -28,59 +28,59 @@
   
   class view_arnak_arnak extends game_view
   {
-	function getGameName() {
-		return "arnak";
-	}	
-  	function build_page( $viewArgs )
-  	{		
-  		// Get players & players number
-		$players = $this->game->loadPlayersBasicInfos();
-		$players_nbr = count( $players );
-		$this->tpl['DECK'] = self::_("Deck: ");
-		$this->tpl['EXILE'] = self::_("Exile: ");
-		/*********** Place your code below:  ************/
+  function getGameName() {
+    return "arnak";
+  }  
+    function build_page( $viewArgs )
+    {    
+      // Get players & players number
+    $players = $this->game->loadPlayersBasicInfos();
+    $players_nbr = count( $players );
+    $this->tpl['DECK'] = self::_("Deck: ");
+    $this->tpl['EXILE'] = self::_("Exile: ");
+    /*********** Place your code below:  ************/
 
 
-		/*
+    /*
 
-		// Examples: set the value of some element defined in your tpl file like this: {MY_VARIABLE_ELEMENT}
+    // Examples: set the value of some element defined in your tpl file like this: {MY_VARIABLE_ELEMENT}
 
-		// Display a specific number / string
-		$this->tpl['MY_VARIABLE_ELEMENT'] = $number_to_display;
+    // Display a specific number / string
+    $this->tpl['MY_VARIABLE_ELEMENT'] = $number_to_display;
 
-		// Display a string to be translated in all languages: 
-		$this->tpl['MY_VARIABLE_ELEMENT'] = self::_("A string to be translated");
+    // Display a string to be translated in all languages: 
+    $this->tpl['MY_VARIABLE_ELEMENT'] = self::_("A string to be translated");
 
-		// Display some HTML content of your own:
-		$this->tpl['MY_VARIABLE_ELEMENT'] = self::raw( $some_html_code );
+    // Display some HTML content of your own:
+    $this->tpl['MY_VARIABLE_ELEMENT'] = self::raw( $some_html_code );
 
-		*/
+    */
 
-		/*
+    /*
 
-		// Example: display a specific HTML block for each player in this game.
-		// (note: the block is defined in your .tpl file like this:
-		//	  <!-- BEGIN myblock --> 
-		//		  ... my HTML code ...
-		//	  <!-- END myblock --> 
-
-
-		$this->page->begin_block( "arnak_arnak", "myblock" );
-		foreach( $players as $player )
-		{
-			$this->page->insert_block( "myblock", array( 
-													"PLAYER_NAME" => $player['player_name'],
-													"SOME_VARIABLE" => $some_value
-													...
-													 ) );
-		}
-
-		*/
+    // Example: display a specific HTML block for each player in this game.
+    // (note: the block is defined in your .tpl file like this:
+    //    <!-- BEGIN myblock --> 
+    //      ... my HTML code ...
+    //    <!-- END myblock --> 
 
 
+    $this->page->begin_block( "arnak_arnak", "myblock" );
+    foreach( $players as $player )
+    {
+      $this->page->insert_block( "myblock", array( 
+                          "PLAYER_NAME" => $player['player_name'],
+                          "SOME_VARIABLE" => $some_value
+                          ...
+                           ) );
+    }
 
-		/*********** Do not change anything below this line  ************/
-  	}
+    */
+
+
+
+    /*********** Do not change anything below this line  ************/
+    }
   }
   
 

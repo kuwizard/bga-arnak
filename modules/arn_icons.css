@@ -22,7 +22,7 @@
 
 .travel-costs {
     display: inline-flex;
-	transform: translate(0px, 12px);  /* margin just does not want to cooperate in this case */
+    transform: translate(0px, 12px);  /* margin just does not want to cooperate in this case */
 }
 
 .travel-costs .icon {
@@ -32,13 +32,13 @@
 }
 
 .research-token {
-	position: absolute;
-	transform: scale(0.14);
-	transform-origin: top left;
-	filter: drop-shadow(20px 25px 12px black);
-	transition: left 1s, top 1s;
-	z-index: 10;
-	pointer-events: none;
+    position: absolute;
+    transform: scale(0.14);
+    transform-origin: top left;
+    filter: drop-shadow(20px 25px 12px black);
+    transition: left 1s, top 1s;
+    z-index: 10;
+    pointer-events: none;
 }
 
 .research-glass.blue {
@@ -91,36 +91,36 @@
 }
 
 .idol.back, .counter.idol {
-	/* idol back */
+    /* idol back */
     width: 130px; height: 160px;
     background: url('../img/icons_css_sprite.png') -416px -254px;
-	clip-path: url(#idol-path);
+    clip-path: url(#idol-path);
 }
 
 .arnak-board .idol, .player-camp .idol {
-	clip-path: url(#idol-path);
-	transform: scale(0.35);
-	position: absolute;
-	pointer-events: none;
+    clip-path: url(#idol-path);
+    transform: scale(0.35);
+    position: absolute;
+    pointer-events: none;
 }
 .player-camp .idol-wrap {
-	position: absolute;
-	filter: drop-shadow(3px 3px 3px black);
-	transition: top .5s, left .5s;
+    position: absolute;
+    filter: drop-shadow(3px 3px 3px black);
+    transition: top .5s, left .5s;
 }
 
 .arnak-board .idol {
-	left: 21px;
-	top: 53px;
-	z-index: 3;
+    left: 21px;
+    top: 53px;
+    z-index: 3;
 }
 .player-camp .idol.back {
     transform: scale(0.43);
 }
 
 .idol ~ .idol.back {
-	left: 47px;
-	z-index: 1;
+    left: 47px;
+    z-index: 1;
 }
 
 
@@ -159,7 +159,7 @@
     background: url('../img/icons_css_sprite.png') -960px -283px;
 }
 .idon.handsize {
-	width: 76px; height: 75px;
+    width: 76px; height: 75px;
     background: url('../img/icons_css_sprite.png') -542px -707px;
 }
 
@@ -221,10 +221,10 @@
 }
 
 .fly-res {
-	width: 100px;
-	height: 100px;
-	background: red;
-	z-index: 300;
+    width: 100px;
+    height: 100px;
+    background: red;
+    z-index: 300;
 }
 
 
@@ -260,7 +260,7 @@
 }
 
 .action-button .arrow {
-	font-size: 36px;
+    font-size: 36px;
 }
 
 .action-button .icon.tablet {
