@@ -763,7 +763,7 @@ function (dojo, declare) {
         dojo.style(cardDiv, "top", y + "%");
         dojo.addClass(cardDiv, "hand");
         if (card.position == "earring") {
-          dojo.addClass(cardDiv, "earring");
+          dojo.addClass(cardDiv, "blueSelection");
         }
         var f = dojo.query(".flipped", cardDiv)[0];
         if (f) {
@@ -1362,7 +1362,7 @@ function (dojo, declare) {
               case 33:
                 for (var candidate of dojo.query(".guardian-wrap")) {
                   var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}`).length) {
+                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}]`).length) {
                     candidate.parentNode.classList.add("highlight-turn");
                   }
                 }
@@ -1441,6 +1441,7 @@ function (dojo, declare) {
           }
           break;
         case 35:
+          this.relocateToArt = 35;
           this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
@@ -1526,10 +1527,24 @@ function (dojo, declare) {
       }
     },
     highlightRelocateTo() {
-      for( var site of dojo.query(".location-wrap.basic") ) {
-        var position = dojo.attr(site,"data-position");
-        if( dojo.query(`.meeple[data-position=${position}]`).length + dojo.query(`.blocking-tile[data-position=${position}]`).length < 2 )
-          site.classList.add("highlight-turn");
+      if( this.relocateToArt == 35 ) {
+        var guardianPositions = []
+        for (var candidate of dojo.query(".guardian-wrap")) {
+          guardianPositions.push(candidate.parentNode.dataset.position);
+        }
+
+        for( var site of dojo.query(".location-wrap.basic, .location-wrap.small") ) {
+          var position = dojo.attr(site,"data-position");
+          if( dojo.query(`.meeple[data-position=${position}]`).length < 1 && !guardianPositions.includes(position))
+            site.classList.add("highlight-turn");
+        }
+      }
+      if( this.relocateToArt == 1 || this.relocateToArt == 2) {
+        for( var site of dojo.query(".location-wrap.basic") ) {
+          var position = dojo.attr(site,"data-position");
+          if( dojo.query(`.meeple[data-position=${position}], .blocking-tile[data-position=${position}]`).length < 2 )
+            site.classList.add("highlight-turn");
+        }
       }
       if( this.relocateToArt == 2 ) {
         for( var site of dojo.query(".location-wrap.small") ) {
@@ -1889,7 +1904,7 @@ function (dojo, declare) {
       this.restoreServerGameState();
       dojo.query(".active").removeClass("active");
       dojo.query(".selected").removeClass("selected");
-      dojo.query(".exiled").removeClass("exiled");
+      dojo.query(".blueSelection").removeClass("blueSelection");
     },
     buyPlane: function(evt) {
       this.travelSelected.push({type: "buyplane"});
@@ -2025,12 +2040,12 @@ function (dojo, declare) {
     addKnifeBonus(resName, cardId) {
       if (resName == "exile") {
         var cardDivs = dojo.query(".camp-" + this.getActivePlayerId() + " :is(.hand.card, .play.card)");
-        cardDivs.addClass("exilable").removeClass("exiled");
+        cardDivs.removeClass("blueSelection");
         if(this.knifeBonuses.hasOwnProperty("exile") && this.knifeBonuses["exile"] == cardId) {
           delete this.knifeBonuses["exile"];
         }
         else {
-          dojo.query(`.camp-${this.getActivePlayerId()} .card[data-cardid=${cardId}] `).removeClass("exilable").addClass("exiled");
+          dojo.query(`.camp-${this.getActivePlayerId()} .card[data-cardid=${cardId}] `).addClass("blueSelection");
           this.knifeBonuses["exile"] = cardId;
         }
       }
@@ -2316,7 +2331,7 @@ function (dojo, declare) {
           this.artClientState(args.args.num);
           break;
         case "artDone":
-          dojo.query(".earring").removeClass("earring");
+          dojo.query(".blueSelection").removeClass("blueSelection");
           dojo.query(".active").removeClass("active");
           break;
         case "afterMain":
@@ -2325,7 +2340,7 @@ function (dojo, declare) {
           tokens.addClass("reward-hidden");
           dojo.query(".selected").removeClass("selected");
           dojo.query(".active").removeClass("active");
-          dojo.query(".active").removeClass("exiled");
+          dojo.query(".blueSelection").removeClass("blueSelection");
 
           if (this.prefs[102].value == 1 && this.isCurrentPlayerActive() &&
           Object.values(this.gamedatas.players).filter(a => a.passed !== "1").length > 1 &&
@@ -2839,7 +2854,7 @@ function (dojo, declare) {
       this.updateSupply();
     },
     notif_earringKeep: function(notif) {
-      dojo.query("#card-" + notif.args.cardId).removeClass("earring");
+      dojo.query("#card-" + notif.args.cardId).removeClass("blueSelection");
     },
     notif_discardedItems: function(notif) {
       this.makeDiscards(notif.args.cards, notif.args.player_id);
@@ -2902,7 +2917,7 @@ function (dojo, declare) {
       newMeepleDiv.dataset.slot = fromHome ? '' : a.slot;
       dojo.removeClass(newMeepleDiv, "new-meeple");
       dojo.removeClass(newMeepleDiv, "onboard")
-      if (fromHome) {
+      if (!fromHome) {
         dojo.addClass(newMeepleDiv, "onboard");
       }
 
@@ -3031,7 +3046,7 @@ function (dojo, declare) {
 
       this.addCardClass(front, a.card_type, a.card_no);
       if (notif.args.position == "earring") {
-        dojo.addClass(topDeck, "earring");
+        dojo.addClass(topDeck, "blueSelection");
       }
       this.gamedatas.players[this.player_id].hand_amt += 1;
       setTimeout(function(thisArg) {thisArg.updateHand()}, 0, this);

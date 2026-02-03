@@ -63,7 +63,7 @@
     -webkit-transform-style: preserve-3d;
 }
 
-.card.earring .front {
+.card.blueSelection .front {
     border: solid 11px #3085d6;
 }
 
@@ -141,10 +141,6 @@
 .card.exilable:hover .card.front {
     box-shadow: inset 0px 0px 110px 1px rgb(255 0 0);
     animation: none;
-}
-
-.card.exiled .card.front {
-    box-shadow: inset 0px 0px 110px 1px rgb(0 255 0);
 }
 
 .card.hand.discardable:hover .card.front {
