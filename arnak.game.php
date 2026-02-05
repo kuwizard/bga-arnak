@@ -482,6 +482,14 @@ class arnak extends Table
     $result["turn_based"] = $this->isTurnBased();
     $result['start_player'] = $this->getGameStateValue("start-player");
 
+    $result['material'] = [
+      "cards" => $this->material["cards"],
+      "research" => $this->birdTemple() ? $this->material["birdResearch"] : $this->material["snakeResearch"],
+      "travelCost" => $this->birdTemple() ? $this->material["birdTravelCost"] : $this->material["snakeTravelCost"],
+      "sites" => $this->material["sites"],
+      "guardians" => $this->material["guardians"]
+    ];
+
     return $result;
   }
 
