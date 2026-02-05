@@ -189,7 +189,7 @@ function (dojo, declare) {
       this.hands = [];
       this.plays = [];
       this.decks = [];
-      this.tooltips = new Tooltips();
+      this.tooltips = new Tooltips(gamedatas.material);
       this.tooltipDelay = 700;
       this.round = this.gamedatas.round;
 

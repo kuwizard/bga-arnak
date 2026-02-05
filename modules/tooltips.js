@@ -1,5 +1,5 @@
 class Tooltips {
-  constructor() {
+  constructor(material) {
     this.resources = {
       coins: {header: _("Coins"), text: _("Coins are mostly used to buy items.")},
       compass: {header: _("Compass"), text: _("Compasses are needed for discovering new locations and buying artifacts")},
@@ -13,119 +13,13 @@ class Tooltips {
       meeple: {header: _("Archaeologists"), text: _("Archaeologists can be used to dig at sites to get their effect, or discover undiscovered locations. Each player has total of 2 archaeologists, and can never have more or less than that.")},
     };
 
+    this.material = material;
     this.staff = {header: _("Moon Staff"), text: _("Moon staff is moved 1 slot to the right at the end of every round. Cards to the left of the staff are artifacts, while the cards to the right of the staff are items.")};
     this.startPlayer = {header: _("Starting player"), text: _("This player plays first in the current round. The token is passed to the next player at the end of each round.")};
 
   }
   cardName(type, num) {
-    var basicNames = {
-      "fundship": _("Funding"),
-      "fundcar": _("Funding"),
-      "exploreship": _("Exploration"),
-      "explorecar": _("Exploration"),
-      "fear": _("Fear"),
-    };
-    if (basicNames[type]) {
-      return basicNames[type];
-    }
-
-    if (type == "art") {
-      return ["",
-      _("Pathfinder's Sandals"),
-      _("Pathfinder's Staff"),
-      _("War Mask"),
-      _("Treasure Chest"),
-      _("Ritual Dagger"),
-
-      _("Crystal Earring"),
-      _("Mortar"),
-      _("Serpent's Gold"),
-      _("Serpent Idol"),
-      _("Monkey Medallion"),
-
-      _("Idol of Ara-Anu"),
-      _("Inscribed Blade"),
-      _("Guardian's Ocarina"),
-      _("Tigerclaw Hairpin"),
-      _("War Club"),
-
-      _("Sundial"),
-      _("Traders' Scales"),
-      _("Hunting Arrows"),
-      _("Coconut Flask"),
-      _("Cleansing Cauldron"),
-
-      _("Ancient Wine"),
-      _("Decorated Horn"),
-      _("Ornate Hammer"),
-      _("Star Charts"),
-      _("Stone Jar"),
-
-      _("Passage Shell"),
-      _("Ceremonial Rattle"),
-      _("Sacred Drum"),
-      _("Trader's Coins"),
-      _("Stone Key"),
-
-      _("Obsidian Earring"),
-      _("Guiding Stone"),
-      _("Guiding Skull"),
-      _("Runes of the Dead"),
-      _("Guardian's Crown")
-
-      ][num];
-    }
-    if (type == "item") {
-      return ["",
-      _("Sea Turtle"),
-      _("Ostrich"),
-      _("Pack Donkey"),
-      _("Horse"),
-      _("Steam Boat"),
-
-      _("Automobile"),
-      _("Sturdy Boots"),
-      _("Gold Pan"),
-      _("Trowel"),
-      _("Pickaxe"),
-
-      _("Hot Air Balloon"),
-      _("Aeroplane"),
-      _("Journal"),
-      _("Parrot"),
-      _("Watch"),
-
-      _("Army Knife"),
-      _("Binoculars"),
-      _("Tent"),
-      _("Fishing Rod"),
-      _("Precision Compass"),
-
-      _("Bow and Arrows"),
-      _("Carrier Pigeon"),
-      _("Whip"),
-      _("Rough Map"),
-      _("Airdrop"),
-
-      _("Flask"),
-      _("Machete"),
-      _("Torch"),
-      _("Large Backpack"),
-      _("Rope"),
-
-      _("Revolver"),
-      _("Hat"),
-      _("Bear Trap"),
-      _("Grappling Hook"),
-      _("Lantern"),
-
-      _("Dog"),
-      _("Brush"),
-      _("Axe"),
-      _("Chronometer"),
-      _("Theodolite")
-      ][num];
-    }
+    return this.material["cards"][type][num]["name"];
   }
   cardEffect(type, num) {
     var basicNames = {
@@ -135,8 +29,8 @@ class Tooltips {
       "explorecar": _("Gain 1 compass as a free action"),
       "fear": _("This card cannot be played and doesn't have any effect.")
     };
-    if (basicNames[type]) {
-      return basicNames[type];
+    if (type == "basic") {
+      return basicNames[num];
     }
 
     if (type == "art") {
@@ -238,111 +132,40 @@ class Tooltips {
     }
   }
   cardCost(type, num) {
-    if (type == 'item') {
-      return [
-      0,
-      3, 3, 4, 4, 3,
-      3, 1, 1, 1, 1,
-      2, 4, 3, 2, 1,
-      3, 4, 4, 2, 4,
-      2, 2, 2, 1, 2,
-      2, 4, 2, 3, 2,
-      4, 1, 2, 2, 3,
-      3, 3, 2, 3, 3][num];
-    }
-    if (type == 'art') {
-      return [0,
-      3, 4, 3, 4, 4,
-      4, 3, 3, 2, 4,
-      3, 2, 4, 4, 4,
-      2, 4, 4, 3, 3,
-      3, 2, 4, 4, 2,
-      3, 3, 4, 3, 3,
-      4, 3, 4, 4, 4][num];
-    }
-    return 0;
+    return this.material["cards"][type][num]["cost"];
   }
   cardPoints(type, num) {
-    if (type == "fear") {
-      return -1;
-    }
-    if (type == "item") {
-      return [0,
-      1, 1, 1, 1, 3,
-      3, 1, 1, 1, 1,
-      1, 3, 1, 2, 1,
-      1, 1, 2, 2, 1,
-      2, 1, 1, 1, 1,
-      1, 1, 2, 1, 1,
-      1, 1, 1, 2, 2,
-      1, 3, 2, 2, 1][num];
-    }
-    if (type == "art") {
-      return [0,
-      1, 1, 1, 3, 2,
-      2, 1, 2, 1, 2,
-      1, 1, 2, 2, 1,
-      1, 2, 1, 2, 1,
-      1, 1, 2, 2, 1,
-      1, 2, 1, 1, 2,
-      2, 1, 1, 1, 2,
-      ][num];
-    }
-    return 0;
+    return this.material["cards"][type][num]["points"];
   }
-
   cardTravel(type, num) {
-    var BOOT = 1;
-    var SHIP = 2;
-    var CAR = 3;
-    var PLANE = 4;
-    switch (type) {
-      case "fear":
-        return [BOOT];
-      case "fundship": case "exploreship":
-        return [SHIP];
-      case "fundcar": case "explorecar":
-        return [CAR];
-      case "art":
-        if (num == 13) {
-          return [PLANE, PLANE];
-        }
-        return [PLANE];
-      case "item":
-        return [[],
-          [SHIP, SHIP], [CAR, CAR], [CAR, CAR], [CAR, CAR], [SHIP, SHIP],
-          [CAR, CAR], [CAR, CAR], [SHIP, SHIP], [CAR], [CAR],
-          [PLANE], [PLANE, PLANE], [CAR, SHIP], [SHIP], [SHIP],
-          [CAR, SHIP], [SHIP], [CAR], [SHIP], [SHIP],
-          [CAR], [SHIP], [CAR], [SHIP], [PLANE],
-          [SHIP], [CAR], [SHIP], [CAR], [SHIP],
-          [SHIP, SHIP], [SHIP], [CAR], [CAR], [CAR],
-          [CAR], [CAR], [SHIP], [SHIP, SHIP], [SHIP]
-        ][num] || [];
-    }
-    return [];
+    return this.material["cards"][type][num]["travel"];
   }
 
   // btw, we need to return string from these functions, because makeTooltipHtml takes string as an argument
   resource(resName) {
     return "<h3>" + this.resources[resName].header + "</h3><div>" + this.resources[resName].text + "</div>";
   }
-  card(type, num, color = "red") {
-    var classNames = {
-    "exploreship": "exploration ship",
-    "explorecar": "exploration car",
-    "fundship": "funding ship",
-    "fundcar": "funding car",
-    "fear": "fear",
-    "item": type + " " + type + "-" + num,
-    "art": type + " " + type + "-" + num,
-    }[type];
+  card(type_old, num_old, color = "red") {
+    var type = (type_old == "item" || type_old == "art") ? type_old : "basic";
+    var num = (type_old == "item" || type_old == "art") ? num_old : type_old;
     var typeString = "";
+    var classNames = "";
     if (type == "art") {
       typeString = " (" + _("artifact") + ")";
+      classNames = type + " " + type + "-" + num;
     }
     if (type == "item") {
       typeString = " (" + _("item") + ")";
+      classNames = type + " " + type + "-" + num;
+    }
+    if (type == "basic") {
+      classNames = {
+        "exploreship": "exploration ship",
+        "explorecar": "exploration car",
+        "fundship": "funding ship",
+        "fundcar": "funding car",
+        "fear": "fear",
+      }[num];
     }
 
     var whenPlay = "";
