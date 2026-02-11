@@ -55,7 +55,7 @@ class CardEffects {
         $this->gainCardResource("arrowhead", 1);
         break;
       case Artefact::Crystal_Earring:
-        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
+        if (count($game->sqlWrapper->getCards($this->playerId, 'deck')) == 0) {
           $game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
@@ -187,8 +187,11 @@ class CardEffects {
         $game->getNewAssistant($new, true, $gold);
         break;
       case Artefact::Ornate_Hammer:
-        $toExile = $game->getObjectFromDb("SELECT * FROM card WHERE card_type = 'item' AND card_position = 'supply' ORDER BY deck_order DESC LIMIT 1");
-        $game->exile($toExile["idcard"], true);
+        $cards = $game->sqlWrapper->getCards(null, 'supply', 'item');
+        if(count($cards) > 0) {
+          $toExile = end($cards);
+          $game->exile($toExile["id"], true);
+        }
         $game->gamestate->nextState("discardSelect");
         break;
       case Artefact::Star_Charts:
@@ -248,7 +251,7 @@ class CardEffects {
         }
         break;
       case Artefact::Obsidian_Earring:
-        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
+        if (count($game->sqlWrapper->getCards($this->playerId, 'deck')) == 0) {
           $game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
