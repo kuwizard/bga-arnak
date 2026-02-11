@@ -114,20 +114,6 @@ enum Basic: string {
   }
 }
 
-function cardFromDb($cardData)
-{
-  $type = $cardData["card_type"];
-  if ($type == "art") {
-    return Artefact::from($cardData["num"]);
-  }
-  else if ($type == "item") {
-    return Item::from($cardData["num"]);
-  }
-  else {
-    return Basic::from($cardData["card_type"]);
-  }
-}
-
 class GameData {
   public function __construct($game) {
     $this->game = $game;

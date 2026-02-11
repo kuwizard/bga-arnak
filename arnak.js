@@ -168,7 +168,7 @@ function (dojo, declare) {
       this.siteSelected = undefined;
       this.travelSelected = [];
       this.knifeBonuses = {};
-      this.keep = [];
+      this.keepSelection = [];
       this.turnEnded = false;
       this.relocateFrom = undefined;
       this.relocateToArt = undefined;
@@ -229,6 +229,10 @@ function (dojo, declare) {
         if (player_id == this.player_id) {
           player.hand = Object.values(player.hand);
           this.hand = player.hand;
+          player.earring = Object.values(player.earring);
+          this.earring = player.earring;
+          player.keep = Object.values(player.keep);
+          this.keep = player.keep;
 
           this.play = player.play;
         }
@@ -738,12 +742,12 @@ function (dojo, declare) {
       var areaDiv = dojo.query(".area-" + playerId)[0];
       dojo.removeClass(areaDiv, "hand-2row hand-3row");
       var x = 2;
-      var dx = [0, 0, 29, 27, 21, 18][this.hand.length] || 18;
+      var dx = [0, 0, 29, 27, 21, 18][this.keep.length + this.hand.length + this.earring.length] || 18;
       var y = -90;
       var scaleRatio = 0.48;
       var z = 0;
       var cardsPlaced = 0;
-      for (var card of this.hand) {
+      for (var card of this.keep.concat(this.hand.concat(this.earring))) {
         if (cardsPlaced % 5 === 0 && cardsPlaced) {
           if (dojo.hasClass(areaDiv, "hand-2row")) {
             dojo.addClass(areaDiv, "hand-3row");
@@ -762,9 +766,6 @@ function (dojo, declare) {
         dojo.style(cardDiv, "left", x + "%");
         dojo.style(cardDiv, "top", y + "%");
         dojo.addClass(cardDiv, "hand");
-        if (card.position == "earring") {
-          dojo.addClass(cardDiv, "blueSelection");
-        }
         var f = dojo.query(".flipped", cardDiv)[0];
         if (f) {
           dojo.removeClass(f, "flipped");
@@ -783,6 +784,10 @@ function (dojo, declare) {
           x = 2;
           y -= 85;
         }
+      }
+      for (var card of this.earring) {
+        var cardDiv = dojo.query("#card-" + card.id, handDiv)[0];
+        dojo.addClass(cardDiv, "blueSelection");
       }
     },
     updateWorkers: function() {
@@ -914,7 +919,6 @@ function (dojo, declare) {
       var y = 30;
       for (var card of cards) {
         card.type = "item";
-        card.id = card.cardId;
         var cardDiv = this.cardDiv(card);
 
         dojo.connect(cardDiv, "click", this, "selectFromExile");
@@ -1279,14 +1283,14 @@ function (dojo, declare) {
 
         case "decideKeep":
           if (dojo.hasClass(cardDiv, "selected")) {
-            this.keep.splice(this.keep.indexOf(cardId), 1);
+            this.keepSelection.splice(this.keepSelection.indexOf(cardId), 1);
             dojo.removeClass(cardDiv, "selected");
           }
           else {
-            this.keep.push(cardId);
+            this.keepSelection.push(cardId);
             dojo.addClass(cardDiv, "selected");
           }
-          dojo.byId("keep-num").innerHTML = this.keep.length;
+          dojo.byId("keep-num").innerHTML = this.keepSelection.length;
           break;
         default:
           this.playCard(cardId);
@@ -2166,7 +2170,7 @@ function (dojo, declare) {
     },
     confirmKeep: function() {
       this.ajaxcall("/arnak/arnak/confirmKeep.html", {
-        cards: btoa(JSON.stringify(this.keep)),
+        cards: btoa(JSON.stringify(this.keepSelection)),
         lock: true
       }, this, function(result) {});
     },
@@ -2353,7 +2357,7 @@ function (dojo, declare) {
           dojo.query(".selected").removeClass("selected");
           break;
         case "decideKeep":
-          this.keep = [];
+          this.keepSelection = [];
           break;
         case "scoring": case "gameEnd":
           dojo.query(".active").removeClass("active");
@@ -2363,7 +2367,7 @@ function (dojo, declare) {
           }
           break;
         case "artSelectDiscard":
-          this.makeDiscards(this.gamedatas.gamestate.args.cards);
+          this.makeDiscards(args.args.cards);
           break;
         case "evalPlane":
           dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
@@ -2653,6 +2657,8 @@ function (dojo, declare) {
       dojo.subscribe("endTurn", this, "notif_endTurn");
       dojo.subscribe("earringKeep", this, "notif_earringKeep");
       dojo.subscribe("earringKeepAll", this, "notif_earringKeepAll");
+      dojo.subscribe("keepCard", this, "notif_keepCard");
+      dojo.subscribe("keptCardsBackInHand", this, "notif_keptCardsBackInHand");
       dojo.subscribe("showAllCards", this, "notif_showAllCards");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
       dojo.subscribe("score", this, "notif_score");
@@ -2688,7 +2694,12 @@ function (dojo, declare) {
             }
           }
         }
-
+        for (var i in this.earring) {
+          if (this.earring[i].id == id) {
+            this.play.push(this.earring.splice(i, 1)[0]);
+            found = true;
+          }
+        }
       }
       for (var i in this.artSupply) {
         if (this.artSupply[i].id == id) {
@@ -2833,7 +2844,7 @@ function (dojo, declare) {
       if (notif.args.cardId > -1) {
         this.cardToDeck(notif.args.cardId, notif.args.playerId, !notif.args.top);
       }
-      for (var cardCollection of [this.itemSupply, this.artSupply, this.hand]) {
+      for (var cardCollection of [this.itemSupply, this.artSupply, this.hand, this.earring]) {
         for (var i in cardCollection) {
           if (cardCollection[i].id == notif.args.cardId) {
             cardCollection.splice(i, 1);
@@ -2875,9 +2886,10 @@ function (dojo, declare) {
       this.updateSupply();
     },
     notif_earringKeep: function(notif) {
-      for (var i in this.hand) {
-        if (this.hand[i].id == notif.args.cardId) {
-          this.hand[i].position = 'hand';
+      for(var i in this.earring) {
+        if (this.earring[i].id == notif.args.cardId) {
+          this.hand.push(this.earring[i]);
+          this.earring.splice(i, 1);
           break;
         }
       }
@@ -2887,9 +2899,27 @@ function (dojo, declare) {
       this.gamedatas.players[notif.args.player_id].hand_amt += 1;
       this.updatePlayerCards(notif.args.player_id);
     },
-    notif_discardedItems: function(notif) {
-      this.makeDiscards(notif.args.cards, notif.args.player_id);
-
+    notif_keepCard: function(notif) {
+      for(var i in this.hand) {
+        if (this.hand[i].id == notif.args.cardId) {
+          this.keep.push(this.hand[i]);
+          this.hand.splice(i, 1);
+          break;
+        }
+      }
+      this.updatePlayerCards(this.player_id);
+    },
+    notif_keptCardsBackInHand: function(notif) {
+      for(var card of notif.args.cards) {
+        for(var i in this.keep) {
+          if (this.keep[i].id == card.cardId) {
+            this.hand.push(this.keep[i]);
+            this.keep.splice(i, 1);
+            break;
+          }
+        }
+      }
+      this.updatePlayerCards(this.player_id);
     },
     notif_moveWorker: function(notif) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
@@ -3056,7 +3086,10 @@ function (dojo, declare) {
     },
     notif_drawSelfCard: function(notif) {
       var a = notif.args;
-      this.hand.push({id: a.card_id, type: a.card_type, num: a.card_no});
+      var card = {id: a.card_id, type: a.card_type, num: a.card_no};
+      var handTarget = (notif.args.position == "earring") ? this.earring : this.hand;
+      handTarget.push(card);
+
       var deck = dojo.query(".camp-" + this.player_id + " .card.deck");
       var topDeck = deck[deck.length - 1];
       topDeck.id = "card-" + a.card_id;
@@ -3076,9 +3109,6 @@ function (dojo, declare) {
       var front = dojo.query(".front", topDeck)[0];
 
       this.addCardClass(front, a.card_type, a.card_no);
-      if (notif.args.position == "earring") {
-        dojo.addClass(topDeck, "blueSelection");
-      }
       if (notif.args.position == "hand") {
         this.gamedatas.players[this.player_id].hand_amt += 1;
       }
