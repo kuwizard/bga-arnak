@@ -505,22 +505,11 @@ class arnak extends Table
     }
 
     $cardToDraw = $bottom ? end($cards) : $cards[0];
-    $nextOrder = $this->getUniqueValueFromDb("SELECT deck_order FROM card WHERE player = $playerId AND card_position = 'hand' ORDER BY deck_order DESC LIMIT 1");
-    if (is_null($nextOrder)) {
-      $nextOrder = 0;
-    }
-    else {
-      $nextOrder += 1;
-    }
     $cardId = $cardToDraw["id"];
     $cardInfo = $cardToDraw["info"];
-    //throw new BgaUserException("order ".$nextOrder);
-    $this->DbQuery(
-      "UPDATE card SET
-        card_position = '$position',
-        deck_order = $nextOrder
-      WHERE idcard = $cardId"
-    );
+
+    $this->sqlWrapper->moveCard($cardToDraw, $playerId, $position);
+
     $message = "";
     if ($bottom) {
       $message = clienttranslate('${player_name} draws a card${bottom}.');
@@ -568,7 +557,7 @@ class arnak extends Table
           "player_id" => $playerId,
           "player_name" => $this->loadPlayersBasicInfos()[$playerId]['player_name'],
         ));
-        $this->dbQuery("UPDATE card SET card_position = 'hand' WHERE idcard = $cardId");
+        $this->sqlWrapper->moveCard($cardToSelect, $this->getActivePlayerId(), 'hand');
         $artActive = $this->getGameStateValue("art-active");
         if ($artActive >= 0 && Artefact::from($artActive) == Artefact::Crystal_Earring) {
           $this->gamestate->nextState("selectTopdeck");
@@ -619,7 +608,7 @@ class arnak extends Table
       throw new BgaUserException(clienttranslate("Invalid attempt to play a card"));
     }
 
-    $this->dbQuery("UPDATE card SET card_position = 'play' WHERE idcard = $cardId");
+    $this->sqlWrapper->moveCard($cardToPlay, $playerId, 'play');
 
     if ($inhand) {
       $this->notifyAllPlayers("playCard", clienttranslate('${player_name} plays ${cardName}'),
@@ -691,7 +680,7 @@ class arnak extends Table
       $this->gainResource($resName, $player, -$amt, array("component" => "card", "arg" => $cardId));
     }
     if ($cardInfo->type() == "art") {
-      $this->dbQuery("UPDATE card SET player = $player, card_position = 'play' WHERE idcard = $cardId");
+      $this->sqlWrapper->moveCard($cardBought, $player, 'play');
       $this->notifyAllPlayers("playCard", clienttranslate('${player_name} plays ${cardName}'),
       array("player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
         "i18n" => ["cardName"],
@@ -765,7 +754,7 @@ class arnak extends Table
       $drawnCard = end($cards);
       $cardId = $drawnCard['id'];
       $cardInfo = $drawnCard["info"];
-      $this->dbQuery("UPDATE card SET card_position = 'deck' WHERE idcard = $cardId");
+      $this->sqlWrapper->moveCard($drawnCard, null, 'deck', false);
       $this->notifyAllPlayers(
         "drawnCardPutBack",
         clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'),
@@ -784,16 +773,12 @@ class arnak extends Table
     $this->resetDiscount();
   }
   function putCardToDeck($cardId, $top, $secret) {
-    $order = "DESC";
     $player = $this->getCurrentPlayerId();
-    if ($top) {
-      $order = "ASC";
-    }
     $cardToPutToDeck = $this->sqlWrapper->getCardFromId($cardId);
     $cardInfo = $cardToPutToDeck["info"];
-    $deckOrderFromDb = $this->getObjectFromDB("SELECT * FROM card WHERE player = $player AND card_position = 'deck' ORDER BY deck_order $order LIMIT 1");
-    $deckOrder = $deckOrderFromDb ? (int) $deckOrderFromDb["deck_order"] + ($top ? -1 : 1) : 0;
-    $this->dbQuery("UPDATE card SET player = $player, card_position = 'deck', deck_order = $deckOrder WHERE idcard = $cardId");
+
+    $this->sqlWrapper->moveCard($cardToPutToDeck, $player, 'deck', !$top);
+
     if ($secret) {
       $this->notifyAllPlayers("newInDeck", clienttranslate('${player_name} puts a card to the ${position} of their deck'),
       array(
@@ -887,7 +872,7 @@ class arnak extends Table
       throw new BgaUserException("Invalid attempt to discard a card.");
     }
     $cardInfo = $cardToDiscard["info"];
-    $this->dbQuery("UPDATE card SET card_position = 'play' WHERE idcard = $cardId");
+    $this->sqlWrapper->moveCard($cardToDiscard, $playerId, 'play');
     $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
     array("i18n" => ["cardName"],
         "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
@@ -936,7 +921,9 @@ class arnak extends Table
     $newCard = $cards[0];
     $cardInfo = $newCard["info"];
     $cardId = $newCard["id"];
-    $this->DbQuery("UPDATE card SET card_position = 'supply' WHERE idcard = $cardId");
+
+    $newOrder = $this->sqlWrapper->moveCard($newCard, null, 'supply');
+
     if (count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1")) > 0) {
       $this->undoSavePoint();
     }
@@ -976,7 +963,7 @@ class arnak extends Table
         "preserve" => ["cardType", "cardNum"]
         )
       );
-      $this->DbQuery("UPDATE card SET player = NULL, card_position = 'discard' WHERE idcard = $cardId");
+      $this->sqlWrapper->moveCard($toDelete, null, 'discard');
     }
   }
 
@@ -1073,7 +1060,7 @@ class arnak extends Table
             if (!$useful) {
               break;
             }
-            $this->dbQuery("UPDATE card SET card_position = 'play' WHERE idcard = $id");
+            $this->sqlWrapper->moveCard($cardTravel, $playerId, 'play');
             $this->notifyAllPlayers("discardCard", clienttranslate('${player_name} discards ${cardName} for travel symbols'),
             array(
               "player_name" => $this->getActivePlayerName(),
@@ -1583,7 +1570,6 @@ class arnak extends Table
     }
   }
   function exile($cardId, $fromSupply = false) {
-    $playerId = $this->getActivePlayerId();
     if ($cardId == "cancel") {
       $this->notifyAllPlayers('exileCancel', clienttranslate('${player_name} chooses not to exile anything'),
       array("player_name" => self::getActivePlayerName())
@@ -1607,7 +1593,7 @@ class arnak extends Table
       }
       $cardInfo = $cardExiled["info"];
 
-      $this->dbQuery("UPDATE card SET card_position = 'discard', player = NULL WHERE idcard = $cardId");
+      $this->sqlWrapper->moveCard($cardExiled, null, 'discard');
       $this->notifyAllPlayers('exileCard', clienttranslate('${player_name} exiles ${cardName}'),
       array(
       "i18n" => ["cardName"],
@@ -2231,9 +2217,21 @@ class arnak extends Table
     $this->checkAction("confirmKeep");
     $playerId = $this->getCurrentPlayerId();  // !! not active, cuz multiactive state
     //throw new BgaUserException(json_encode($cardsToKeep));
+    $cards = $this->sqlWrapper->getCards($playerId, 'hand');
+    $handIds = [];
+    foreach ($cards as $cardEls) {
+      array_push($handIds, $cardEls['id']);
+    }
+
     foreach ($cardsToKeep as $cardId) {
-      $this->dbQuery("UPDATE card SET card_position = 'keep' WHERE idcard = $cardId AND player = $playerId AND card_position = 'hand'");
-      $this->notifyPlayer($playerId, 'keepCard', '', array("cardId" => $cardId));
+      if (in_array($cardId, $handIds)) {
+        $card = $this->sqlWrapper->getCardFromId($cardId);
+        $this->sqlWrapper->moveCard($card, $playerId, 'keep');
+        $this->notifyPlayer($playerId, 'keepCard', '', array("cardId" => $cardId));
+      }
+      else {
+        throw new BgaUserException("Invalid cards to keep : " + implode(",",$cardsToKeep));
+      }
     }
 
     $this->gamestate->setPlayerNonMultiactive($playerId, "allDiscarded");
@@ -2251,7 +2249,7 @@ class arnak extends Table
       foreach ($cards as $cardNext) {
         $cardInfo = $cardNext["info"];
         $cardId = $cardNext["id"];
-        $this->dbQuery("UPDATE card SET card_position = 'play' WHERE idcard = $cardId");
+        $this->sqlWrapper->moveCard($cardNext, $playerId, 'play');
         $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
         array("player_name" => $playerName,
             "i18n" => ["cardName"],
@@ -2263,11 +2261,10 @@ class arnak extends Table
             "cardId" => $cardId));
       }
       if ($cardsKeptCount > 0) {
+        $this->sqlWrapper->moveCards($playerId, 'keep', 'hand');
         $this->notifyPlayer($playerId, 'keptCardsBackInHand', '', array('cards' => JSON_ENCODE($cardsKept)));
       }
     }
-    $this->dbQuery("UPDATE card SET card_position = 'hand' WHERE card_position = 'keep'");
-
 
     if (!$firstRound) {
       $this->notifyAllPlayers("shufflePlay", clienttranslate("Shuffling cards from play area to the bottom of the deck"), array());
@@ -2276,16 +2273,8 @@ class arnak extends Table
       foreach($this->loadPlayersBasicInfos() as $playerId => $player) {
         $playCards = $this->sqlWrapper->getCards($playerId, 'play');
         shuffle($playCards);
-        $deckCards = $this->sqlWrapper->getCards($playerId, 'deck');
-        $highestNum = 0;
-        if (count($deckCards) > 0) {
-          $lowestCard = end($deckCards);
-          $highestNum = $lowestCard["deckOrder"] + 1;
-        }
-        foreach ($playCards as $i => $card) {
-          $deckOrder = $highestNum + $i;
-          $cardId = $card["id"];
-          $this->DbQuery("UPDATE card SET card_position='deck', deck_order=$deckOrder WHERE idcard=$cardId");
+        foreach ($playCards as $card) {
+          $this->sqlWrapper->moveCard($card, $playerId, 'deck');
         }
       }
     }
@@ -2518,8 +2507,9 @@ class arnak extends Table
 
   function gameEnd() {
     $this->gamestate->nextState('gameEnd');
-    $this->dbQuery("UPDATE card SET card_position = 'play' WHERE player IS NOT NULL");
     foreach ($this->loadPlayersBasicInfos() as $playerId => $player) {
+      $this->sqlWrapper->moveCards($playerId, 'hand', 'play');
+      $this->sqlWrapper->moveCards($playerId, 'deck', 'play');
       $cards = $this->sqlWrapper->getCards($playerId);
       $this->notifyAllPlayers("showAllCards", "", array(
         "player_id" => $playerId,
