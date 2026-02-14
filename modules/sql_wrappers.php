@@ -58,6 +58,28 @@ class SqlWrapper {
     return $card["idcard"];
   }
 
+  public function moveCard($card, $playerId, $position, $high = true) {
+    $cards = $this->getCards($playerId, $position);
+    $nextOrder = 0;
+    if (count($cards) > 0) {
+      if ($high) {
+        $nextOrder = end($cards)["deckOrder"] + 1;
+      }
+      else {
+        $nextOrder = $cards[0]["deckOrder"] - 1;
+      }
+    }
+    $player_str = $playerId ? $playerId : "NULL";
+    $id = $card['id'];
+    $this->game->DbQuery("UPDATE card SET player = $player_str, card_position = '$position', deck_order = $nextOrder WHERE idcard = $id");
+
+    return $nextOrder;
+  }
+
+  public function moveCards($playerId, $from, $to) {
+    $this->game->DbQuery("UPDATE card SET player = $playerId, card_position = '$to' WHERE player = $playerId  AND card_position = '$from'");
+  }
+
   private function cardFeildStr($feilds) {
     $strFields = array_map(function ($feild) { return "$feild ".$this->cardFeildMapping[$feild];}, $feilds);
     return implode(', ', $strFields);
