@@ -58,26 +58,135 @@ class SqlWrapper {
     return $card["idcard"];
   }
 
-  public function moveCard($card, $playerId, $position, $high = true) {
-    $cards = $this->getCards($playerId, $position);
+  public function moveCard($debug, $card, $playerId, $destination, $notifs = [], $high = true) {
+    $destinationCards = $this->getCards($playerId, $destination);
     $nextOrder = 0;
-    if (count($cards) > 0) {
+    if (count($destinationCards) > 0) {
       if ($high) {
-        $nextOrder = end($cards)["deckOrder"] + 1;
+        $nextOrder = end($destinationCards)["deckOrder"] + 1;
       }
       else {
-        $nextOrder = $cards[0]["deckOrder"] - 1;
+        $nextOrder = $destinationCards[0]["deckOrder"] - 1;
       }
     }
-    $player_str = $playerId ? $playerId : "NULL";
-    $id = $card['id'];
-    $this->game->DbQuery("UPDATE card SET player = $player_str, card_position = '$position', deck_order = $nextOrder WHERE idcard = $id");
 
-    return $nextOrder;
+    $id = $card['id'];
+    $cardInfo = $card["info"];
+    $player_str = $playerId ? $playerId : "NULL";
+    $this->game->DbQuery("UPDATE card SET player = $player_str, card_position = '$destination', deck_order = $nextOrder WHERE idcard = $id");
+
+    if (count($notifs) > 0) {
+      $notif_card = array(
+        "i18n" => ["cardName"],
+        "cardName" => $this->game->gameData->cardName($cardInfo),
+        "cardType" => ($cardInfo->type() == 'basic')?$cardInfo->value:$cardInfo->type(),
+        "cardNum" => ($cardInfo->type() == 'basic')?null:$cardInfo->value,
+        "cardId" => $id,
+        "source" => $card['position'],
+        "srcPlayerId" => $card['playerId'],
+        "destination" => $destination,
+        "dstPlayerId" => $playerId,
+        "deckOrder" => $nextOrder,
+        "preserve" => ['cardType', 'cardNum'],
+        "debug" => $debug
+      );
+
+      if ($playerId) {
+        $notif_card["playerName"] = $this->game->loadPlayersBasicInfos()[$playerId]["player_name"];
+      }
+      else {
+        $notif_card["playerName"] = $this->game->getActivePlayerName();
+      }
+
+      foreach($notifs[0] as $var => $value) {
+        if ($var != "msg") {
+          array_push($notif_card["i18n"], $var);
+          $notif_card[$var] = $value;
+        }
+      }
+
+      if (count($notifs) == 1) {
+        if (!is_null($notifs[0])) {
+          $this->game->notifyAllPlayers("moveCard", $notifs[0]["msg"], $notif_card);
+        }
+      }
+      else if (count($notifs) == 2) {
+        if (!is_null($notifs[0])) {
+          $this->game->notifyPlayer($playerId, "moveCard", $notifs[0]["msg"], $notif_card);
+        }
+
+        if (!is_null($notifs[1])) {
+          $notif_players = array (
+            "i18n" => [],
+            "playerName" => $this->game->getActivePlayerName(),
+            "source" => $card['position'],
+            "srcPlayerId" => $card['playerId'],
+            "destination" => $destination,
+            "dstPlayerId" => $playerId,
+            "debug" => $debug
+          );
+          foreach($notifs[1] as $var => $value) {
+            if ($var != "msg") {
+              array_push($notif_players["i18n"], $var);
+              $notif_players[$var] = $value;
+            }
+          }
+
+          $this->game->notifyAllPlayers("playerMoveCard", $notifs[1]["msg"], $notif_players);
+        }
+      }
+    }
   }
 
-  public function moveCards($playerId, $from, $to) {
+  public function moveCards($debug, $playerId, $from, $to, $notifs) {
+
+    $fromCards = $this->getPublicCards($playerId, $from);
+
     $this->game->DbQuery("UPDATE card SET player = $playerId, card_position = '$to' WHERE player = $playerId  AND card_position = '$from'");
+
+    if (count($notifs) > 0) {
+      $notif_cards = array (
+        "i18n" => [],
+        "playerId" => $playerId,
+        "playerName" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
+        "source" => $from,
+        "destination" => $to,
+        "cards" => JSON_ENCODE($fromCards),
+        "debug" => $debug
+      );
+      foreach($notifs[0] as $var => $value) {
+        if ($var != "msg") {
+          array_push($notif_cards["i18n"], $var);
+          $notif_cards[$var] = $value;
+        }
+      }
+
+      if (count($notifs) == 1) {
+        if (!is_null($notifs[0])) {
+          $this->game->notifyAllPlayers("moveCards", $notifs[0]["msg"], $notif_cards);
+        }
+      }
+      else {
+        if (!is_null($notifs[0])) {
+          $this->game->notifyPlayer($playerId, "moveCards", $notifs[0]["msg"], $notif_cards);
+        }
+
+        if (!is_null($notifs[1])) {
+          $notif_players = array (
+            "i18n" => [],
+            "debug" => $debug
+          );
+          foreach($notifs[1] as $var => $value) {
+            if ($var != "msg") {
+              array_push($notif_players["i18n"], $var);
+              $notif_players[$var] = $value;
+            }
+          }
+
+          $this->game->notifyAllPlayers("movePlayerCards", $notifs[1]["msg"], $notif_players);
+        }
+      }
+    }
   }
 
   private function cardFeildStr($feilds) {
