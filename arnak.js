@@ -2623,6 +2623,7 @@ function (dojo, declare) {
       dojo.subscribe("pass", this, "notif_pass");
       dojo.subscribe("nextRound", this, "notif_nextRound");
       dojo.subscribe("putToDeck", this, "notif_putToDeck");
+      dojo.subscribe("newInDeck", this, "notif_newInDeck");
       dojo.subscribe("cardReveal", this, "notif_cardReveal");
       dojo.subscribe("drawnCardPutBack", this, "notif_drawnCardPutBack");
       dojo.subscribe("shufflePlay", this, "notif_shufflePlay");
@@ -2651,6 +2652,7 @@ function (dojo, declare) {
       dojo.subscribe("passStartMarker", this, "notif_passStartMarker");
       dojo.subscribe("endTurn", this, "notif_endTurn");
       dojo.subscribe("earringKeep", this, "notif_earringKeep");
+      dojo.subscribe("earringKeepAll", this, "notif_earringKeepAll");
       dojo.subscribe("showAllCards", this, "notif_showAllCards");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
       dojo.subscribe("score", this, "notif_score");
@@ -2681,7 +2683,9 @@ function (dojo, declare) {
           if (this.hand[i].id == id) {
             this.play.push(this.hand.splice(i, 1)[0]);
             found = true;
-            this.gamedatas.players[notif.args.player_id].hand_amt -= 1;
+            if( notif.args.from_position == 'hand' ) {
+              this.gamedatas.players[notif.args.player_id].hand_amt -= 1;
+            }
           }
         }
 
@@ -2694,7 +2698,9 @@ function (dojo, declare) {
       }
       if (!found) {
         play.push({id: id, type: notif.args.cardType, num: notif.args.cardNum, justPlayed: true});
-        this.gamedatas.players[notif.args.player_id].hand_amt -= 1;
+        if( notif.args.from_position == 'hand' ) {
+          this.gamedatas.players[notif.args.player_id].hand_amt -= 1;
+        }
       }
 
       if (notif.args.cardType == "art") {
@@ -2811,6 +2817,18 @@ function (dojo, declare) {
     notif_pass: function(notif) {
       this.playerPass(notif.args.player_id);
     },
+    notif_newInDeck: function(notif) {
+      if (notif.args.playerId != this.player_id) {
+        var handDiv = dojo.query(".camp-" + notif.args.playerId)[0];
+        var cardDiv = this.cardDiv({type: "back"});
+        dojo.place(cardDiv, handDiv, notif.args.top ? "last": "first");
+        this.deckTransform(cardDiv);
+
+        targetBoard = dojo.query(".camp-" + notif.args.playerId)[0];
+        var n = dojo.query(".deck-amt", targetBoard)[0];
+        n.innerHTML = +n.innerHTML + 1;
+      }
+    },
     notif_putToDeck: function(notif) {
       if (notif.args.cardId > -1) {
         this.cardToDeck(notif.args.cardId, notif.args.playerId, !notif.args.top);
@@ -2854,7 +2872,17 @@ function (dojo, declare) {
       this.updateSupply();
     },
     notif_earringKeep: function(notif) {
+      for (var i in this.hand) {
+        if (this.hand[i].id == notif.args.cardId) {
+          this.hand[i].position = 'hand';
+          break;
+        }
+      }
       dojo.query("#card-" + notif.args.cardId).removeClass("blueSelection");
+    },
+    notif_earringKeepAll: function(notif) {
+      this.gamedatas.players[notif.args.player_id].hand_amt += 1;
+      this.updatePlayerCards(notif.args.player_id);
     },
     notif_discardedItems: function(notif) {
       this.makeDiscards(notif.args.cards, notif.args.player_id);
@@ -3048,7 +3076,9 @@ function (dojo, declare) {
       if (notif.args.position == "earring") {
         dojo.addClass(topDeck, "blueSelection");
       }
-      this.gamedatas.players[this.player_id].hand_amt += 1;
+      if (notif.args.position == "hand") {
+        this.gamedatas.players[this.player_id].hand_amt += 1;
+      }
       setTimeout(function(thisArg) {thisArg.updateHand()}, 0, this);
       this.updatePlayerCards(this.player_id, true);
     },
@@ -3061,7 +3091,9 @@ function (dojo, declare) {
         this.fadeOutAndDestroy(toDestroy);
         var n = dojo.query(".camp-" + a.player_id + " .deck-amt")[0];
         n.innerHTML = +n.innerHTML - 1;
-        this.gamedatas.players[a.player_id].hand_amt += 1;
+        if (a.position == "hand") {
+          this.gamedatas.players[a.player_id].hand_amt += 1;
+        }
       }
       this.updatePlayerCards(a.player_id);
     },
