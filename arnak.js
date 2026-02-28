@@ -2662,6 +2662,7 @@ function (dojo, declare) {
       dojo.subscribe("showAllCards", this, "notif_showAllCards");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
       dojo.subscribe("score", this, "notif_score");
+      dojo.subscribe("taupe", this, "notif_taupe");
 
       this.notifqueue.setSynchronous("drawSelfCard", 800);
       this.notifqueue.setSynchronous("gainRes", 500);
@@ -3296,6 +3297,9 @@ function (dojo, declare) {
         cT.incValue(a.score);
       }
       this.scoreCtrl[a.player_id].incValue(a.score);
+    },
+    notif_taupe: function(notif) {
+      console.log(notif.args);
     }
    });
 });

@@ -346,13 +346,20 @@ class arnak extends Table
     shuffle($arts);
     if ($this->debugMode()) {
       $arts = [
+        Artefact::Guardians_Ocarina,
+        Artefact::Crystal_Earring,
+        Artefact::Obsidian_Earring,
         Artefact::Pathfinders_Sandals,
         Artefact::Ornate_Hammer,
         Artefact::War_Mask,
         Artefact::Idol_of_AraAnu,
         Artefact::Inscribed_Blade,
         Artefact::Cleansing_Cauldron,
-        Artefact::Treasure_Chest
+        Artefact::Treasure_Chest,
+        Artefact::Monkey_Medallion,
+        Artefact::War_Club,
+        Artefact::Ritual_Dagger,
+        Artefact::War_Mask
       ];
     }
 
@@ -364,13 +371,25 @@ class arnak extends Table
     shuffle($items);
     if ($this->debugMode()) {
       $items = [
+          Item::Large_Backpack,
+          Item::Fishing_Rod,
+          Item::Precision_Compass,
           Item::Theodolite,
+          Item::Hat,
+          Item::Automobile,
           Item::Ostrich,
           Item::Hot_Air_Balloon,
           Item::Tent,
           Item::Revolver,
           Item::Bear_Trap,
-          Item::Lantern
+          Item::Lantern,
+          Item::Army_Knife,
+          Item::Binoculars,
+          Item::Dog,
+          Item::Horse,
+          Item::Pack_Donkey,
+          Item::Aeroplane,
+          Item::Machete
         ];
     }
     foreach($items as $order => $item) {
