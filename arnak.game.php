@@ -507,7 +507,8 @@ class arnak extends Table
     $this->notifyAllPlayers("drawCard", $message,
     array ('player_id' => $playerId, 'i18n' => ['bottom'],
       'player_name' => $this->loadPlayersBasicInfos()[$playerId]['player_name'],
-      'bottom' => $bottom ? clienttranslate(" from the bottom of their deck") : ""
+      'bottom' => $bottom ? clienttranslate(" from the bottom of their deck") : "",
+      'position' => $position
       )
     );
     $this->notifyPlayer($playerId, "drawSelfCard", clienttranslate('You draw ${card_name}'),
@@ -525,6 +526,7 @@ class arnak extends Table
   }
   function selectCard($cardId) {
     $this->checkAction("selectCard");
+    $playerId = $this->getActivePlayerId();
     switch($this->gamestate->state()["name"]) {
       case "artEarringSelectKeep":
         $card = $this->getObjectFromDB("SELECT * FROM card WHERE idcard = $cardId AND card_position = 'earring'");
@@ -537,6 +539,10 @@ class arnak extends Table
           "cardName" => cardName($card["card_type"], $card["num"]),
 
           ));
+        $this->notifyAllPlayers("earringKeepAll", clienttranslate('${player_name} keeps 1 card in hand'), array(
+          "player_id" => $playerId,
+          "player_name" => $this->loadPlayersBasicInfos()[$playerId]['player_name'],
+        ));
         $this->dbQuery("UPDATE card SET card_position = 'hand' WHERE idcard = $cardId");
         if ($this->getGameStateValue("art-active") == 6) {
           $this->gamestate->nextState("selectTopdeck");
@@ -832,6 +838,7 @@ class arnak extends Table
         "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
         "cardName" => cardName($type, $num),
         "player_id" => $playerId,
+        "from_position" => $card['card_position'],
         "cardType" => $type,
         "cardNum" => $num,
         "cardId" => $cardId));
