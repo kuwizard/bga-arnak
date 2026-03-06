@@ -6,7 +6,6 @@ class SqlWrapper {
     $this->game = $game;
     $this->cardFeildMapping = array(
       "idcard" => "id",
-      "deck_order" => "deckOrder",
       "card_type" => "type",
       "num" => "num",
       "card_position" => "position",
@@ -15,12 +14,12 @@ class SqlWrapper {
   }
 
   public function getPublicCards($player_id = NULL, $position = NULL, $type = NULL) {
-    $fields = ["idcard", "card_type", "num", "deck_order"];
+    $fields = ["idcard", "card_type", "num"];
     return $this->getCardsFromFields($player_id, $position, $type, $fields);
   }
 
   public function getCards($player_id = NULL, $position = NULL, $type = NULL) {
-    $fields = ["idcard", "deck_order", "card_type", "num", "card_position", "player"];
+    $fields = ["idcard", "card_type", "num", "card_position", "player"];
     $cards = $this->getCardsFromFields($player_id, $position, $type, $fields);
     foreach ($cards as $idx => $card) {
       $cards[$idx] = $this->cardWithInfo($cards[$idx]);
@@ -58,16 +57,27 @@ class SqlWrapper {
     return $card["idcard"];
   }
 
+  private function getCardOrders($player_id, $position) {
+    $filters = [];
+    if ($position) {
+      array_push($filters, "card_position = '$position'" );
+    }
+    array_push($filters, is_null($player_id) ? "player IS NULL" : "player = $player_id");
+    $filters_str = implode(' AND ', $filters);
+    $cards = $this->game->getObjectListFromDb("SELECT deck_order FROM card WHERE $filters_str ORDER BY deck_order");
+
+    $orders = [];
+    foreach ($cards as $card) {
+      array_push($orders, $card["deck_order"]);
+    }
+    return $orders;
+  }
+
   public function moveCard($debug, $card, $playerId, $destination, $notifs = [], $high = true) {
-    $destinationCards = $this->getCards($playerId, $destination);
+    $destinationOrders = $this->getCardOrders($playerId, $destination);
     $nextOrder = 0;
-    if (count($destinationCards) > 0) {
-      if ($high) {
-        $nextOrder = end($destinationCards)["deckOrder"] + 1;
-      }
-      else {
-        $nextOrder = $destinationCards[0]["deckOrder"] - 1;
-      }
+    if (count($destinationOrders) > 0) {
+      $nextOrder = $high ? (end($destinationOrders) + 1) : ($destinationOrders[0] - 1);
     }
 
     $id = $card['id'];
@@ -86,7 +96,6 @@ class SqlWrapper {
         "srcPlayerId" => $card['playerId'],
         "destination" => $destination,
         "dstPlayerId" => $playerId,
-        "deckOrder" => $nextOrder,
         "preserve" => ['cardType', 'cardNum'],
         "debug" => $debug
       );

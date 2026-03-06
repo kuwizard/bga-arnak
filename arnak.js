@@ -983,21 +983,16 @@ function (dojo, declare) {
         }
       }
     },
-    sortSupply() {
-      this.artSupply = this.artSupply.sort((a, b) => a.deckOrder - b.deckOrder);
-      this.itemSupply = this.itemSupply.sort((a, b) => a.deckOrder - b.deckOrder);
-    },
     updateSupply() {
       var x = 1;
       var dx = 17.08;
-      var allCards = this.artSupply.reverse().concat(this.itemSupply);
+      var allCards = this.artSupply.toReversed().concat(this.itemSupply);
       if (allCards.length == 7) {
         dx = 14.2;
       }
       var y = 5;
       var scaleRatio = 0.27;
       var boardDiv = dojo.query(".arnak-board")[0];
-      this.sortSupply();
 
       for (var card of allCards) {
         var cardDiv = dojo.byId("card-" + card.id);
@@ -2866,7 +2861,7 @@ function (dojo, declare) {
     },
     notif_cardReveal: function(notif) {
       var a = notif.args;
-      var cardToPush = {id: a.cardId, type: a.cardType, num: a.cardNum, deckOrder: a.deckOrder}
+      var cardToPush = {id: a.cardId, type: a.cardType, num: a.cardNum}
       if (a.cardType === "item") {
         this.itemSupply.push(cardToPush);
         this.gamedatas.itemDeck -= 1;
@@ -3260,7 +3255,6 @@ function (dojo, declare) {
       dojo.addClass(staff, "round" + notif.args.roundNo);
     },
     notif_removeStaffCard: function(notif) {
-      this.sortSupply();
       var args = notif.args;
       var supply = (args.cardType === "item" ? this.itemSupply : this.artSupply);
       if (supply[0].id != args.cardId) {
