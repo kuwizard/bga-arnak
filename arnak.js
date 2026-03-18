@@ -24,6 +24,7 @@ define([
   "ebg/core/gamegui",
   "ebg/counter",
   g_gamethemeurl + "modules/tooltips.js",
+  g_gamethemeurl + "modules/card_place.js"
 ],
 function (dojo, declare) {
   return declare("bgagame.arnak", ebg.core.gamegui, {
@@ -185,12 +186,20 @@ function (dojo, declare) {
       dojo.place(aidButton, dojo.query("#maintitlebar_content > div")[0], "first");
 
       this.restoreGlobals();
-      this.hand = [];
-      this.play = [];
-      this.artSupply = [];
-      this.itemSupply = [];
+      this.hands = [];
+      this.plays = [];
+      this.decks = [];
       this.tooltips = new Tooltips();
       this.tooltipDelay = 700;
+
+      this.itemSupply = CardPlace(Object.values(gamedatas.itemSupply));
+      this.artSupply = CardPlace(Object.values(gamedatas.artSupply));
+      this.itemDeck = CardCounter(this.gamedatas.itemDeck);
+      this.artDeck = CardCounter(this.gamedatas.artDeck);
+      this.itemExile = CardCounter(this.gamedatas.itemExile);
+      this.artExile = CardCounter(this.gamedatas.artExile);
+      this.remover = CardCounter(0);
+      this.updateSupply();
 
       if (gamedatas.bird_temple) {
         this.dontPreloadImage('board-back.jpg');
@@ -225,27 +234,24 @@ function (dojo, declare) {
 
         player.meeple = 2;
         var handDiv = dojo.query(".camp-" + player_id)[0];
-        player.play = Object.values(player.play);
+        this.plays[player_id] = CardPlace(Object.values(player.play));
+        this.decks[player_id] = BackCardPlace(player.deck_amt);
         if (player_id == this.player_id) {
-          player.hand = Object.values(player.hand);
-          this.hand = player.hand;
-          player.earring = Object.values(player.earring);
-          this.earring = player.earring;
-          player.keep = Object.values(player.keep);
-          this.keep = player.keep;
-
-          this.play = player.play;
+          this.hands[player_id] = CardPlace(Object.values(player.hand));
+          this.earring = CardPlace(Object.values(player.earring));
+          this.play = this.plays[player_id];
+          this.hand = this.hands[player_id];
+          this.deck = this.decks[player_id];
+          this.keep = CardPlace(Object.values(player.keep));
         }
+        else {
+          this.hands[player_id] = CardCounter(player.hand_amt);
+        }
+
         var x = -30;
         var y = -140;
         //var scaleRatio = 0.45;
 
-
-        for (var i = 0; i < player.deck_amt; ++i) {
-          var cardDiv = this.cardDiv({type: "back"});
-          dojo.place(cardDiv, handDiv);
-          this.deckTransform(cardDiv);
-        }
         if (player_id != this.player_id) {
           var handAmtDiv = dojo.create("div", {class: "hand-amt"});
           handAmtDiv.innerHTML = this.fsr(_("${player_name} has ${n} cards in hand"), {
@@ -254,7 +260,7 @@ function (dojo, declare) {
           });
           dojo.place(handAmtDiv, handDiv)
         }
-        dojo.query(".camp-" + player_id + " .deck-amt")[0].innerHTML = player.deck_amt;
+        this.updateDeck(player_id);
 
         this.updateResources(player_id);
         for (var p of gamedatas.board_position) {
@@ -354,9 +360,6 @@ function (dojo, declare) {
       for(var player of Object.values(this.gamedatas.players))
         playerMeeples[player.id] = player.meeple;
 
-      this.itemSupply = Object.values(gamedatas.itemSupply);
-      this.artSupply = Object.values(gamedatas.artSupply);
-      this.updateSupply();
       //dojo.query(".hand.card, .play.card").connect("click", this, "handClick");
       dojo.addClass(dojo.query(".staff-parent")[0], "round" + gamedatas.round);
 
@@ -574,14 +577,13 @@ function (dojo, declare) {
       dojo.addClass(wrap, "card-wrap");
       dojo.addClass(flipWrap, "card-flip-wrap");
       dojo.addClass(rotateWrap, "card-rotate-wrap");
-      result.id = "card-" + card.id;
-
-      result.dataset.cardid = card.id;
-      result.dataset.cardnum = card.num;
-      result.dataset.cardtype = card.type;
       this.addCardClass(front, card.type, card.num, playerId);
-      if (card.type === "back") {
-        dojo.addClass(flipWrap, "flipped");
+      if (card.type != "back") {
+        result.id = "card-" + card.id;
+
+        result.dataset.cardid = card.id;
+        result.dataset.cardnum = card.num;
+        result.dataset.cardtype = card.type;
       }
       dojo.place(front, flipWrap);
       dojo.place(back, flipWrap);
@@ -722,12 +724,10 @@ function (dojo, declare) {
         }
       }
     },
-    updatePlayerCards: function(playerId, noHand = false) {
-      var handAmt = this.gamedatas.players[playerId].hand_amt
+    updatePlayerCards: function(playerId) {
+      var handAmt = this.hands[playerId].size();
       if (playerId == this.player_id) {
-        if (!noHand) {
-          this.updateHand(playerId);
-        }
+        this.updateHand(playerId);
       }
       else {
         var numDiv = dojo.byId("hand-amt-" + playerId);
@@ -736,47 +736,59 @@ function (dojo, declare) {
       }
       dojo.query("#player_board_" + playerId + " .counter-number-handsize")[0].innerHTML = handAmt;
       this.updatePlay(playerId);
+      this.updateDeck(playerId);
+      this.updateRemovedCards();
     },
     updateHand: function(playerId = this.player_id) {
       var handDiv = dojo.query(".camp-" + playerId)[0];
       var areaDiv = dojo.query(".area-" + playerId)[0];
       dojo.removeClass(areaDiv, "hand-2row hand-3row");
       var x = 2;
-      var dx = [0, 0, 29, 27, 21, 18][this.keep.length + this.hand.length + this.earring.length] || 18;
+      var dx = [0, 0, 29, 27, 21, 18][this.keep.size() + this.hand.size() + this.earring.size()] || 18;
       var y = -90;
       var scaleRatio = 0.48;
       var z = 0;
       var cardsPlaced = 0;
-      for (var card of this.keep.concat(this.hand.concat(this.earring))) {
+
+      var placeCard = (card) => {
         if (cardsPlaced % 5 === 0 && cardsPlaced) {
           if (dojo.hasClass(areaDiv, "hand-2row")) {
             dojo.addClass(areaDiv, "hand-3row");
           }
           dojo.addClass(areaDiv, "hand-2row");
         }
-        var cardDiv = dojo.query("#card-" + card.id, handDiv)[0];
-        if (!cardDiv) {
-          cardDiv = this.cardDiv(card);
-          dojo.connect(cardDiv, "click", this, "handClick");
-          dojo.place(cardDiv, handDiv);
+        if (!card.div) {
+          if (card.fromDiv) {
+            card.div = this.cardToHand(card);
+            delete card.fromDiv;
+          }
+          else
+            card.div = this.cardDiv(card);
+          dojo.connect(card.div, "click", this, "handClick");
+          dojo.place(card.div, handDiv);
         }
         this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
 
-        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
-        dojo.style(cardDiv, "left", x + "%");
-        dojo.style(cardDiv, "top", y + "%");
-        dojo.addClass(cardDiv, "hand");
-        var f = dojo.query(".flipped", cardDiv)[0];
-        if (f) {
-          dojo.removeClass(f, "flipped");
-        }
-        dojo.query(".card-rotate-wrap", cardDiv).style("transform", "");
+        dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
+        dojo.query(".card-rotate-wrap", card.div).style("transform", "");
+
+        setTimeout ((x,y) => {
+          dojo.style(card.div, "left", x + "%");
+          dojo.style(card.div, "top", y + "%");
+          dojo.addClass(card.div, "hand");
+          var f = dojo.query(".flipped", card.div)[0];
+          if (f) {
+            dojo.removeClass(f, "flipped");
+          }
+          
+        },0,x,y);
+
         x += dx;
 
-        dojo.style(cardDiv, "z-index", z++);
+        dojo.style(card.div, "z-index", z++);
 
-        cardDiv.dataset.cardtype = card.type;
-        cardDiv.dataset.cardnum = card.num;
+        card.div.dataset.cardtype = card.type;
+        card.div.dataset.cardnum = card.num;
 
 
         ++cardsPlaced;
@@ -785,10 +797,48 @@ function (dojo, declare) {
           y -= 85;
         }
       }
-      for (var card of this.earring) {
-        var cardDiv = dojo.query("#card-" + card.id, handDiv)[0];
-        dojo.addClass(cardDiv, "blueSelection");
+      this.keep.foreach(function(card) {
+        placeCard(card);
+      });
+      this.hand.foreach(function(card) {
+        placeCard(card);
+        dojo.removeClass(card.div, "blueSelection");
+      });
+      this.earring.foreach(function(card) {
+        placeCard(card);
+        dojo.addClass(card.div, "blueSelection");
+      });
+    },
+    updateDeck: function(playerId) {
+        var pos = 0;
+        this.decks[playerId].foreach((card) => {
+          if (!card.div) {
+            if (card.fromDiv) {
+              card.div = this.cardToDeck(card, playerId);
+              delete card.fromDiv;
+            }
+            else {
+              card.div = this.cardDiv(card);
+              this.deckTransform(card.div);
+            }
+            var handDiv = dojo.query(".camp-" + playerId)[0];
+            dojo.place(card.div, handDiv, pos++);
+          }
+        });
+
+        var n = dojo.query(".camp-" + playerId + " .deck-amt")[0];
+        n.innerHTML = this.decks[playerId].size();
+    },
+    updateRemovedCards() {
+      for (var player in this.hands) {
+        if (player != this.player_id)
+          this.hands[player].update(this.fadeOutAndDestroy);
       }
+      this.artDeck.update(this.fadeOutAndDestroy);
+      this.itemDeck.update(this.fadeOutAndDestroy);
+      this.artExile.update(this.fadeOutAndDestroy);
+      this.itemExile.update(this.fadeOutAndDestroy);
+      this.remover.update(this.fadeOutAndDestroy);
     },
     updateWorkers: function() {
       var boardDiv = dojo.query(".player-camp")[0];
@@ -840,8 +890,8 @@ function (dojo, declare) {
       var areaDiv = dojo.query(".area-" + playerId)[0];
       dojo.removeClass(areaDiv, "play-2row play-3row");
       var x = 2;
-      var play = this.gamedatas.players[playerId].play;
-      var dx = [0,0, 25, 18, 17, 16, 15][play.length] || 15;
+      var play = this.plays[playerId];
+      var dx = [0,0, 25, 18, 17, 16, 15][play.size()] || 15;
       var y = 110;
       var scaleRatio = 0.38;
       var z = 5;
@@ -853,7 +903,7 @@ function (dojo, declare) {
         z = 100;
       }
       var cardsPlaced = 0;
-      for (var card of play) {
+      play.foreach((card) => {
         if (cardsPlaced % 6 === 0 && cardsPlaced) {
           if (dojo.hasClass(areaDiv, "play-3row")) {
             dojo.addClass(areaDiv, "play-4row");
@@ -863,40 +913,35 @@ function (dojo, declare) {
           }
           dojo.addClass(areaDiv, "play-2row");
         }
-        var cardDiv = dojo.byId("card-" + card.id);
-        if (cardDiv) {
-          if (cardDiv.classList.contains("supply")) {
-            var newElement = cardDiv.cloneNode(true);
-            cardDiv.parentElement.replaceChild(newElement, cardDiv);
-            cardDiv = newElement;
+        if(!card.div) {
+          if (card.fromDiv) {
+            var newElement = card.fromDiv.cloneNode(true);
+            card.fromDiv.parentElement.replaceChild(newElement, card.fromDiv);
+            card.div = newElement;
+            delete card.fromDiv;
+            dojo.place(card.div, handDiv, pos);
+          }
+          else {
+            card.div = this.cardDiv(card, playerId);
+            dojo.connect(card.div, "click", this, "handClick");
+            dojo.place(card.div, handDiv, pos);
+            this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
+            if (card.justPlayed)
+              dojo.addClass(card.div, "just-played");
           }
         }
-        else {
-          cardDiv = this.cardDiv(card, playerId);
-          dojo.connect(cardDiv, "click", this, "handClick");
-
-          dojo.place(cardDiv, handDiv, pos);
-          this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
-          if (card.justPlayed) {
-            dojo.addClass(cardDiv, "just-played");
-          }
-        }
-        if (dojo.query(".arnak-board #card-" + card.id)[0]) {
-          dojo.place(cardDiv, handDiv, pos);
-        }
-        dojo.removeClass(cardDiv, "selected supply");
 
         var rx = (Math.random()-.5) * 0.5;
         var ry = (Math.random()-.5) * 0.2;
         var rr = (Math.random()-.5) * 5;
 
-        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
-        dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${rr}deg)`)
-        dojo.style(cardDiv, "left", (x + rx) + "%");
-        dojo.style(cardDiv, "top", (y + ry) + "%");
-        dojo.style(cardDiv, "z-index", z);
-        dojo.removeClass(cardDiv, "hand supply");
-        dojo.addClass(cardDiv, "play");
+        dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
+        dojo.query(".card-rotate-wrap", card.div).style("transform", `rotate(${rr}deg)`)
+        dojo.style(card.div, "left", (x + rx) + "%");
+        dojo.style(card.div, "top", (y + ry) + "%");
+        dojo.style(card.div, "z-index", z);
+        dojo.removeClass(card.div, "selected hand supply");
+        dojo.addClass(card.div, "play");
         if (pos == "first") {
           --z;
         }
@@ -909,7 +954,7 @@ function (dojo, declare) {
           x = 2;
           y += 70;
         }
-      }
+      });
     },
     makeDiscards(cards, player_id) {
       var cardsDiv = dojo.create("div", {class: "discarded-cards"});
@@ -986,35 +1031,37 @@ function (dojo, declare) {
     updateSupply() {
       var x = 1;
       var dx = 17.08;
-      var allCards = this.artSupply.toReversed().concat(this.itemSupply);
-      if (allCards.length == 7) {
+      if (this.artSupply.size() + this.itemSupply.size() == 7) {
         dx = 14.2;
       }
       var y = 5;
       var scaleRatio = 0.27;
       var boardDiv = dojo.query(".arnak-board")[0];
 
-      for (var card of allCards) {
-        var cardDiv = dojo.byId("card-" + card.id);
-        if (!cardDiv) {
-          cardDiv = this.cardDiv(card);
-          dojo.connect(cardDiv, "click", this, "supplyClick");
+      var placeCard = (card) => {
+        if (!card.div) {
+          card.div = this.cardDiv(card);
+          dojo.connect(card.div, "click", this, "supplyClick");
 
-          dojo.place(cardDiv, boardDiv);
+          dojo.place(card.div, boardDiv);
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num), this.tooltipDelay);
         }
 
-        dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
-        dojo.style(cardDiv, "left", x + "%");
-        dojo.style(cardDiv, "top", y + "%");
-        dojo.addClass(cardDiv, "supply");
+        dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
+        dojo.style(card.div, "left", x + "%");
+        dojo.style(card.div, "top", y + "%");
+        dojo.addClass(card.div, "supply");
         x += dx;
-      }
+      };
+      this.artSupply.rforeach(placeCard);
+      this.itemSupply.foreach(placeCard);
 
-      dojo.query(".item-deck-number")[0].innerHTML = this.gamedatas.itemDeck;
-      dojo.query(".art-deck-number")[0].innerHTML = this.gamedatas.artDeck;
-      dojo.query(".item-exile-number")[0].innerHTML = this.gamedatas.itemExile;
-      dojo.query(".art-exile-number")[0].innerHTML = this.gamedatas.artExile;
+      dojo.query(".item-deck-number")[0].innerHTML = this.itemDeck.size();
+      dojo.query(".art-deck-number")[0].innerHTML = this.artDeck.size();
+      dojo.query(".item-exile-number")[0].innerHTML = this.itemExile.size();
+      dojo.query(".art-exile-number")[0].innerHTML = this.artExile.size();
+
+      this.updateRemovedCards();
     },
     updateResearchTrack: function() {
       for (var i = 0; i <= 14; ++i) {
@@ -1096,44 +1143,36 @@ function (dojo, declare) {
         ++position;
       }
     },
-    cardToDeck: function(cardId, player, bottom = true) {
-      var cardDiv = dojo.byId("card-" + cardId);
-      if (!cardDiv) {
-        throw "Card " + cardId + " is not present"
-      }
-      cardDiv.id = "";
-      var targetBoard;
-      targetBoard = dojo.query(".camp-" + player)[0];
-      var newCardDiv = cardDiv;
-      //if (!dojo.hasClass(cardDiv.parentNode, "player-camp")) {
-        newCardDiv = cardDiv.cloneNode(true);
-        var targetB = targetBoard.getBoundingClientRect();
-        var cardB = cardDiv.getBoundingClientRect();
-        var x = cardB.x - targetB.x;
-        var y = cardB.y - targetB.y;
-        var s = targetB.width / targetBoard.offsetWidth;
-        x += (1-s) * (x) * (1/s);
-        y += (1-s) * (y) * (1/s);
-        dojo.removeClass(newCardDiv, "supply");
-        dojo.style(newCardDiv, "transform", "scale(0.25, 0.25)");
-        dojo.style(newCardDiv, "left", x + "px");
-        dojo.style(newCardDiv, "top", y + "px");
+    cardToDeck: function(card, player) {
+      var targetBoard = dojo.query(".camp-" + player)[0];
+      var targetB = targetBoard.getBoundingClientRect();
+      var cardB = card.fromDiv.getBoundingClientRect();
+      var x = cardB.x - targetB.x;
+      var y = cardB.y - targetB.y;
+      var s = targetB.width / targetBoard.offsetWidth;
+      x += (1-s) * (x) * (1/s);
+      y += (1-s) * (y) * (1/s);
 
-        dojo.destroy(cardDiv);
-      //}
+      var newCardDiv = card.fromDiv;
+      newCardDiv = card.fromDiv.cloneNode(true);
+      newCardDiv.id = "";
+      delete newCardDiv.dataset.cardid;
+      delete newCardDiv.dataset.cardtype;
+      delete newCardDiv.dataset.cardnum;
+
+      dojo.removeClass(newCardDiv, "supply");
+      dojo.style(newCardDiv, "transform", "scale(0.25, 0.25)");
+      dojo.style(newCardDiv, "left", x + "px");
+      dojo.style(newCardDiv, "top", y + "px");
+
+      dojo.destroy(card.fromDiv);
       newCardDiv.style["z-index"] = "";
-      dojo.place(newCardDiv, targetBoard, bottom ? "first" : "last");
-      var n = dojo.query(".deck-amt", targetBoard)[0];
-      n.innerHTML = +n.innerHTML + 1;
-
 
       setTimeout(function(thisArg, newDiv) {
         thisArg.deckTransform(newDiv);
-        dojo.query(".card-flip-wrap", newDiv).addClass("flipped");
-
       }, 0, this, newCardDiv);
 
-      this.deckTransform(cardDiv);
+      return newCardDiv;
     },
     deckTransform(cardDiv) {
       var scaleRatio = 0.48;
@@ -1143,12 +1182,27 @@ function (dojo, declare) {
       dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
 
       dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${rr}rad)`);
+      dojo.query(".card-flip-wrap", cardDiv).addClass("flipped");
 
       dojo.style(cardDiv, "left", (3 + rx) + "%");
       dojo.style(cardDiv, "top", (10 + ry) + "%");
 
-      dojo.removeClass(cardDiv, "play hand");
+      dojo.removeClass(cardDiv, "play hand supply");
       dojo.addClass(cardDiv, "deck");
+    },
+    cardToHand(card) {
+      var newEl = card.fromDiv.cloneNode(true);
+      card.fromDiv.parentNode.replaceChild(newEl, card.fromDiv);  // remove events, because official ways simply don't work
+
+      newEl.id = "card-" + card.id;
+      newEl.dataset.cardid = card.id;
+      dojo.removeClass(newEl, "deck blank");
+
+      var front = dojo.query(".front", newEl)[0];
+      this.addCardClass(front, card.type, card.num);
+      dojo.destroy(card.fromDiv);
+
+      return newEl;
     },
     workerPosition(siteNo, spotNo) {
       var board = dojo.query(".arnak-board")[0];
@@ -2135,7 +2189,9 @@ function (dojo, declare) {
       if (dojo.query("#player_board_" + this.player_id + " .counter-wrap .meeple").length > 0) {
         remainingActions.push(_("archaeologists remaining"));
       }
-      if (this.hand.filter(a => a.type !== "fear").length > playCard ? 1 : 0) {
+      var nonFears = 0;
+      this.hand.foreach((card) => {if(card.type !== "fear") nonFears += 1;});
+      if (nonFears > playCard ? 1 : 0) {
         remainingActions.push(_("playable cards remaining"));
       }
       if (dojo.query(".camp-" + this.player_id + " .assistant-inner:not(.exhausted)").length > 0) {
@@ -2659,118 +2715,93 @@ function (dojo, declare) {
       this.notifqueue.setSynchronous("passStartMarker", 500);
 
       this.notifqueue.setSynchronous("startScoring", 2000);
-
-
+    },
+    getPlace: function(place, playerId, type) {
+      if (place == 'play')
+        return this.plays[playerId];
+      else if(place == 'hand')
+        return this.hands[playerId];
+      else if(place == 'earring' && playerId == this.player_id)
+        return this.earring;
+      else if(place == 'supply' && type == "art")
+        return this.artSupply;
+      else if(place == 'supply'&& type == "item")
+        return this.itemSupply;
+      else if(place == 'deck' && playerId)
+        return this.decks[playerId];
+      else if(place == 'deck' && !playerId && type == "art")
+        return this.artDeck;
+      else if(place == 'deck' && !playerId && type == "item")
+        return this.itemDeck;
+      else if(place == 'discard' && type == "art")
+        return this.artExile;
+      else if(place == 'discard' && type == "item")
+        return this.itemExile;
+      else if(place == 'keep' && playerId == this.player_id)
+        return this.keep;
+      else
+        return this.remover;
     },
     notif_moveCard: function(notif) {
-      console.log("Fwd : " + notif.args.debug[0]);
-      console.log(notif.args);
-      if (notif.args.debug[0] != "") {
-        this["notif_" + notif.args.debug[0]](notif);
+      console.log("Fwd : " + notif.args.debug[0] );
+      console.log(notif.args.source + " - " + notif.args.destination);
+
+      var sourcePlace = this.getPlace(notif.args.source, notif.args.srcPlayerId, notif.args.cardType);
+      var destinationPlace = this.getPlace(notif.args.destination, notif.args.dstPlayerId, notif.args.cardType);
+
+      var card = sourcePlace.remove(notif.args.cardId, notif.args.top);
+      if (!card) {
+        card = {id: notif.args.cardId, type: notif.args.cardType, num: notif.args.cardNum};
+        if ((notif.args.source == 'hand' || notif.args.source == 'earring') && notif.args.destination == 'play')
+          card.justPlayed = true;
       }
+      else if (card.type == "back")
+        card = {id: notif.args.cardId, type: notif.args.cardType, num: notif.args.cardNum, fromDiv: card.div};
+
+      if (notif.args.source == 'supply' && notif.args.destination == 'play') {
+        card.fromDiv = card.div;
+        delete card.div;
+      }
+
+      destinationPlace.add(card, notif.args.top);
+
+      if (notif.args.dstPlayerId)
+        this.updatePlayerCards(notif.args.dstPlayerId);
+      else if (notif.args.srcPlayerId)
+        this.updatePlayerCards(notif.args.srcPlayerId);
+      else if(notif.args.source == 'deck' || notif.args.destination == 'deck')
+        this.updateSupply();
     },
     notif_playerMoveCard: function(notif) {
       console.log("Fwd : " + notif.args.debug[1]);
       console.log(notif.args);
-      if (notif.args.debug[1] != "") {
-        this["notif_" + notif.args.debug[1]](notif);
-      }
+
+      if (notif.args.dstPlayerId != this.player_id)
+        this.notif_moveCard(notif);
     },
     notif_moveCards: function(notif) {
       console.log("Fwd : " + notif.args.debug[0]);
       console.log(notif.args);
-      if (notif.args.debug[0] != "") {
-        this["notif_" + notif.args.debug[0]](notif);
-      }
-    },
-    notif_cardPlayed: function(notif) {
-      var id = notif.args.cardId;
-      var play = this.gamedatas.players[notif.args.dstPlayerId].play;
-      var found = false;
-      if (notif.args.dstPlayerId == this.player_id) {
-        for (var i in this.hand) {
-          if (this.hand[i].id == id) {
-            this.play.push(this.hand.splice(i, 1)[0]);
-            found = true;
-            if( notif.args.source == 'hand' ) {
-              this.gamedatas.players[notif.args.dstPlayerId].hand_amt -= 1;
-            }
-          }
+
+      var sourcePlace = this.getPlace(notif.args.source, notif.args.playerId);
+      var destinationPlace = this.getPlace(notif.args.destination, notif.args.playerId);
+      for (var c of JSON.parse(notif.args.cards)) {
+        var card = sourcePlace.remove(c.id);
+        if (!card)
+          card = c;
+        else if(card.type == "back") {
+          this.remover.add(card);
+          card = c;
         }
-        for (var i in this.earring) {
-          if (this.earring[i].id == id) {
-            this.play.push(this.earring.splice(i, 1)[0]);
-            found = true;
-          }
-        }
-      }
-      for (var i in this.artSupply) {
-        if (this.artSupply[i].id == id) {
-          play.push(this.artSupply.splice(i, 1)[0]);
-          found = true;
-        }
-      }
-      if (!found) {
-        play.push({id: id, type: notif.args.cardType, num: notif.args.cardNum, justPlayed: true});
-        if( notif.args.source == 'hand' ) {
-          this.gamedatas.players[notif.args.dstPlayerId].hand_amt -= 1;
-        }
+        destinationPlace.add(card);
       }
 
-      if (notif.args.cardType == "art") {
-        this.artSelected = notif.args.cardNum;
-      }
+      sourcePlace.foreach((card)=>{
+        this.remover.add(card);
+      });
+      sourcePlace.clear();
 
-      this.restoreServerGameState();
-      this.updatePlayerCards(notif.args.dstPlayerId);
-    },
-    notif_exileCard: function(notif) {
-      var a = notif.args;
-      var cardDiv = dojo.byId("card-" + a.cardId);
-      if (cardDiv) {
-        this.fadeOutAndDestroy(cardDiv);
-      }
-      if (a.srcPlayerId) {
-        var play = this.gamedatas.players[a.srcPlayerId].play;
-        var found = false;
-        for (var i in play) {
-          if (play[i].id == a.cardId) {
-            play.splice(i, 1);
-            found = true;
-            break;
-          }
-        }
-        if (!found) {
-          // exiled from hand
-          this.gamedatas.players[a.srcPlayerId].hand_amt -= 1;
-        }
-        if (a.srcPlayerId == this.player_id) {
-          for (var i in this.hand) {
-            if (this.hand[i].id == a.cardId) {
-              this.hand.splice(i, 1);
-              break;
-            }
-          }
-        }
-      }
-      else {
-        for (var i in this.itemSupply) {
-          if (this.itemSupply[i].id == a.cardId) {
-            this.itemSupply.splice(i, 1);
-            break;
-          }
-        }
-      }
-      if (notif.args.cardType == "item") {
-        this.gamedatas.itemExile += 1;
-      }
-      else if (notif.args.cardType == "art") {
-        this.gamedatas.artExile += 1;
-      }
-      if (a.srcPlayerId)
-        this.updatePlayerCards(a.srcPlayerId);
-      this.restoreServerGameState();
-      dojo.query(".exilable").removeClass("exilable");
+      this.updatePlayerCards(notif.args.playerId);
     },
     notif_gainRes: function(notif) {
       var args = notif.args;
@@ -2829,104 +2860,11 @@ function (dojo, declare) {
     },
     notif_gainFear: function(notif) {
       var a = notif.args;
-      this.gamedatas.players[a.player_id].play.push({id: a.fearId, type: "fear", num: null});
+      this.plays[a.player_id].add({id: a.fearId, type: "fear", num: null});
       this.updatePlayerCards(a.player_id);
     },
     notif_pass: function(notif) {
       this.playerPass(notif.args.player_id);
-    },
-    notif_newInDeck: function(notif) {
-      if (notif.args.dstPlayerId != this.player_id) {
-        var handDiv = dojo.query(".camp-" + notif.args.dstPlayerId)[0];
-        var cardDiv = this.cardDiv({type: "back"});
-        dojo.place(cardDiv, handDiv, notif.args.top ? "last": "first");
-        this.deckTransform(cardDiv);
-
-        targetBoard = dojo.query(".camp-" + notif.args.dstPlayerId)[0];
-        var n = dojo.query(".deck-amt", targetBoard)[0];
-        n.innerHTML = +n.innerHTML + 1;
-      }
-    },
-    notif_putToDeck: function(notif) {
-      if (notif.args.cardId > -1) {
-        this.cardToDeck(notif.args.cardId, notif.args.dstPlayerId, !notif.args.top);
-      }
-      for (var cardCollection of [this.itemSupply, this.artSupply, this.hand, this.earring]) {
-        for (var i in cardCollection) {
-          if (cardCollection[i].id == notif.args.cardId) {
-            cardCollection.splice(i, 1);
-            break;
-          }
-        }
-      }
-    },
-    notif_cardReveal: function(notif) {
-      var a = notif.args;
-      var cardToPush = {id: a.cardId, type: a.cardType, num: a.cardNum}
-      if (a.cardType === "item") {
-        this.itemSupply.push(cardToPush);
-        this.gamedatas.itemDeck -= 1;
-      }
-      else if (a.cardType === "art") {
-        this.artSupply.push(cardToPush);
-        this.gamedatas.artDeck -= 1;
-      }
-      this.updateSupply();
-    },
-    notif_drawnCardPutBack: function(notif) {
-      var a = notif.args;
-      var supply = (a.cardType === "item" ? this.itemSupply : this.artSupply);
-      for (var i in supply) {
-        if( supply[i].id == a.cardId ) {
-          supply.splice(i, 1);
-          if (a.cardType === "item")
-            this.gamedatas.itemDeck += 1;
-          else
-            this.gamedatas.artDeck += 1;
-          var cardDiv = dojo.byId("card-" + a.cardId);
-          if(cardDiv) {
-            dojo.destroy(cardDiv);
-          }
-          break;
-        }
-      }
-      this.updateSupply();
-    },
-    notif_earringKeep: function(notif) {
-      for(var i in this.earring) {
-        if (this.earring[i].id == notif.args.cardId) {
-          this.hand.push(this.earring[i]);
-          this.earring.splice(i, 1);
-          break;
-        }
-      }
-      dojo.query("#card-" + notif.args.cardId).removeClass("blueSelection");
-    },
-    notif_earringKeepAll: function(notif) {
-      this.gamedatas.players[notif.args.dstPlayerId].hand_amt += 1;
-      this.updatePlayerCards(notif.args.dstPlayerId);
-    },
-    notif_keepCard: function(notif) {
-      for(var i in this.hand) {
-        if (this.hand[i].id == notif.args.cardId) {
-          this.keep.push(this.hand[i]);
-          this.hand.splice(i, 1);
-          break;
-        }
-      }
-      this.updatePlayerCards(this.player_id);
-    },
-    notif_keptCardsBackInHand: function(notif) {
-      for(var card of notif.args.cards) {
-        for(var i in this.keep) {
-          if (this.keep[i].id == card.cardId) {
-            this.hand.push(this.keep[i]);
-            this.keep.splice(i, 1);
-            break;
-          }
-        }
-      }
-      this.updatePlayerCards(this.player_id);
     },
     notif_moveWorker: function(notif) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
@@ -3083,59 +3021,13 @@ function (dojo, declare) {
       for (var p in this.gamedatas.players) {
         var areaDiv = dojo.query(".area-" + p)[0];
         dojo.removeClass(areaDiv, "play-2row play-3row");
-        for (var card of this.gamedatas.players[p].play) {
-          this.cardToDeck(card.id, p);
-        }
-        this.gamedatas.players[p].play.splice(0, this.gamedatas.players[p].play.length);
+        this.plays[p].foreach((card) => {
+          this.decks[p].add(card, true);
+        });
+        this.plays[p].clear();
         this.playerPass(p, true);
+        this.updatePlayerCards(p);
       }
-
-    },
-    notif_drawSelfCard: function(notif) {
-      var a = notif.args;
-      var card = {id: a.cardId, type: a.cardType, num: a.cardNum};
-      var handTarget = (notif.args.destination == "earring") ? this.earring : this.hand;
-      handTarget.push(card);
-
-      var deck = dojo.query(".camp-" + this.player_id + " .card.deck");
-      var topDeck = deck[deck.length - 1];
-      topDeck.id = "card-" + a.cardId;
-      topDeck.dataset.cardid = a.cardId;
-      dojo.removeClass(topDeck, "deck blank");
-
-      var newEl = topDeck.cloneNode(true);
-      topDeck.parentNode.replaceChild(newEl, topDeck);  // remove events, because official ways simply don't work
-
-      var n = dojo.query(".camp-" + this.player_id + " .deck-amt")[0];
-      n.innerHTML = +n.innerHTML - 1;
-
-      topDeck = newEl;
-
-      dojo.connect(topDeck, "onclick", this, "handClick");
-
-      var front = dojo.query(".front", topDeck)[0];
-
-      this.addCardClass(front, a.cardType, a.cardNum);
-      if (notif.args.destination == "hand") {
-        this.gamedatas.players[this.player_id].hand_amt += 1;
-      }
-      setTimeout(function(thisArg) {thisArg.updateHand()}, 0, this);
-      this.updatePlayerCards(this.player_id, true);
-    },
-    notif_drawCard: function(notif) {
-      var a = notif.args;
-      var toDestroy = dojo.query(".camp-" + a.dstPlayerId + " .card-outer.deck");
-      toDestroy = toDestroy[toDestroy.length - 1];
-      if (a.dstPlayerId != this.player_id) {
-        dojo.removeClass(toDestroy, "deck");
-        this.fadeOutAndDestroy(toDestroy);
-        var n = dojo.query(".camp-" + a.dstPlayerId + " .deck-amt")[0];
-        n.innerHTML = +n.innerHTML - 1;
-        if (a.destination == "hand") {
-          this.gamedatas.players[a.dstPlayerId].hand_amt += 1;
-        }
-      }
-      this.updatePlayerCards(a.dstPlayerId);
     },
     notif_useAssistant: function(notif) {
       dojo.query(".player-camp .assistant-" + notif.args.assNum).addClass("exhausted");
@@ -3254,30 +3146,6 @@ function (dojo, declare) {
       var staff = dojo.query(".staff-parent")[0];
       dojo.removeClass(staff, "round1 round2 round3 round4 round5");
       dojo.addClass(staff, "round" + notif.args.roundNo);
-    },
-    notif_removeStaffCard: function(notif) {
-      var args = notif.args;
-      var supply = (args.cardType === "item" ? this.itemSupply : this.artSupply);
-      if (supply[0].id != args.cardId) {
-        console.log("lowest card id does not match");
-      }
-      supply.splice(0, 1);
-      this.fadeOutAndDestroy(dojo.byId("card-" + args.cardId));
-      if (args.cardType === "item") {
-        this.gamedatas.itemExile += 1;
-      }
-      else {
-        this.gamedatas.artExile += 1;
-      }
-    },
-    notif_showAllCards: function(notif) {
-      var playerId = notif.args.playerId;
-      var cards = JSON.parse(notif.args.cards);
-      var player = this.gamedatas.players[playerId];
-      player.hand = player.deck = [];
-      player.play = player.play.concat(cards);
-      dojo.query(".card.deck, .deck-amt").forEach(dojo.destroy);
-      this.updatePlayerCards(playerId);
     },
     notif_deckDisplay: function(notif) {
       var a = notif.args;
