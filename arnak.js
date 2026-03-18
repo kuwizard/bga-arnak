@@ -2861,7 +2861,10 @@ function (dojo, declare) {
       for (var i in supply) {
         if( supply[i].id == a.cardId ) {
           supply.splice(i, 1);
-          this.gamedatas.itemDeck += 1;
+          if (a.cardType === "item")
+            this.gamedatas.itemDeck += 1;
+          else
+            this.gamedatas.artDeck += 1;
           var cardDiv = dojo.byId("card-" + a.cardId);
           if(cardDiv) {
             dojo.destroy(cardDiv);
