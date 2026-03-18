@@ -518,7 +518,7 @@ class arnak extends Table
       ["msg" => clienttranslate('You draw ${cardName}'), "top" => !$bottom],
       ["msg" => $message, "bottom" => ($bottom?clienttranslate(" from the bottom of their deck"):""), "top" => !$bottom]
     ];
-    $this->sqlWrapper->moveCard(["drawSelfCard", "drawCard"], $card, $playerId, $position, $notif);
+    $this->sqlWrapper->moveCard($card, $playerId, $position, $notif);
 
     $this->undoSavePoint();
     $this->incStat(1, "gained-draw", $playerId);
@@ -535,7 +535,7 @@ class arnak extends Table
         }
 
         $notif = [["msg" => clienttranslate('You keep ${cardName} in your hand')], ["msg" => clienttranslate('${playerName} keeps 1 card in hand')]];
-        $this->sqlWrapper->moveCard(["earringKeep", "earringKeepAll"], $card, $this->getActivePlayerId(), 'hand', $notif);
+        $this->sqlWrapper->moveCard($card, $this->getActivePlayerId(), 'hand', $notif);
         $artActive = $this->getGameStateValue("art-active");
         if ($artActive >= 0 && Artefact::from($artActive) == Artefact::Crystal_Earring) {
           $this->gamestate->nextState("selectTopdeck");
@@ -588,7 +588,7 @@ class arnak extends Table
 
     $notif = $inhand ? [["msg" => clienttranslate('${playerName} plays ${cardName}')]] : [];
 
-    $this->sqlWrapper->moveCard(["cardPlayed"], $cardToPlay, $playerId, 'play', $notif);
+    $this->sqlWrapper->moveCard($cardToPlay, $playerId, 'play', $notif);
 
     if (!$inhand) {
       $this->setGameStateValue("art-active", -1);
@@ -649,7 +649,7 @@ class arnak extends Table
     }
     if ($cardInfo->type() == "art") {
       $notif = [["msg" => clienttranslate('${playerName} plays ${cardName}')]];
-      $this->sqlWrapper->moveCard(["cardPlayed"], $cardBought, $player, 'play', $notif);
+      $this->sqlWrapper->moveCard($cardBought, $player, 'play', $notif);
 
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
@@ -713,7 +713,7 @@ class arnak extends Table
       $drawnCard = end($cards);
 
       $notif = [["msg" => clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'), "cardTypeText" => $this->cardTypeText($drawnCard["info"]->type())]];
-      $this->sqlWrapper->moveCard(["drawnCardPutBack"], $drawnCard, null, 'deck', $notif, false);
+      $this->sqlWrapper->moveCard($drawnCard, null, 'deck', $notif, false);
     }
     $this->gamestate->nextState("main_action_done");
     $this->resetDiscount();
@@ -731,7 +731,7 @@ class arnak extends Table
     else {
       array_push($notif, ["msg" => clienttranslate('${playerName} puts ${cardName} to the ${position} of their deck'), "position" => $position_notif, "top" => $top]);
     }
-    $this->sqlWrapper->moveCard(["putToDeck","newInDeck"], $card, $player, 'deck', $notif, !$top);
+    $this->sqlWrapper->moveCard($card, $player, 'deck', $notif, !$top);
   }
   function getFromExile($cardId) {
     $this->checkAction("selectExileCard");
@@ -783,7 +783,7 @@ class arnak extends Table
       throw new BgaUserException("Invalid attempt to discard a card.");
     }
     $notif = [["msg" => clienttranslate('${playerName} discards ${cardName}')]];
-    $this->sqlWrapper->moveCard(["cardPlayed"], $card, $playerId, 'play', $notif);
+    $this->sqlWrapper->moveCard($card, $playerId, 'play', $notif);
 
     $name = $this->gamestate->state()["name"];
     if ($name === "mustDiscard" || $name === "mustDiscardFree" || $name === "mayDiscard") {
@@ -824,7 +824,7 @@ class arnak extends Table
     $newCard = $cards[0];
 
     $notif = [["msg" => clienttranslate('New ${cardTypeText} ${cardName} is revealed'), "cardTypeText" => $this->cardTypeText($newCard["info"]->type())]];
-    $this->sqlWrapper->moveCard(["cardReveal"], $newCard, null, 'supply', $notif);
+    $this->sqlWrapper->moveCard($newCard, null, 'supply', $notif);
 
     if (count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1")) > 0) {
       $this->undoSavePoint();
@@ -839,7 +839,7 @@ class arnak extends Table
       }
 
       $notif = [["msg" => clienttranslate('Removing ${cardName} from the supply')]];
-      $this->sqlWrapper->moveCard(["removeStaffCard"], $cards[0], null, 'discard', $notif);
+      $this->sqlWrapper->moveCard($cards[0], null, 'discard', $notif);
     }
   }
 
@@ -937,7 +937,7 @@ class arnak extends Table
               break;
             }
             $notif = [["msg" => clienttranslate('${playerName} discards ${cardName} for travel symbols')]];
-            $this->sqlWrapper->moveCard(["cardPlayed"], $cardTravel, $playerId, 'play', $notif);
+            $this->sqlWrapper->moveCard($cardTravel, $playerId, 'play', $notif);
           }
           break;
         case "buyplane":
@@ -1459,7 +1459,7 @@ class arnak extends Table
       }
 
       $notif = [["msg" => clienttranslate('${playerName} exiles ${cardName}')]];
-      $this->sqlWrapper->moveCard(["exileCard"], $card, null, 'discard', $notif);
+      $this->sqlWrapper->moveCard($card, null, 'discard', $notif);
       $this->incStat(1, "exiled", $this->getActivePlayerId());
     }
 
@@ -2083,7 +2083,7 @@ class arnak extends Table
 
     foreach ($keepCards as $card) {
       $notif = [["msg" => ''], null];
-      $this->sqlWrapper->moveCard(['keepCard'], $card, $playerId, 'keep', $notif);
+      $this->sqlWrapper->moveCard($card, $playerId, 'keep', $notif);
     }
 
     $this->gamestate->setPlayerNonMultiactive($playerId, "allDiscarded");
@@ -2097,7 +2097,7 @@ class arnak extends Table
       $cards = $this->sqlWrapper->getCards($playerId, 'hand');
       foreach ($cards as $card) {
         $notif =[["msg" => clienttranslate('${playerName} discards ${cardName}')]];
-        $this->sqlWrapper->moveCard(["cardPlayed"], $card, $playerId, 'play', $notif);
+        $this->sqlWrapper->moveCard($card, $playerId, 'play', $notif);
       }
 
       if ($cardsKeptCount > 0) {
@@ -2105,7 +2105,7 @@ class arnak extends Table
           ["msg" => ""],
           ["msg" => clienttranslate('${playerName} decides to keep ${cardAmt} cards to the next round'), "cardAmt" => $cardsKeptCount, "playerName" => $player["player_name"]]
         ];
-        $this->sqlWrapper->moveCards(['keptCardsBackInHand', "playerKeptCards"], $playerId, 'keep', 'hand', $notif);
+        $this->sqlWrapper->moveCards($playerId, 'keep', 'hand', $notif);
       }
     }
 
@@ -2117,7 +2117,7 @@ class arnak extends Table
         $playCards = $this->sqlWrapper->getCards($playerId, 'play');
         shuffle($playCards);
         foreach ($playCards as $card) {
-          $this->sqlWrapper->moveCard([], $card, $playerId, 'deck');
+          $this->sqlWrapper->moveCard($card, $playerId, 'deck');
         }
       }
     }
@@ -2352,8 +2352,8 @@ class arnak extends Table
     $this->gamestate->nextState('gameEnd');
     foreach ($this->loadPlayersBasicInfos() as $playerId => $player) {
       $notif = [["msg" => ""]];
-      $this->sqlWrapper->moveCards(["showAllCards"], $playerId, 'hand', 'play', $notif);
-      $this->sqlWrapper->moveCards(["showAllCards"], $playerId, 'deck', 'play', $notif);
+      $this->sqlWrapper->moveCards($playerId, 'hand', 'play', $notif);
+      $this->sqlWrapper->moveCards($playerId, 'deck', 'play', $notif);
     }
     $this->finalScoring();
     $this->gamestate->nextState('scoringDone');

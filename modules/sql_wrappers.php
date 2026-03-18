@@ -73,7 +73,7 @@ class SqlWrapper {
     return $orders;
   }
 
-  public function moveCard($debug, $card, $playerId, $destination, $notifs = [], $high = true) {
+  public function moveCard($card, $playerId, $destination, $notifs = [], $high = true) {
     $destinationOrders = $this->getCardOrders($playerId, $destination);
     $nextOrder = 0;
     if (count($destinationOrders) > 0) {
@@ -96,8 +96,7 @@ class SqlWrapper {
         "srcPlayerId" => $card['playerId'],
         "destination" => $destination,
         "dstPlayerId" => $playerId,
-        "preserve" => ['cardType', 'cardNum'],
-        "debug" => $debug
+        "preserve" => ['cardType', 'cardNum']
       );
 
       if ($playerId) {
@@ -131,8 +130,7 @@ class SqlWrapper {
             "source" => $card['position'],
             "srcPlayerId" => $card['playerId'],
             "destination" => $destination,
-            "dstPlayerId" => $playerId,
-            "debug" => $debug
+            "dstPlayerId" => $playerId
           );
           foreach($notifs[1] as $var => $value) {
             if ($var != "msg") {
@@ -147,7 +145,7 @@ class SqlWrapper {
     }
   }
 
-  public function moveCards($debug, $playerId, $from, $to, $notifs) {
+  public function moveCards($playerId, $from, $to, $notifs) {
 
     $fromCards = $this->getPublicCards($playerId, $from);
 
@@ -160,8 +158,7 @@ class SqlWrapper {
         "playerName" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
         "source" => $from,
         "destination" => $to,
-        "cards" => JSON_ENCODE($fromCards),
-        "debug" => $debug
+        "cards" => JSON_ENCODE($fromCards)
       );
       foreach($notifs[0] as $var => $value) {
         if ($var != "msg") {
@@ -182,8 +179,7 @@ class SqlWrapper {
 
         if (!is_null($notifs[1])) {
           $notif_players = array (
-            "i18n" => [],
-            "debug" => $debug
+            "i18n" => []
           );
           foreach($notifs[1] as $var => $value) {
             if ($var != "msg") {
