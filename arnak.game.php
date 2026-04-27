@@ -269,9 +269,10 @@ class arnak extends Table
         $idol = "NULL";
       }
       else {
-        $idol = array_pop($idolBonus);
+        $idolStr = array_pop($idolBonus);
+        $idol = "'$idolStr'";
       }
-      $this->DbQuery("INSERT INTO board_position (idboard_position, slot2, idol_bonus) VALUES ($i, $slot2, '$idol')");
+      $this->DbQuery("INSERT INTO board_position (idboard_position, slot2, idol_bonus) VALUES ($i, $slot2, $idol)");
     }
 
     $researchBonus = [
