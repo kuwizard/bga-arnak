@@ -766,8 +766,8 @@ function (dojo, declare) {
             card.div = this.cardDiv(card);
           dojo.connect(card.div, "click", this, "handClick");
           dojo.place(card.div, handDiv);
+          this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
         }
-        this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
 
         dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
         dojo.query(".card-rotate-wrap", card.div).style("transform", "");
@@ -919,16 +919,16 @@ function (dojo, declare) {
             card.fromDiv.parentElement.replaceChild(newElement, card.fromDiv);
             card.div = newElement;
             delete card.fromDiv;
-            dojo.place(card.div, handDiv, pos);
           }
           else {
             card.div = this.cardDiv(card, playerId);
-            dojo.connect(card.div, "click", this, "handClick");
-            dojo.place(card.div, handDiv, pos);
-            this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
             if (card.justPlayed)
               dojo.addClass(card.div, "just-played");
           }
+
+          dojo.connect(card.div, "click", this, "handClick");
+          dojo.place(card.div, handDiv, pos);
+          this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
         }
 
         var rx = (Math.random()-.5) * 0.5;
