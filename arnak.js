@@ -737,6 +737,7 @@ function (dojo, declare) {
       dojo.query("#player_board_" + playerId + " .counter-number-handsize")[0].innerHTML = handAmt;
       this.updatePlay(playerId);
       this.updateDeck(playerId);
+      this.updateSupplyCounters();
       this.updateRemovedCards();
     },
     updateHand: function(playerId = this.player_id) {
@@ -1056,12 +1057,14 @@ function (dojo, declare) {
       this.artSupply.rforeach(placeCard);
       this.itemSupply.foreach(placeCard);
 
+      this.updateSupplyCounters();
+      this.updateRemovedCards();
+    },
+    updateSupplyCounters() {
       dojo.query(".item-deck-number")[0].innerHTML = this.itemDeck.size();
       dojo.query(".art-deck-number")[0].innerHTML = this.artDeck.size();
       dojo.query(".item-exile-number")[0].innerHTML = this.itemExile.size();
       dojo.query(".art-exile-number")[0].innerHTML = this.artExile.size();
-
-      this.updateRemovedCards();
     },
     updateResearchTrack: function() {
       for (var i = 0; i <= 14; ++i) {
