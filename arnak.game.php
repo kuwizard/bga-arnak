@@ -227,12 +227,18 @@ class arnak extends Table
     $compassGain = [0, 0, 1, 1, 2];
 
     foreach($players as $playerId => $player) {
-      $startDeck = ["fundship", "fundcar", "exploreship", "explorecar", "fear", "fear"];
+      $startDeck = [
+        Basic::Funding_Car,
+        Basic::Funding_Ship,
+        Basic::Explore_Car,
+        Basic::Explore_Ship,
+        Basic::Fear,
+        Basic::Fear
+      ];
 
       shuffle($startDeck);
-      foreach($startDeck as $deckOrder => $cardType) {
-        $this->DbQuery("INSERT INTO card (player, card_position, card_type, deck_order) VALUES ($playerId, 'deck', '$cardType', $deckOrder)");
-      }
+      $this->sqlWrapper->createCards([], $startDeck, $playerId, 'deck');
+
       $playerOrder = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["player_no"];
       if ($playerOrder == 1) {
         $this->setGameStateValue("start-player", $playerId);
@@ -363,9 +369,7 @@ class arnak extends Table
       ];
     }
 
-    foreach($arts as $order => $art) {
-      $this->DbQuery("INSERT INTO card (card_type, num, card_position, deck_order) VALUES ('art', $art->value, 'deck', $order)");
-    }
+    $this->sqlWrapper->createCards([], $arts, NULL, 'deck');
 
     $items = Item::cases();
     shuffle($items);
@@ -392,9 +396,8 @@ class arnak extends Table
           Item::Machete
         ];
     }
-    foreach($items as $order => $item) {
-      $this->DbQuery("INSERT INTO card (card_type, num, card_position, deck_order) VALUES ('item', $item->value, 'deck', $order)");
-    }
+
+    $this->sqlWrapper->createCards([], $items, NULL, 'deck');
 
     $assistantIds = range(1, 12);
     shuffle($assistantIds);
@@ -2405,14 +2408,8 @@ class arnak extends Table
       $player = $this->getActivePlayerId();
     }
     if ($resName === "fear") {
-      $this->DbQuery("INSERT INTO card (player, card_position, card_type) VALUES ($player, 'play', 'fear')");
-      $fearId = $this->getObjectFromDB("SELECT LAST_INSERT_ID() id")["id"];
-      $this->notifyAllPlayers("gainFear", clienttranslate('${player_name} gains a fear'),
-      array(
-      "player_id" => $player,
-      "player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
-      "fearId" => $fearId
-      ));
+      $notifs =[["msg" => clienttranslate('${player_name} gains a fear')]];
+      $this->sqlWrapper->createCards(["gainFear"], [Basic::Fear], $player, 'play', $notifs);
       $this->incStat(1, "gained-fear", $player);
       return;
     }

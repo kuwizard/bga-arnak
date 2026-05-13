@@ -2678,7 +2678,6 @@ function (dojo, declare) {
       dojo.subscribe("moveCards", this, "notif_moveCards");
 
       dojo.subscribe("gainRes", this, "notif_gainRes");
-      dojo.subscribe("gainFear", this, "notif_gainFear");
       dojo.subscribe("pass", this, "notif_pass");
       dojo.subscribe("nextRound", this, "notif_nextRound");
       dojo.subscribe("shufflePlay", this, "notif_shufflePlay");
@@ -2710,7 +2709,6 @@ function (dojo, declare) {
       this.notifqueue.setSynchronous("moveCard", 800);
 
       this.notifqueue.setSynchronous("gainRes", 500);
-      this.notifqueue.setSynchronous("gainFear", 500);
       this.notifqueue.setSynchronous("score", 2000);
       this.notifqueue.setSynchronous("moveWorker", 800);
 
@@ -2860,11 +2858,6 @@ function (dojo, declare) {
           }, t * 100, this)
         }
       }
-    },
-    notif_gainFear: function(notif) {
-      var a = notif.args;
-      this.plays[a.player_id].add({id: a.fearId, type: "fear", num: null});
-      this.updatePlayerCards(a.player_id);
     },
     notif_pass: function(notif) {
       this.playerPass(notif.args.player_id);
