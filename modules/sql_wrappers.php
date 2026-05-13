@@ -194,6 +194,39 @@ class SqlWrapper {
     }
   }
 
+  public function createCards($cards, $playerId, $position, $notifs = []) {
+    $orders = $this->getCardOrders($playerId, $position);
+    $deckOrder = 0;
+    if (count($orders) > 0) {
+      $deckOrder = end($orders) + 1;
+    }
+
+    foreach($cards as $card) {
+      $cardType = $card->type();
+      $cardTypeDb = ($cardType == "basic") ? $card->value : $cardType;
+      $cardNum = ($cardType == "basic") ? 'NULL' : $card->value;
+      $player_str = $playerId ? $playerId : "NULL";
+      $this->game->DbQuery("INSERT INTO card (player, card_position, card_type, num, deck_order) VALUES ($player_str, '$position', '$cardTypeDb', $cardNum, $deckOrder)");
+      $deckOrder++;
+      if (count($notifs) == 1) {
+        $id = $this->game->getObjectFromDB("SELECT LAST_INSERT_ID() id")["id"];
+        $notif_cards = array(
+          "i18n" => ["cardName"],
+          "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
+          "cardName" => $this->game->gameData->cardName($card),
+          "cardType" => $cardTypeDb,
+          "cardNum" => $cardNum,
+          "cardId" => $id,
+          "source" => 'discard',
+          "srcPlayerId" => NULL,
+          "destination" => $position,
+          "dstPlayerId" => $playerId
+        );
+        $this->game->notifyAllPlayers("moveCard", $notifs[0]["msg"], $notif_cards);
+      }
+    }
+  }
+
   private function cardFeildStr($feilds) {
     $strFields = array_map(function ($feild) { return "$feild ".$this->cardFeildMapping[$feild];}, $feilds);
     return implode(', ', $strFields);
