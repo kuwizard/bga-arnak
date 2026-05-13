@@ -442,7 +442,7 @@ class arnak extends Table
     $result['artExile'] = count($this->sqlWrapper->getPublicCards(null, 'discard', 'art'));
 
     $result['board_position'] = $this->getCollectionFromDb("SELECT * FROM board_position");
-    $result['round'] = $this->getGameStateValue("round");
+    $result['round'] = $this->staffPosition();
     $result['locations'] = $this->getCollectionFromDb("SELECT idlocation id, size size, num num, is_at_position position FROM location WHERE is_open");
     $result['guardians'] = $this->getCollectionFromDb("SELECT * FROM guardian WHERE at_location IS NOT NULL OR in_hand IS NOT NULL");
     $result['research_bonus'] = $this->getCollectionFromDb("SELECT * FROM research_bonus");
@@ -472,6 +472,10 @@ class arnak extends Table
 
   function isTurnBased() {
     return $this->gamestate->table_globals[200] > 2;
+  }
+
+  function staffPosition() {
+    return ($this->debugMode() ? 3 : $this->getGameStateValue("round")); 
   }
 
   function displayDeck($playerId) {
@@ -799,10 +803,7 @@ class arnak extends Table
   }
 
   function refillCards() {
-    $round = (int)$this->getGameStateValue("round");
-    if ($this->debugMode()) {
-      $round = 3;
-    }
+    $round = $this->staffPosition();
     $card = true;
     foreach(["art", "item"] as $i => $cardType) {
       $limit = $cardType == "art" ? $round : 6 - $round;
@@ -2131,13 +2132,10 @@ class arnak extends Table
     if (!$firstRound) {
       $this->exileStaffCards();
     }
-    if ($this->debugMode()) {
-      $this->incGameStateValue('round', 1);
-    }
-    else {
-      $this->incGameStateValue('round', 1);
-    }
-    $this->notifyAllPlayers("moveStaff", clienttranslate('Moving the moon staff to round ${roundNo}'), array("roundNo" => $this->getGameStateValue('round')));
+
+    $this->incGameStateValue("round", 1);
+
+    $this->notifyAllPlayers("moveStaff", clienttranslate('Moving the moon staff to round ${roundNo}'), array("roundNo" => $this->staffPosition()));
 
     $this->refillCards();
 
