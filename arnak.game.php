@@ -393,7 +393,7 @@ class arnak extends Table
     foreach ($this->loadPlayersBasicInfos() as $idPlayer => $infos) {
       if ($idPlayer == $current_player_id) {
         $result['players'][$idPlayer]["hand"] =
-          $this->getObjectListFromDb("SELECT idcard id, deck_order deck_order, card_type type, num num, card_position position FROM card WHERE player = $idPlayer AND (card_position = 'hand' OR card_position = 'earring') ORDER BY deck_order");
+          $this->getObjectListFromDb("SELECT idcard id, deck_order deck_order, card_type type, num num, card_position position FROM card WHERE player = $idPlayer AND (card_position = 'hand' OR card_position = 'earring' OR card_position = 'keep') ORDER BY deck_order");
       }
       if ($this->gamestate->state()["name"] == "gameEnd") {
         $result["players"][$idPlayer]["scoreBreakdown"] = array();
@@ -404,7 +404,7 @@ class arnak extends Table
       $result['players'][$idPlayer]["play"] =
         $this->getCollectionFromDb("SELECT idcard id, card_type type, num num FROM card WHERE player = $idPlayer AND card_position = 'play'");
       $result['players'][$idPlayer]["deck_amt"] = count($this->getCollectionFromDb("SELECT idcard id, card_type type, num num FROM card WHERE player = $idPlayer AND card_position = 'deck'"));
-      $result['players'][$idPlayer]["hand_amt"] = count($this->getCollectionFromDb("SELECT idcard id FROM card WHERE player = $idPlayer AND card_position = 'hand'"));
+      $result['players'][$idPlayer]["hand_amt"] = count($this->getCollectionFromDb("SELECT idcard id FROM card WHERE player = $idPlayer AND (card_position = 'hand' OR card_position = 'keep')"));
       $result['players'][$idPlayer]["assistants"] = $this->getObjectListFromDb("SELECT idassistant id, gold gold, num num, ready ready FROM assistant WHERE in_hand = $idPlayer");
       $result['players'][$idPlayer]["guardian"] = count($this->getObjectListFromDb("SELECT * FROM guardian WHERE in_hand = $idPlayer"));
       $result['players'][$idPlayer]["guardians_ready"] = $this->getObjectListFromDb("SELECT idguardian id, num num FROM guardian WHERE in_hand = $idPlayer AND ready = 1");
@@ -595,6 +595,7 @@ class arnak extends Table
       array("player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
           "i18n" => ["cardName"],
           "player_id" => $playerId,
+          "from_position" => $card['card_position'],
           "cardName" => cardName($type, $num),
           "cardType" => $type,
           "cardNum" => $num,
@@ -662,6 +663,7 @@ class arnak extends Table
         "i18n" => ["cardName"],
         "cardName" => cardName("art", $num),
         "player_id" => $player,
+        "from_position" => $card['card_position'],
         "cardName" => cardName("art", $num),
         "cardType" => "art",
         "cardNum" => $num,
@@ -2149,6 +2151,7 @@ class arnak extends Table
             "i18n" => ["cardName"],
             "cardName" => cardName($type, $num),
             "player_id" => $playerId,
+            "from_position" => 'hand',
             "cardType" => $type,
             "cardNum" => $num,
             "cardId" => $cardId));
