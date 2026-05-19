@@ -191,6 +191,7 @@ function (dojo, declare) {
       this.decks = [];
       this.tooltips = new Tooltips();
       this.tooltipDelay = 700;
+      this.round = this.gamedatas.round;
 
       this.itemSupply = CardPlace(Object.values(gamedatas.itemSupply));
       this.artSupply = CardPlace(Object.values(gamedatas.artSupply));
@@ -361,7 +362,7 @@ function (dojo, declare) {
         playerMeeples[player.id] = player.meeple;
 
       //dojo.query(".hand.card, .play.card").connect("click", this, "handClick");
-      dojo.addClass(dojo.query(".staff-parent")[0], "round" + gamedatas.round);
+      dojo.addClass(dojo.query(".staff-parent")[0], "round" + this.round);
 
       var id = 0;
       for (var b of this.siteBoxes) {
@@ -1032,7 +1033,9 @@ function (dojo, declare) {
     updateSupply() {
       var x = 1;
       var dx = 17.08;
-      if (this.artSupply.size() + this.itemSupply.size() == 7) {
+      var maxArtSize = this.round;
+      var maxItemSize = 6 - this.round;
+      if (this.artSupply.size() > maxArtSize || this.itemSupply.size() > maxItemSize) {
         dx = 14.2;
       }
       var y = 5;
@@ -1054,6 +1057,9 @@ function (dojo, declare) {
         dojo.addClass(card.div, "supply");
         x += dx;
       };
+
+      if (this.artSupply.size() <= maxArtSize)
+        x += dx * (maxArtSize - this.artSupply.size());
       this.artSupply.rforeach(placeCard);
       this.itemSupply.foreach(placeCard);
 
@@ -3131,7 +3137,8 @@ function (dojo, declare) {
     notif_moveStaff: function(notif) {
       var staff = dojo.query(".staff-parent")[0];
       dojo.removeClass(staff, "round1 round2 round3 round4 round5");
-      dojo.addClass(staff, "round" + notif.args.roundNo);
+      this.round = notif.args.roundNo;
+      dojo.addClass(staff, "round" + this.round);
     },
     notif_deckDisplay: function(notif) {
       var a = notif.args;
