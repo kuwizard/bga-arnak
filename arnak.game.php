@@ -804,12 +804,9 @@ class arnak extends Table
 
   function refillCards() {
     $round = $this->staffPosition();
-    $card = true;
     foreach(["art", "item"] as $i => $cardType) {
       $limit = $cardType == "art" ? $round : 6 - $round;
-      while (count($this->sqlWrapper->getCards(null, 'supply', $cardType)) < $limit && $card) {
-        $card = $this->revealCard($cardType);
-      }
+      while (count($this->sqlWrapper->getCards(null, 'supply', $cardType)) < $limit && $this->revealCard($cardType));
     }
   }
   function cardTypeText($type) {
@@ -833,7 +830,7 @@ class arnak extends Table
     if (count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1")) > 0) {
       $this->undoSavePoint();
     }
-    return $newCard;
+    return true;
   }
   function exileStaffCards() {
     foreach(["art", "item"] as $i => $type) {
