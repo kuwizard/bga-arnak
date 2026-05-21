@@ -2688,6 +2688,7 @@ function (dojo, declare) {
       dojo.subscribe("nextRound", this, "notif_nextRound");
       dojo.subscribe("shufflePlay", this, "notif_shufflePlay");
       dojo.subscribe("moveStaff", this, "notif_moveStaff");
+      dojo.subscribe("outOfCards", this, "notif_outOfCards");
       dojo.subscribe("returnWorkers", this, "notif_returnWorkers");
       dojo.subscribe("moveWorker", this, "notif_moveWorker");
       dojo.subscribe("guardMove", this, "notif_guardMove");
@@ -3139,6 +3140,9 @@ function (dojo, declare) {
       dojo.removeClass(staff, "round1 round2 round3 round4 round5");
       this.round = notif.args.roundNo;
       dojo.addClass(staff, "round" + this.round);
+    },
+    notif_outOfCards: function(notif) {
+      this.updateSupply();
     },
     notif_deckDisplay: function(notif) {
       var a = notif.args;
