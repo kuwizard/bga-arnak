@@ -734,13 +734,7 @@ class arnak extends Table
     else if( $this->gamestate->state()["name"] == "buyItem" ) {
       $type = "item";
     }
-    $cards = $this->sqlWrapper->getCards(null, 'supply', $type);
-    if (count($cards) > 0) {
-      $drawnCard = end($cards);
-
-      $notif = [["msg" => clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'), "cardTypeText" => $this->cardTypeText($drawnCard["info"]->type())]];
-      $this->sqlWrapper->moveCard(["drawnCardPutBack"], $drawnCard, null, 'deck', $notif, false);
-    }
+    $this->unRefillCards();
     $this->gamestate->nextState("main_action_done");
     $this->resetDiscount();
   }
@@ -850,6 +844,17 @@ class arnak extends Table
       $this->undoSavePoint();
     }
     return true;
+  }
+  function unRefillCards() {
+    $round = $this->staffPosition();
+    foreach(["art", "item"] as $i => $cardType) {
+      $limit = $cardType == "art" ? $round : 6 - $round;
+      while (count($cards = $this->sqlWrapper->getCards(null, 'supply', $cardType)) > $limit) {
+        $lastCard = end($cards);
+        $notif = [["msg" => clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'), "cardTypeText" => $this->cardTypeText($lastCard["info"]->type())]];
+        $this->sqlWrapper->moveCard(["drawnCardPutBack"], $lastCard, null, 'deck', $notif, false);
+      }
+    }
   }
   function exileStaffCards() {
     foreach(["art", "item"] as $i => $type) {
