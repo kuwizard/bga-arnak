@@ -145,9 +145,7 @@ class Tooltips {
   resource(resName) {
     return "<h3>" + this.resources[resName].header + "</h3><div>" + this.resources[resName].text + "</div>";
   }
-  card(type_old, num_old, color = "red") {
-    var type = (type_old == "item" || type_old == "art") ? type_old : "basic";
-    var num = (type_old == "item" || type_old == "art") ? num_old : type_old;
+  card(type, num, color = "red") {
     var typeString = "";
     var classNames = "";
     if (type == "art") {
@@ -170,7 +168,7 @@ class Tooltips {
 
     var whenPlay = "";
     var playExplain = _("The card effect is triggered when you play it from hand.");
-    if (type == "fear") {
+    if (type == "basic" && num == "fear") {
       playExplain = null;
     }
     if (type == "art") {
