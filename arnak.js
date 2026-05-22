@@ -665,28 +665,28 @@ function (dojo, declare) {
     },
     addCardClass(frontDiv, type, num, playerId = this.player_id) {
       frontDiv.className = "card front " + this.playerColor(playerId);
-      switch(type) {
-        case "exploreship":
-          dojo.addClass(frontDiv, "exploration ship");
-          break;
-        case "explorecar":
-          dojo.addClass(frontDiv, "exploration car");
-          break;
-        case "fundship":
-          dojo.addClass(frontDiv, "funding ship");
-          break;
-        case "fundcar":
-          dojo.addClass(frontDiv, "funding car");
-          break;
-        case "fear":
-          dojo.addClass(frontDiv, "fear");
-          break;
-        case "back":
-          dojo.addClass(frontDiv, "blank");
-
-          break;
-        case "art": case "item":
-          dojo.addClass(frontDiv, type + " " + type + "-" + num);
+      if (type == "item" || type == "art")
+        dojo.addClass(frontDiv, type + " " + type + "-" + num);
+      else if(type == "back") 
+        dojo.addClass(frontDiv, "blank");
+      else if (type == "basic") {
+        switch(num) {
+          case "exploreship":
+            dojo.addClass(frontDiv, "exploration ship");
+            break;
+          case "explorecar":
+            dojo.addClass(frontDiv, "exploration car");
+            break;
+          case "fundship":
+            dojo.addClass(frontDiv, "funding ship");
+            break;
+          case "fundcar":
+            dojo.addClass(frontDiv, "funding car");
+            break;
+          case "fear":
+            dojo.addClass(frontDiv, "fear");
+            break;
+        }
       }
     },
     addScoringTable: function(notif) {
@@ -2657,6 +2657,17 @@ function (dojo, declare) {
           var sufix = "";
           if (args.cardType) {
             prefix = "<div class='notif-inner-tooltip' data-type='" + args.cardType + "' data-num='" + args.cardNum + "'>";
+            //////////////////////////////
+            //Deprecated, keeping for old notifications, launched by previous version games
+            //to be removed when those old games all ended
+            if ( args.cardType == "fundcar" ||
+                 args.cardType == "fundship" ||
+                 args.cardType == "explorecar" ||
+                 args.cardType == "exploreship" ||
+                 args.cardType == "fear" ) {
+              prefix = "<div class='notif-inner-tooltip' data-type='basic' data-num='" + args.cardType + "'>";
+            }
+            //////////////////////////////
             sufix = "</div>";
           }
           this.updateNotificationTooltips();

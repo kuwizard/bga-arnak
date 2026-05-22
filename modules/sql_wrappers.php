@@ -15,7 +15,14 @@ class SqlWrapper {
 
   public function getPublicCards($player_id = NULL, $position = NULL, $type = NULL) {
     $fields = ["idcard", "card_type", "num"];
-    return $this->getCardsFromFields($player_id, $position, $type, $fields);
+    $cards = $this->getCardsFromFields($player_id, $position, $type, $fields);
+    foreach ($cards as $idx => $card) {
+      if ($card["type"] != "art" && $card["type"] != "item") {
+        $cards[$idx]["num"] = $card["type"];
+        $cards[$idx]["type"] = "basic";
+      }
+    }
+    return $cards;
   }
 
   public function getCards($player_id = NULL, $position = NULL, $type = NULL) {
@@ -89,8 +96,8 @@ class SqlWrapper {
       $notif_card = array(
         "i18n" => ["cardName"],
         "cardName" => $this->game->gameData->cardName($cardInfo),
-        "cardType" => ($cardInfo->type() == 'basic')?$cardInfo->value:$cardInfo->type(),
-        "cardNum" => ($cardInfo->type() == 'basic')?null:$cardInfo->value,
+        "cardType" => $cardInfo->type(),
+        "cardNum" => $cardInfo->value,
         "cardId" => $id,
         "source" => $card['position'],
         "srcPlayerId" => $card['playerId'],
@@ -218,8 +225,8 @@ class SqlWrapper {
           "i18n" => ["cardName"],
           "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
           "cardName" => $this->game->gameData->cardName($card),
-          "cardType" => $cardTypeDb,
-          "cardNum" => $cardNum,
+          "cardType" => $card->type(),
+          "cardNum" => $card->value,
           "cardId" => $id,
           "source" => 'discard',
           "srcPlayerId" => NULL,
