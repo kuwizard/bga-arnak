@@ -189,6 +189,7 @@ function (dojo, declare) {
       this.hands = [];
       this.plays = [];
       this.decks = [];
+      this.material = gamedatas.material;
       this.tooltips = new Tooltips(gamedatas.material);
       this.tooltipDelay = 700;
       this.round = this.gamedatas.round;
@@ -1365,13 +1366,12 @@ function (dojo, declare) {
     playCard: function(cardId) {
       var cardDiv = dojo.byId("card-" + cardId);
       var type = cardDiv.dataset.cardtype;
-      var num = +cardDiv.dataset.cardnum;
+      var num = cardDiv.dataset.cardnum;
       this.selectedCard = cardId;
-      var cantPlay = this.gamedatas.gamestate.name == "afterMain" && (
-              type == "art" || (
-                type == "item" && ([5, 6, 8, 15, 22, 32, 39].indexOf(num) == -1 )
-              )
-            )
+
+      var cardInfo = this.material.cards[type][num];
+
+      var cantPlay = this.gamedatas.gamestate.name == "afterMain" && cardInfo.action != "free";
       if (cantPlay) {
         this.showMessage(_("You already played a main action this turn"), "error");
         return;
@@ -1379,74 +1379,78 @@ function (dojo, declare) {
       var color = this.playerColor(this.player_id);
       dojo.addClass(cardDiv, "active");
       if (type === "item") {
-        switch(num) {
-          case 15: case 39:
+        switch(cardInfo.varname) {
+          case "Item_Watch":
+          case "Item_Chronometer":
             this.setClientState("choosePass", {descriptionmyturn: _("Select one option")});
             break;
-          case 14: case 30: case 34:
+          case "Item_Parrot":
+          case "Item_Rope":
+          case "Item_Grappling_Hook":
             this.setClientState("discardForCard", {descriptionmyturn: _("Discard a card for the effect")});
             break;
-          case 27: case 28: case 38:
+          case "Item_Machete":
+          case "Item_Torch":
+          case "Item_Axe":
             this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card")});
             break;
-          case 25:
+          case "Item_Airdrop":
             this.setClientState("selectItem", {descriptionmyturn: _("Select an item from the supply")});
             dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
             break;
-          case 23:
+          case "Item_Whip":
             this.setClientState("selectArt", {descriptionmyturn: _("Select an artifact from the supply")});
             dojo.query(".card.supply[data-cardtype='art']").addClass("highlight-turn");
             break;
-
-          case 35: case 36: case 17: case 18: case 31: case 33:
+          case "Item_Binoculars":
             this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
-            switch(num) {
-              // nested switch with the same expression sure feels weird, bug I think it is correct
-              case 17:
-                dojo.query(".location-wrap.small").addClass("highlight-turn");
-                break;
-              case 18:
-                for (var candidate of dojo.query(".location-wrap")) {
-                  var pos = candidate.dataset.position;
-                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`)[0]) {
-                    candidate.classList.add("highlight-turn");
-                  }
-                }
-                break;
-              case 31:
-                for (var candidate of dojo.query(".guardian-wrap")) {
-                  var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
-                    candidate.parentNode.classList.add("highlight-turn");
-                  }
-                }
-                break;
-              case 33:
-                for (var candidate of dojo.query(".guardian-wrap")) {
-                  var pos = candidate.parentNode.dataset.position;
-                  if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}]`).length) {
-                    candidate.parentNode.classList.add("highlight-turn");
-                  }
-                }
-                break;
-              case 35:
-                dojo.query(".location-wrap.basic").addClass("highlight-turn");
-                break;
-              case 36:
-                for( var site of dojo.query(".location-wrap.basic") ) {
-                  var position = dojo.attr(site,"data-position");
-                  if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
-                    site.classList.add("highlight-turn");
-                  }
-                }
-                break;
-            };
+            dojo.query(".location-wrap.small").addClass("highlight-turn");
             break;
-          case 13:
+          case "Item_Tent":
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            for (var candidate of dojo.query(".location-wrap")) {
+              var pos = candidate.dataset.position;
+              if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`)[0]) {
+                candidate.classList.add("highlight-turn");
+              }
+            }
+            break;
+          case "Item_Revolver":
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            for (var candidate of dojo.query(".guardian-wrap")) {
+              var pos = candidate.parentNode.dataset.position;
+              if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
+                candidate.parentNode.classList.add("highlight-turn");
+              }
+            }
+            break;
+          case "Item_Bear_Trap":
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            for (var candidate of dojo.query(".guardian-wrap")) {
+              var pos = candidate.parentNode.dataset.position;
+              if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}]`).length) {
+                candidate.parentNode.classList.add("highlight-turn");
+              }
+            }
+            break;
+          case "Item_Lantern":
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            dojo.query(".location-wrap.basic").addClass("highlight-turn");
+            break;
+          case "Item_Dog":
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            for( var site of dojo.query(".location-wrap.basic") ) {
+              var position = dojo.attr(site,"data-position");
+              if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
+                site.classList.add("highlight-turn");
+              }
+            }
+            break;
+          case "Item_Journal":
             this.setClientState("selectResearch", {descriptionmyturn: _("Select a research space")});
             //dojo.query(".research-box").addClass("highlight-turn");
             break;
-          case 16:
+          case "Item_Army_Knife":
             this.setClientState("selectKnife", {descriptionmyturn: _("Select 2 bonuses (click a card to exile)")});
             break;
           default:
@@ -1483,9 +1487,11 @@ function (dojo, declare) {
       var color = this.playerColor(this.player_id);
       var stateSet = true;
       dojo.query(`.card[data-cardtype=art][data-cardnum=${artNum}] .card.front`).addClass("active");
-      switch(+artNum) {
-        case 1: case 2:
-          this.relocateToArt = artNum;
+      var cardInfo = this.material.cards["art"][artNum];
+      switch(cardInfo.varname) {
+        case "Artefact_Pathfinders_Sandals":
+        case "Artefact_Pathfinders_Staff":
+          this.relocateToArt = cardInfo.varname;
           var workersOnBoard = dojo.query(".meeple.onboard." + this.playerColor(this.player_id));
           switch(workersOnBoard.length) {
             case 0:
@@ -1502,8 +1508,8 @@ function (dojo, declare) {
               break;
           }
           break;
-        case 35:
-          this.relocateToArt = 35;
+        case "Artefact_Guardians_Crown":
+          this.relocateToArt = cardInfo.varname;
           this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
@@ -1512,27 +1518,28 @@ function (dojo, declare) {
             }
           }
           break;
-        case 5: case 7:
+        case "Artefact_Ritual_Dagger": 
+        case "Artefact_Mortar":
           this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card")});
           break;
-        case 6:
+        case "Artefact_Crystal_Earring":
           this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 3}});
           break;
-        case 12:
+        case "Artefact_Inscribed_Blade":
           this.setClientState("selectResearchDiscount", {descriptionmyturn: _("You must select discount")});
           break;
-        case 31:
+        case "Artefact_Obsidian_Earring":
           this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 2}});
           break;
-        case 10:
+        case "Artefact_Monkey_Medallion":
           this.setClientState("selectItem", {descriptionmyturn: _("You must select an item from the supply")});
           dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
           break;
-        case 13:
+        case "Artefact_Guardians_Ocarina":
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
           this.highlightRelocateFrom();
           break;
-        case 15:
+        case "Artefact_War_Club":
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
@@ -1542,36 +1549,37 @@ function (dojo, declare) {
           }
 
           break;
-        case 14:
+        case "Artefact_Tigerclaw_Hairpin":
           this.setClientState("hairpinExile", {descriptionmyturn: _("You may exile a card")});
           break;
-        case 16:
+        case "Artefact_Sundial":
           this.setClientState("choosePass", {descriptionmyturn: _("Select one option")});
           break;
-        case 22:
+        case "Artefact_Decorated_Horn":
           this.setClientState("hornSelectAss", {descriptionmyturn: _("Select an asssistant to replace")});
 
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
-        case 24:
+        case "Artefact_Star_Charts":
           this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 coin"), args: {cost: "coin"}});
           break;
-        case 17:
-        case 29:
+        case "Artefact_Traders_Scales":
+        case "Artefact_Traders_Coins":
           this.setClientState("cardUpgrade", {descriptionmyturn: _("You may select one option")});
           break;
-        case 27:
+        case "Artefact_Ceremonial_Rattle":
           this.setClientState("artSelectAss", {descriptionmyturn: _("You must choose an assistant to refresh")});
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
-        case 28:
+        case "Artefact_Sacred_Drum":
           this.setClientState("discardForCard", {descriptionmyturn: _("You must discard a card for the effect")});
           break;
-        case 11: case 12:
+        case "Artefact_Idol_of_Ara_Anu":
+        case "Artefact_Inscribed_Blade":
           this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space (or a temple tile)")});
           //dojo.query(".research-box, .temple-tile").addClass("highlight-turn");
           break;
-        case 33:
+        case "Artefact_Guiding_Skull":
           this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 compass"), args: {cost: "compass"}});
           break;
         default:
@@ -1589,7 +1597,7 @@ function (dojo, declare) {
       }
     },
     highlightRelocateTo() {
-      if( this.relocateToArt == 35 ) {
+      if( this.relocateToArt == "Artefact_Guardians_Crown" ) {
         var guardianPositions = []
         for (var candidate of dojo.query(".guardian-wrap")) {
           guardianPositions.push(candidate.parentNode.dataset.position);
@@ -1601,14 +1609,14 @@ function (dojo, declare) {
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == 1 || this.relocateToArt == 2) {
+      if( this.relocateToArt == "Artefact_Pathfinders_Sandals" || this.relocateToArt == "Artefact_Pathfinders_Staff") {
         for( var site of dojo.query(".location-wrap.basic") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}], .blocking-tile[data-position=${position}]`).length < 2 )
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == 2 ) {
+      if( this.relocateToArt == "Artefact_Pathfinders_Staff" ) {
         for( var site of dojo.query(".location-wrap.small") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}]`).length < 1 )
