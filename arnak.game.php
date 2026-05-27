@@ -2273,6 +2273,7 @@ class arnak extends Table
     }
     $passedNum = count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1"));
     if ($passedNum == 1) {
+      $this->notifyAllPlayers("endTurn", "");
       $this->gamestate->nextState("turn_end");
     }
   }
