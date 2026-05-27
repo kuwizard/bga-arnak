@@ -1,5 +1,5 @@
 class Tooltips {
-  constructor(material) {
+  constructor(material, siteBoxes, researchBoxes, birdTemple) {
     this.resources = {
       coins: {header: _("Coins"), text: _("Coins are mostly used to buy items.")},
       compass: {header: _("Compass"), text: _("Compasses are needed for discovering new locations and buying artifacts")},
@@ -12,11 +12,63 @@ class Tooltips {
       handsize: {header: _("Cards in hand"), text: _("Cards left in the hand of the player. Cards can be used either for their effect or as travel symbols.")},
       meeple: {header: _("Archaeologists"), text: _("Archaeologists can be used to dig at sites to get their effect, or discover undiscovered locations. Each player has total of 2 archaeologists, and can never have more or less than that.")},
     };
+    this.ressourceCostSingle = {
+      "coins": _("coin"),
+      "compass": _("compass"),
+      "tablet": _("tablet"),
+      "jewel": _("jewel"),
+      "arrowhead": _("arrowhead"),
+      "idol": _("idol"),
+      "discard": _("card discard"),
+      "fear": _("fear card")
+    };
+    this.ressourceCostSeveral = {
+      "coins": _("coins"),
+      "compass": _("compasses"),
+      "tablet": _("tablets"),
+      "arrowhead": _("arrowheads")
+    };
 
     this.material = material;
+    this.siteBoxes = siteBoxes;
+    this.researchBoxes = researchBoxes;
+    this.birdTemple = birdTemple;
     this.staff = {header: _("Moon Staff"), text: _("Moon staff is moved 1 slot to the right at the end of every round. Cards to the left of the staff are artifacts, while the cards to the right of the staff are items.")};
     this.startPlayer = {header: _("Starting player"), text: _("This player plays first in the current round. The token is passed to the next player at the end of each round.")};
+  }
+  costText(resources) {
+    var texts = [];
+    for (var resource in resources) {
+      if (resource == "travel") {
+        texts.push(this.travelIcons(resources[resource]));
+      }
+      else {
+        var amount = resources[resource];
+        texts.push(amount + " " + ((amount < 2) ? this.ressourceCostSingle[resource] : this.ressourceCostSeveral[resource]));
+      }
+    }
+    return texts.join(", ");
+  }
+  travelIcons(travel) {
+    const BOOT = 1;
+    const SHIP = 2;
+    const CAR = 3;
+    const PLANE = 4;
 
+    var tokenText = "";
+    for (var token of travel) {
+      var travelStr = ""
+      if (token == BOOT)
+        travelStr = "boot";
+      else if (token == SHIP)
+        travelStr = "ship";
+      else if (token == CAR)
+        travelStr = "car";
+      else if (token = PLANE)
+        travelStr = "plane";
+      tokenText += "<div class='token-tooltip-inline'><div class='token-tooltip-position'><div class='icon " + travelStr + "'></div></div></div>";
+    }
+    return tokenText;
   }
   cardName(type, num) {
     return this.material["cards"][type][num]["name"];
@@ -174,8 +226,8 @@ class Tooltips {
     if (type == "art") {
       playExplain = _("The card effect is triggered both when you play it from hand (which costs 1 tablet) and when you buy it from the card row.");
     }
-    var travelString = this.cardTravel(type, num).map(a => ["", _("boot"), _("ship"), _("car"), _("plane")][a]).join(" " + _("and") + " ");
-    var useTravel = this.fsr(_("You can instead use the card as ${travelString} travel icon. "), { travelString });
+    var travelString = this.travelIcons(this.cardTravel(type, num));
+    var useTravel = this.fsr(_("You can instead use the card as ${travelString}. "), { travelString });
     if (type == "art") {
       useTravel += _("(You cannot use the travel symbol when you buy the card from the card row)");
     }
@@ -200,7 +252,7 @@ class Tooltips {
       "card": _("draw a card."),
     }[type];
   }
-  siteBox(box, site, guard, birdTemple) {
+  siteBox(locationId, site, guard) {
     var guardWrap = "";
     if (guard) {
       var guardDiv = "<div class='guardian guardian-" + guard.num + "'></div>";
@@ -210,11 +262,12 @@ class Tooltips {
     if (site && site.size != "basic") {
       siteDiv = "<div class='location " + site.size + " location-" + site.num + "'></div>";
     }
+    var box = this.siteBoxes[locationId];
     var x = (box.x / 100) * 2884;
     var y = (box.y / 100) * 4097;
     var w = (box.w / 100) * 2884;
     var h = (box.h / 100) * 2884 + 250;
-    var bg = "<div class='site-bg " + (site ? site.size : "basic") + " " + (birdTemple ? "front" : "back") + "' style='background-position-x: -" + (x) + "px; background-position-y: -" + y + "px; width: " + w + "px; height: " + h + "px'></div>";
+    var bg = "<div class='site-bg " + (site ? site.size : "basic") + " " + (this.birdTemple ? "front" : "back") + "' style='background-position-x: -" + (x) + "px; background-position-y: -" + y + "px; width: " + w + "px; height: " + h + "px'></div>";
     var siteWrap = bg + "<div class='site-wrap'>" + siteDiv + guardWrap + "</div>";
     var boardWrap = "<div class='board-wrap'>" + siteWrap + "</div>";
 
@@ -223,33 +276,34 @@ class Tooltips {
       compassNum = 6;
     }
     var header = _("Undiscovered dig site");
-    var siteExplanation = this.fsr(_("This site is undiscovered. As a main action, you can discover it by paying depicted travel icons and ${compassNum} compasses and moving one of your archaeologists here. You will get the idol bonus, the idol itself and the site effect, but will face a guardian."), { compassNum });
+    var siteTravelCost = this.travelIcons(this.material.travelCost[locationId][0]);
+    if (box.numSlots == 2)
+      siteTravelCost += _(" or ") + this.travelIcons(this.material.travelCost[locationId][1]);
+
+    var siteExplanation = this.fsr(_("As a main action, you can discover it by paying ${cost} and ${compassNum} compasses and moving one of your archaeologists here. You will get the idol bonus, the idol itself and the site effect, but will face a guardian."), { cost: siteTravelCost, compassNum: compassNum });
     if (site) {
-      siteExplanation = _("This is a discovered site. As a main action, you can pay depicted travel icons, move one of your archaeologists on an empty space and evaluate the site effect.");
+      siteExplanation = this.fsr(_("As a main action, you can pay ${cost}, move one of your archaeologists on an empty space and evaluate the site effect."), { cost: siteTravelCost });
       header = _("Discovered dig site");
     }
     siteExplanation = "<li>" + siteExplanation + "</li>"
     var guardExplanation = "";
     if (guard) {
-      guardExplanation = "<li>" + _("There is a guardian at this site. The site effect can still be used, but at the end of the round, you gain 1 fear card for each of your archaeologists at a site with a guardian.") + "</li><li>" + _("As a main action, if you have an archaeologist at this site, you can overcome the guardian by paying the depicted resources. You will be able to use its boon once at any time throughout the game") + "</li>";
+      guardExplanation = "<li>" + _("There is a guardian at this site. The site effect can still be used, but at the end of the round, you gain 1 fear card for each of your archaeologists at a site with a guardian.") + "</li>";
+      guardExplanation += "<li>" + this.fsr(_("As a main action, if you have an archaeologist at this site, you can overcome the guardian by paying ${cost}. You will be able to use its boon once at any time throughout the game"), { cost: this.costText(this.material.guardians[guard.num].cost)}) + "</li>";
     }
     return "<div class='site-tooltip'><h3>" + header + "</h3><ul class='explanation'>" + siteExplanation + guardExplanation + "</ul>" + boardWrap + "</div>";
   }
-  temple(id, amt, birdTemple) {
+  temple(id, amt) {
     var color = this.material.research.tiles[id].color;
     var colorText = {"gold": _("Golden"), "silver": _("Silver"), "bronze": _("Bronze")}[color];
     var score = this.material.research.tiles[id].points;
     var tileText = _("temple tile");
     var header = "<h3>" + colorText + " " + tileText + "</h3>";
-    var costTexts = {"coins": _("coin"), "compass":  _("compass"), "tablet":  _("tablets"), "jewel": _("jewel"), "arrowhead": _("arrowhead")};
-    var resourceTexts = [];
-    for (var resource in this.material.research.tiles[id].cost)
-      resourceTexts.push(this.material.research.tiles[id].cost[resource] + " " + costTexts[resource]);
+    var resourcesText = this.costText(this.material.research.tiles[id].cost);
 
     var explanation = _("You can get temple tiles as a main action once you magnifying glass reaches the top of the research track.");
 
-    var costText = _("This tile costs ") + resourceTexts.join(", ");
-    return header + "<ul><li>" + explanation + "</li><li>" + costText + "</li><li>" + this.fsr(_("This tile is worth ${score} points at the end of the game"), { score }) + "</li><li>" + this.fsr(_("There are ${amt} tiles left in this stack"), { amt }) + "</li>";
+    return header + "<ul><li>" + explanation + "</li><li>" + _("This tile costs ") + resourcesText + "</li><li>" + this.fsr(_("This tile is worth ${score} points at the end of the game"), { score }) + "</li><li>" + this.fsr(_("There are ${amt} tiles left in this stack"), { amt }) + "</li>";
   }
   effectText(step, type) {
     var special = this.material.research.steps[step][type].bonus;
@@ -274,7 +328,8 @@ class Tooltips {
   stepScore(step, type) {
     return this.material.research.steps[step][type].points;
   }
-  research(box, bonuses, birdTemple, id) {
+  research(id, bonuses) {
+    var box = this.researchBoxes[this.birdTemple?0:1][id];
     var x = (box.x / 100) * 2884;
     var y = (box.y / 100) * 4097;
     var w = (box.w / 100) * 2884;
@@ -287,11 +342,11 @@ class Tooltips {
       glassText = "<li>" + _("When a player's magnifying glass reaches this space, they ") + this.effectText(step, "glass") + "</li>";
       bookText = "<li>" + _("When a player's notebook reaches this space, they ") + this.effectText(step, "book") + "</li>";
     }
-    var bg = "<div class='research-bg " + (birdTemple ? "front" : "back") + "' style='background-position-x: -" + (x) + "px; background-position-y: -" + y + "px; width: " + w + "px; height: " + h + "px'></div>";
+    var bg = "<div class='research-bg " + (this.birdTemple ? "front" : "back") + "' style='background-position-x: -" + (x) + "px; background-position-y: -" + y + "px; width: " + w + "px; height: " + h + "px'></div>";
     var headerText = _("Research space");
     var generalExplanation = "<li>" +
     _("You can move a token to this space if it is on the space below, as a main action")+ "</li><li>" +
-    _(" To move the token, you must pay the resources below this space") + "</li><li>" +
+    _(" To move the token, you must pay ") + this.costText(this.material.research.squares[id].cost) + "</li><li>" +
     _("A player's notebook can never be higher than their magnifying glass") + "</li>";
 
     var tokenExplanation = "";
