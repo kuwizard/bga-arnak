@@ -115,55 +115,6 @@ function (dojo, declare) {
       {x: 67.5, y: 32.2, w: 26.5, h: 4},
       ]
     ],
-    siteTravelCost: function(no, birdSide) {
-      if (birdSide) {
-        var costs = [
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-
-          [[CAR]],
-          [[CAR]],
-          [[SHIP]],
-          [[SHIP]],
-          [[CAR]],
-          [[CAR]],
-          [[SHIP]],
-          [[SHIP]],
-
-          [[CAR, CAR]],
-          [[CAR, CAR]],
-          [[SHIP, SHIP]],
-          [[SHIP, SHIP]]
-        ];
-      }
-      else {
-        var costs = [
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-          [[BOOT], [BOOT, BOOT]],
-
-          [[CAR]],
-          [[CAR]],
-          [[SHIP]],
-          [[SHIP]],
-          [[CAR]],
-          [[BOOT, BOOT]],
-          [[PLANE]],
-          [[SHIP]],
-
-          [[CAR, CAR]],
-          [[BOOT, PLANE]],
-          [[SHIP, CAR]],
-          [[SHIP, SHIP]]
-        ];
-      }
-      return costs[no];
-    },
     restoreGlobals: function() {
       this.chartsSelected = undefined;
       this.siteSelected = undefined;
@@ -190,7 +141,7 @@ function (dojo, declare) {
       this.plays = [];
       this.decks = [];
       this.material = gamedatas.material;
-      this.tooltips = new Tooltips(gamedatas.material);
+      this.tooltips = new Tooltips(gamedatas.material, this.siteBoxes, this.researchBoxes, gamedatas.bird_temple);
       this.tooltipDelay = 700;
       this.round = this.gamedatas.round;
 
@@ -365,6 +316,9 @@ function (dojo, declare) {
       //dojo.query(".hand.card, .play.card").connect("click", this, "handClick");
       dojo.addClass(dojo.query(".staff-parent")[0], "round" + this.round);
 
+      for (var locationId in gamedatas.board_position)
+        this.siteBoxes[locationId].numSlots = (gamedatas.board_position[locationId]["slot2"] == -1)? 1 : 2;
+
       var id = 0;
       for (var b of this.siteBoxes) {
         var box = dojo.create("div");
@@ -423,7 +377,6 @@ function (dojo, declare) {
 
         ++id;
       }
-      id = 0;
 
       for (var assistant of Object.values(gamedatas.assistants)) {
         if (assistant) {
@@ -439,7 +392,9 @@ function (dojo, declare) {
       this.updateResearchTrack();
 
       gamedatas.research_bonus = Object.values(gamedatas.research_bonus);
-      for (var b of this.researchBoxes[gamedatas.bird_temple ? 0:1]) {
+      var researchBoxes = this.researchBoxes[gamedatas.bird_temple?0:1];
+      for (var id in researchBoxes) {
+        var b = researchBoxes[id];
         var box = dojo.create("div");
         dojo.addClass(box, "research-box");
         box.dataset.research_id = id;
@@ -458,9 +413,7 @@ function (dojo, declare) {
           dojo.addClass(bonusDiv, "research-bonus reward-" + bonus.bonus_type);
           dojo.place(bonusDiv, box);
         }
-        this.addTooltipHtml(box.id, this.tooltips.research(b, currSlotBonuses, gamedatas.bird_temple, id), this.tooltipDelay);
-        ++id;
-
+        this.addTooltipHtml(box.id, this.tooltips.research(id, currSlotBonuses), this.tooltipDelay);
 
         //dojo.place(box, board);
       }
@@ -1014,20 +967,18 @@ function (dojo, declare) {
           guard = dojo.query(".guardian-wrap", wrap)[0];
         }
         this.addTooltipHtml("site-box-" + positionId,
-          this.tooltips.siteBox(
-            this.siteBoxes[positionId],
+          this.tooltips.siteBox(positionId,
             site ? {num: site.dataset.num,
              size: site.dataset.size
             } : undefined,
-            guard ?{num: guard.dataset.num} : undefined,
-            this.gamedatas.bird_temple), this.tooltipDelay);
+            guard ?{num: guard.dataset.num} : undefined), this.tooltipDelay);
       }
     },
     updateTempleTooltips() {
       for (var pos = 1; pos <= 6; ++pos) {
         var n = this.gamedatas.temple_tile[pos].amt;
         if (n > 0) {
-          this.addTooltipHtml("temple-tile-wrap-" + pos, this.tooltips.temple(pos, n, this.gamedatas.bird_temple), this.tooltipDelay);
+          this.addTooltipHtml("temple-tile-wrap-" + pos, this.tooltips.temple(pos, n), this.tooltipDelay);
         }
       }
     },
@@ -1102,6 +1053,7 @@ function (dojo, declare) {
             y = box.y + 0.2;
           }
           else if (i == 8 && !this.bird_temple) {
+            console.log(this.bird_temple); //DEBUG THAT
             var skip = dojo.query(".assistant.position-4")[0] ? 2.5 : 0;
             var pos = +j;
             if (pos > 1) {
