@@ -67,6 +67,8 @@ require_once( "modules/gamedata.php" );
 
 class arnak extends Table
 {
+  public array $material;
+
   function debugMode() {
     if ($this->getBgaEnvironment() == 'studio') {
       return 1;
@@ -113,6 +115,8 @@ class arnak extends Table
       //  "my_second_game_variant" => 101,
       //    ...
     ) );
+
+    $this->gameData = new GameData($this);
   }
 
   protected function getGameName( )
@@ -514,7 +518,7 @@ class arnak extends Table
     $this->notifyPlayer($playerId, "drawSelfCard", clienttranslate('You draw ${card_name}'),
     array(
       'i18n' => ["card_name"],
-      'card_name' => cardName($cardType, $cardNo),
+      'card_name' => $this->gameData->cardName($cardType, $cardNo),
       'card_type' => $cardType,
       'card_no' => $cardNo,
       'card_id' => $cardId,
@@ -536,7 +540,7 @@ class arnak extends Table
         $this->notifyPlayer($this->getActivePlayerId(), "earringKeep", clienttranslate('You keep ${cardName} in your hand'), array(
           "i18n" => ["cardName"],
           "cardId" => $cardId,
-          "cardName" => cardName($card["card_type"], $card["num"]),
+          "cardName" => $this->gameData->cardName($card["card_type"], $card["num"]),
 
           ));
         $this->notifyAllPlayers("earringKeepAll", clienttranslate('${player_name} keeps 1 card in hand'), array(
@@ -596,7 +600,7 @@ class arnak extends Table
           "i18n" => ["cardName"],
           "player_id" => $playerId,
           "from_position" => $card['card_position'],
-          "cardName" => cardName($type, $num),
+          "cardName" => $this->gameData->cardName($type, $num),
           "cardType" => $type,
           "cardNum" => $num,
           "cardId" => $cardId,
@@ -639,7 +643,7 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("$type card cannot be bought"));
       }
     }
-    $amt = cardCost($type, $num);
+    $amt = $this->gameData->cardCost($type, $num);
     $resName = $type == "item" ? "coins" : "compass";
     if ($this->gamestate->state()["name"] == "researchBonus") {
       if ($this->currentSpecialResearch() == "free-art") {
@@ -661,10 +665,10 @@ class arnak extends Table
       $this->notifyAllPlayers("playCard", clienttranslate('${player_name} plays ${cardName}'),
       array("player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
         "i18n" => ["cardName"],
-        "cardName" => cardName("art", $num),
+        "cardName" => $this->gameData->cardName("art", $num),
         "player_id" => $player,
         "from_position" => $card['card_position'],
-        "cardName" => cardName("art", $num),
+        "cardName" => $this->gameData->cardName("art", $num),
         "cardType" => "art",
         "cardNum" => $num,
         "cardId" => $cardId,
@@ -721,7 +725,7 @@ class arnak extends Table
       clienttranslate('Card ${cardName} is put back on top of ${cardTypeText} deck'),
       array(
         "i18n" => ["cardName", "cardTypeText"],
-        "cardName" => cardName($drawnCard["card_type"], $drawnCard["num"]),
+        "cardName" => $this->gameData->cardName($drawnCard["card_type"], $drawnCard["num"]),
         "cardId" => $drawnCard['idcard'],
         "cardType" => $drawnCard["card_type"],
         "cardTypeText" => $this->cardTypeText($drawnCard["card_type"]),
@@ -762,7 +766,7 @@ class arnak extends Table
         "i18n" => ["itemName", "position"],
         "playerId" => $player,
         "player_name" => $this->getActivePlayerName(),
-        "itemName" => cardName($type, $num),
+        "itemName" => $this->gameData->cardName($type, $num),
         "cardId" => $cardId,
         "position" => $top ? clienttranslate("top") : clienttranslate("bottom"),
         "top" => $top,
@@ -778,7 +782,7 @@ class arnak extends Table
         "i18n" => ["itemName", "position"],
         "playerId" => $player,
         "player_name" => $this->getActivePlayerName(),
-        "itemName" => cardName($type, $num),
+        "itemName" => $this->gameData->cardName($type, $num),
         "cardId" => $cardId,
 
         "position" => $top ? clienttranslate("top") : clienttranslate("bottom"),
@@ -838,7 +842,7 @@ class arnak extends Table
     $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
     array("i18n" => ["cardName"],
         "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
-        "cardName" => cardName($type, $num),
+        "cardName" => $this->gameData->cardName($type, $num),
         "player_id" => $playerId,
         "from_position" => $card['card_position'],
         "cardType" => $type,
@@ -891,7 +895,7 @@ class arnak extends Table
       clienttranslate('New ${cardTypeText} ${cardName} is revealed'),
       array(
         "i18n" => ["cardName", "typeText", "cardTypeText"],
-        "cardName" => cardName($newCard["card_type"], $newCard["num"]),
+        "cardName" => $this->gameData->cardName($newCard["card_type"], $newCard["num"]),
         "cardId" => $newCard['idcard'],
         "cardType" => $newCard["card_type"],
         "cardTypeText" => $this->cardTypeText($newCard["card_type"]),
@@ -909,7 +913,7 @@ class arnak extends Table
         continue;
       }
       $cardId = $toDelete["idcard"];
-      $name = cardName($type, $toDelete["num"]);
+      $name = $this->gameData->cardName($type, $toDelete["num"]);
       $this->notifyAllPlayers("removeStaffCard", clienttranslate('Removing ${cardName} from the supply'),
         array(
         "i18n" => ["cardName"],
@@ -1002,7 +1006,7 @@ class arnak extends Table
           $card = $this->getObjectFromDB("SELECT * FROM card WHERE idcard = $id AND player = $playerId AND card_position = 'hand'");
           if ($card) {
             $useful = false;
-            foreach(cardTravel($card["card_type"], $card["num"]) as $i => $travelType) {
+            foreach($this->gameData->cardTravel($card["card_type"], $card["num"]) as $i => $travelType) {
               $paymentAvailable[$travelType] += 1;
               if ($this->travelUseful($travelReqs, $travelType)) {
                 $useful = true;
@@ -1018,7 +1022,7 @@ class arnak extends Table
               "player_id" => $this->getActivePlayerId(),
               "cardType" => $card["card_type"],
               "cardNum" => $card["num"],
-              "cardName" => cardName($card["card_type"], $card["num"]),
+              "cardName" => $this->gameData->cardName($card["card_type"], $card["num"]),
               "cardId" => $card["idcard"],
               "i18n" => ["cardName"]
             ));
@@ -1063,20 +1067,11 @@ class arnak extends Table
           break;
         case "guardian":
           $num = $pay["num"];
-          $travelType;
-          switch($num) {
-            case 1: case 10: case 15:
-              $travelType = SHIP;
-              break;
-            case 3: case 4: case 9:
-              $travelType = CAR;
-              break;
-            case 12: case 13:
-              $travelType = PLANE;
-              break;
-            default:
-              throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
+          $boon = $this->gameData->guardianBoon($num);
+          if(!isset($boon["travel"])) {
+            throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
           }
+          $travelType = $boon["travel"];
           if (!$this->travelUseful($travelReqs, $travelType)) {
             break;
           }
@@ -1163,7 +1158,7 @@ class arnak extends Table
     }
   }
   function overcomeGuard($guardNum, $movePayment, $free = false) {
-    $cost = guardianCost($guardNum);
+    $cost = $this->gameData->guardianCost($guardNum);
     $playerId = $this->getActivePlayerId();
     if (!$free) {
       foreach ($cost as $type => $amt) {
@@ -1275,7 +1270,7 @@ class arnak extends Table
       }
     }
     else {
-      $this->payTravel(siteTravelCost($siteId, $targetSlotNo, $this->birdTemple()), $movePayment);
+      $this->payTravel($this->gameData->siteTravelCost($siteId, $targetSlotNo), $movePayment);
     }
 
 
@@ -1425,16 +1420,21 @@ class arnak extends Table
       $this->gamestate->nextState("siteEffect");
     }
     $playerId = $this->getActivePlayerId();
-    $gains = siteEffects($size, $num);
+    $gains = $this->gameData->siteEffects($size, $num);
     $double = $size == "basic" && $this->getGameStateValue("art-active") == 26;
     $iters = 1;
     if ($double) {
       $iters = 2;
     }
     $mustDiscard = false;
+    $buyFreeItem = false;
     foreach($gains as $type => $amt) {
-      if ($type == "discard") {
+      if ($type == "discardforjewel") {
         $mustDiscard = true;
+        $this->gainResource("jewel", $playerId, 1, array("component" => "site", "size" => $size, "num" => $num));
+      }
+      else if ($type == "buyfreeitem") {
+        $buyFreeItem = true;
       }
       else {
         for ($i = 0; $i < $iters; $i++) {
@@ -1444,11 +1444,11 @@ class arnak extends Table
     }
     $this->incStat($double ? 2 : 1, "sites-activated", $playerId);
     $this->incStat($double ? 2 : 1, "sites-activated-".$size, $playerId);
-    if ($size == "small" && $num == 1) {  // is airplane
+    if ($buyFreeItem) {
       $this->setGameStateValue("discount-coins", 9999);
       $this->gamestate->nextState("plane");
     }
-    else if ($size == "basic" && $num == 4) {  // is discard jewel
+    else if ($mustDiscard) {  // is discard jewel
       if ($double) {
         $this->gamestate->nextState("jewelDiscardShell");
       }
@@ -1528,7 +1528,7 @@ class arnak extends Table
       array(
       "i18n" => ["cardName"],
       "player_name" => $this->getActivePlayerName(),
-      "cardName" => cardName($card["card_type"], $card["num"]),
+      "cardName" => $this->gameData->cardName($card["card_type"], $card["num"]),
       "player_id" => $this->getActivePlayerId(),
       "cardId" => $cardId,
       "cardType" => $card["card_type"],
@@ -1566,19 +1566,18 @@ class arnak extends Table
       "guardNum" => $guardNum
     ));
 
-    switch($guardNum) {
-      case 7:
-        $this->gainResource("card", $playerId, 1);
-        break;
-      case 2: case 5: case 6: case 11: case 14:
-        $this->exile($arg);
-        break;
-      case 8:
-        $this->upgrade($arg, true);
-        break;
-      default:
-        throw new BgaUserException("Cannot use guard $guardNum");
-        break;
+    $boon = $this->gameData->guardianBoon($guardNum);
+    if (isset($boon["card"])) {
+      $this->gainResource("card", $playerId, 1);
+    }
+    else if (isset($boon["exile"])) {
+      $this->exile($arg);
+    }
+    else if (isset($boon["upgrade"])) {
+      $this->upgrade($arg, true);
+    }
+    else {
+      throw new BgaUserException("Cannot use guard $guardNum");
     }
   }
 
@@ -1809,14 +1808,14 @@ class arnak extends Table
   function research($researchId, $free = false, $forceType = null) {
     $playerId = $this->getActivePlayerId();
     $playerResearch = $this->getNonEmptyObjectFromDB("SELECT research_glass glass, research_book book FROM player WHERE player_id = $playerId");
-    $glassOptions = researchPossibilities($this->birdTemple(), $playerResearch["glass"]);
-    $bookOptions = researchPossibilities($this->birdTemple(), $playerResearch["book"]);
+    $glassOptions = $this->gameData->researchPossibilities($playerResearch["glass"]);
+    $bookOptions = $this->gameData->researchPossibilities($playerResearch["book"]);
 
     if (in_array($researchId, $glassOptions)) {
       $researchType = "glass";
     }
     else if (in_array($researchId, $bookOptions)) {
-      if (researchStep($this->birdTemple(), $researchId) > researchStep($this->birdTemple(), $playerResearch["glass"])) {
+      if ($this->gameData->researchStep($researchId) > $this->gameData->researchStep($playerResearch["glass"])) {
         throw new BgaUserException(clienttranslate("Book can never be higher than glass"));
       }
       $researchType = "book";
@@ -1831,7 +1830,7 @@ class arnak extends Table
     if (!is_null($forceType) && $forceType != $researchType) {
       throw new BgaUserException(clienttranslate("You must research with your $forceType"));
     }
-    $toPay = researchCost($this->birdTemple(), $researchId);
+    $toPay = $this->gameData->researchCost($researchId);
     $resArg = array("component" => "research", "id" => $researchId);
     if (!$free) {
       foreach($toPay as $resName => $amt) {
@@ -1842,14 +1841,17 @@ class arnak extends Table
     $this->dbQuery("UPDATE player SET research_$researchType = $researchId WHERE player_id = $playerId");
     $researchDone = true;
 
-    $step = researchStep($this->birdTemple(), $researchId);
+    $step = $this->gameData->researchStep($researchId);
     $rank = null;
-    $stepBonus = researchBonus($this->birdTemple(), $step, $researchType === "book");
+    $stepBonus = "";
     $researchBonus = $this->getCollectionFromDb("SELECT * FROM research_bonus WHERE track_pos = $researchId");
     if ($step == 8) {
       $this->undoSavePoint();
       $rank = count($this->getCollectionFromDb("SELECT * FROM player WHERE research_glass = 14"));
       $this->dbQuery("UPDATE player SET temple_rank = $rank WHERE player_id = $playerId");
+    }
+    else {
+      $stepBonus = $this->gameData->researchBonus($step, $researchType === "book");
     }
     $this->notifyAllPlayers('research', clienttranslate('${player_name} researches with his ${type}'), array("player_name" => $this->getActivePlayerName(),
       "player_id" => $this->getActivePlayerId(),
@@ -1945,7 +1947,7 @@ class arnak extends Table
     $this->gamestate->nextState("main_action_done");
   }
   function getTempleTile($num) {
-    $cost = templeTileCost($num, $this->birdTemple());
+    $cost = $this->gameData->templeTileCost($num);
     $playerId = $this->getActivePlayerId();
     $glassResearch = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_glass"];
     if ($glassResearch < 14) {
@@ -1954,7 +1956,7 @@ class arnak extends Table
     foreach ($cost as $resName => $amt) {
       $this->gainResource($resName, $playerId, -$amt, array("component" => "temple", "num" => $num));
     }
-    $color = templeColor($num);
+    $color = $this->gameData->templeTileColor($num);
     $this->dbQuery("UPDATE player SET temple_$color = temple_$color + 1 WHERE player_id = $playerId");
     $this->dbQuery("UPDATE temple_tile SET amt = amt - 1 WHERE idtemple_tile = $num");
     $this->notifyAllPlayers("getTempleTile", clienttranslate('${player_name} gets a ${colorText} temple tile'),
@@ -2008,13 +2010,15 @@ class arnak extends Table
       return "";
     }
     $playerId = $this->getActivePlayerId();
-    $step = researchStep($this->birdTemple(),
-      $this->getNonEmptyObjectFromDB(
+    $step = $this->gameData->researchStep($this->getNonEmptyObjectFromDB(
         "SELECT * FROM player WHERE player_id = $playerId"
       )["research_".$this->researchType()]
     );
 
-    return researchBonus($this->birdTemple(), $step, $this->researchType() == "book");
+    if ($step == 8) {
+      return "";
+    }
+    return $this->gameData->researchBonus($step, $this->researchType() == "book");
   }
   function researchDone() {
     return $this->getGameStateValue("special-research-done") == "1" && $this->getGameStateValue("research-token-done") == "1";
@@ -2149,7 +2153,7 @@ class arnak extends Table
         $this->notifyAllPlayers("playCard", clienttranslate('${player_name} discards ${cardName}'),
         array("player_name" => $playerName,
             "i18n" => ["cardName"],
-            "cardName" => cardName($type, $num),
+            "cardName" => $this->gameData->cardName($type, $num),
             "player_id" => $playerId,
             "from_position" => 'hand',
             "cardType" => $type,
@@ -2256,19 +2260,19 @@ class arnak extends Table
 
       $cost = 0;
       foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'item'") as $cardId => $card) {
-          $cost += cardCost($card["card_type"], $card["num"]);
+          $cost += $this->gameData->cardCost($card["card_type"], $card["num"]);
         }
       $this->setStat($cost, "cost-item", $playerId);
       $cost = 0;
       foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'art'") as $cardId => $card) {
-          $cost += cardCost($card["card_type"], $card["num"]);
+          $cost += $this->gameData->cardCost($card["card_type"], $card["num"]);
         }
       $this->setStat($cost, "cost-art", $playerId);
 
-      $this->setStat(researchStep($this->birdTemple(), $player["research_book"]), "book-step", $playerId);
-      $this->setStat(researchStep($this->birdTemple(), $player["research_glass"]), "glass-step", $playerId);
+      $this->setStat($this->gameData->researchStep($player["research_book"]), "book-step", $playerId);
+      $this->setStat($this->gameData->researchStep($player["research_glass"]), "glass-step", $playerId);
 
-      if (researchStep($this->birdTemple(), $player["research_glass"]) == 8) {
+      if ($this->gameData->researchStep($player["research_glass"]) == 8) {
         $auxScore += 100 * (5 - $player["temple_rank"]);
       }
       $this->DbQuery("UPDATE player SET player_score_aux = $auxScore WHERE player_id = $playerId");
@@ -2282,8 +2286,8 @@ class arnak extends Table
     switch($category) {
       case "research":
         $score =
-          stepPoints($this->birdTemple(), true, researchStep($this->birdTemple(), $player["research_book"])) +
-          stepPoints($this->birdTemple(), false, researchStep($this->birdTemple(), $player["research_glass"]), $player["temple_rank"]);
+          $this->gameData->stepPoints(true, $this->gameData->researchStep($player["research_book"])) +
+          $this->gameData->stepPoints(false, $this->gameData->researchStep($player["research_glass"]), $player["temple_rank"]);
         break;
       case "temple":
         $score = $player["temple_bronze"] * 2 + $player["temple_silver"] * 6 + $player["temple_gold"] * 11;
@@ -2296,7 +2300,7 @@ class arnak extends Table
         break;
       case "cards":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type != 'fear'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += $this->gameData->cardPoints($card["card_type"], $card["num"]);
         }
         break;
       case "fear":
@@ -2304,12 +2308,12 @@ class arnak extends Table
         break;
       case "item":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'item'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += $this->gameData->cardPoints($card["card_type"], $card["num"]);
         }
         break;
       case "art":
         foreach ($this->getCollectionFromDb("SELECT * FROM card WHERE player = $playerId AND card_type = 'art'") as $cardId => $card) {
-          $score += cardPoints($card["card_type"], $card["num"]);
+          $score += $this->gameData->cardPoints($card["card_type"], $card["num"]);
         }
         break;
     }
