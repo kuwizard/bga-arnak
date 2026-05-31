@@ -471,7 +471,7 @@ function (dojo, declare) {
           var div = dojo.create("div", {class: 'research-bonus-tooltip', id: id});
           div.style.top = y + "px";
           dojo.place(div, board);
-          this.addTooltipHtml(id, this.tooltips.researchBonus(type, step, gamedatas.bird_temple));
+          this.addTooltipHtml(id, this.tooltips.researchBonus(type, step));
 
           if (type == "glass") {
             y -= 39;
