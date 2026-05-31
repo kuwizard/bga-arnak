@@ -236,47 +236,23 @@ class Tooltips {
     return "<div class='site-tooltip'><h3>" + header + "</h3><ul class='explanation'>" + siteExplanation + guardExplanation + "</ul>" + boardWrap + "</div>";
   }
   temple(id, amt, birdTemple) {
-    var color = "bronze";
-    if (id > 3) {
-      color = "silver";
-    }
-    if (id > 5) {
-      color = "gold";
-    }
+    var color = this.material.research.tiles[id].color;
     var colorText = {"gold": _("Golden"), "silver": _("Silver"), "bronze": _("Bronze")}[color];
-    var score = {"gold": 11, "silver": 6, "bronze": 2}[color];
+    var score = this.material.research.tiles[id].points;
     var tileText = _("temple tile");
     var header = "<h3>" + colorText + " " + tileText + "</h3>";
-    var baseCosts = [[1 + " " + (birdTemple ? _("coin") : _("compass")), 2 + " " + _("tablets")], [1 + " " + _("jewel")], [1 + " " + (birdTemple ? _("compass") : _("coin")), 1 + " " + _("arrowhead")]];
-    var combos = [[], [0], [1], [2], [0, 1], [1, 2], [0, 1, 2]]
+    var costTexts = {"coins": _("coin"), "compass":  _("compass"), "tablet":  _("tablets"), "jewel": _("jewel"), "arrowhead": _("arrowhead")};
+    var resourceTexts = [];
+    for (var resource in this.material.research.tiles[id].cost)
+      resourceTexts.push(this.material.research.tiles[id].cost[resource] + " " + costTexts[resource]);
+
     var explanation = _("You can get temple tiles as a main action once you magnifying glass reaches the top of the research track.");
 
-
-    var costText = _("This tile costs ") +
-      combos[id].reduce((a, c) => a.concat(baseCosts[c]), []).join(", ");
+    var costText = _("This tile costs ") + resourceTexts.join(", ");
     return header + "<ul><li>" + explanation + "</li><li>" + costText + "</li><li>" + this.fsr(_("This tile is worth ${score} points at the end of the game"), { score }) + "</li><li>" + this.fsr(_("There are ${amt} tiles left in this stack"), { amt }) + "</li>";
   }
-  effectText(step, bird, book) {
-    var special = bird ? [[],
-      ["coins", "assistant-silver"],
-      ["compass", "assistant-silver"],
-      ["compass", "assistant-gold"],
-      ["compass", "assistant-gold"],
-      ["compass", "3compass"],
-      ["card", "free-art"],
-      ["compass", "guard"],
-      ["", ""],
-    ][step][book ? 1 : 0] : [
-      [],
-      ["coins", "assistant-silver"],
-      ["2coins", "exile"],
-      ["card", "assistant-gold"],
-      ["assistant-special", "free-art"],
-      ["assistant-gold", "assistant-refresh"],
-      ["fear", "card"],
-      ["fear", "jewel"],
-      ["", ""],
-    ][step][book ? 1 : 0];
+  effectText(step, type) {
+    var special = this.material.research.steps[step][type].bonus;
     var effectTexts = {
       "coins": _("gain a coin"),
       "compass": _("gain a compass"),
@@ -295,38 +271,21 @@ class Tooltips {
     }
     return effectTexts[special];
   }
-  stepScore(step, bird, book) {
-    if (bird) {
-      if (book) {
-        return [0, 0, 1, 2, 4, 6, 8, 10][step];
-      }
-      else {
-        return [0, 1, 2, 4, 6, 9, 12, 16][step];
-      }
-    }
-    else {
-      if (book) {
-        return [0, 0, 3, 4, 5, 8, 12, 15][step];
-      }
-      else {
-        return [0, 1, 2, 3, 4, 5, 10, 15][step];
-      }
-    }
+  stepScore(step, type) {
+    return this.material.research.steps[step][type].points;
   }
   research(box, bonuses, birdTemple, id) {
     var x = (box.x / 100) * 2884;
     var y = (box.y / 100) * 4097;
     var w = (box.w / 100) * 2884;
     var h = (box.h / 100) * 2884 + (id == 0 ? 30 : 160);
-    var step = birdTemple ? [0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 6, 6, 7, 7, 8][id]:
-      [0, 1, 1, 2, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8][id];
-    var glassEffect = this.effectText(step, birdTemple, false);
-    var bookEffect = this.effectText(step, birdTemple, true);
+
     var glassText = "<li>" + _("If a player reaches this space with their magnifying glass, they take the left-most free space and select 1 bonus token from the stack") + "</li>";
     var bookText = "";
-    if (glassEffect) {
-      glassText = "<li>" + _("When a player's magnifying glass reaches this space, they ") + glassEffect + "</li>";
-      bookText = "<li>" + _("When a player's notebook reaches this space, they ") + bookEffect + "</li>";
+    if (id <= 7) {
+      var step = this.material.research.squares[id].step;
+      glassText = "<li>" + _("When a player's magnifying glass reaches this space, they ") + this.effectText(step, "glass") + "</li>";
+      bookText = "<li>" + _("When a player's notebook reaches this space, they ") + this.effectText(step, "book") + "</li>";
     }
     var bg = "<div class='research-bg " + (birdTemple ? "front" : "back") + "' style='background-position-x: -" + (x) + "px; background-position-y: -" + y + "px; width: " + w + "px; height: " + h + "px'></div>";
     var headerText = _("Research space");
@@ -357,11 +316,11 @@ class Tooltips {
     }
     return "<h3>" + headerText + "</h3><div class='research-tooltip research-tooltip-" + id + "'>" + bg + "<ul>" + generalExplanation + tokenExplanation + glassText  + bookText + "</ul></div>";
   }
-  researchBonus(type, step, bird) {
-    var effectText = this.effectText(step, bird, type == "book");
+  researchBonus(type, step) {
+    var effectText = this.effectText(step, type);
     var typeText = type == "book" ? _("notebook") : _("magnifying glass");
     effectText = effectText[0].toUpperCase() + effectText.substr(1);
-    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, bird, type=="book") + "</ul>";
+    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, type) + "</ul>";
   }
   assistant(num, gold = false, height) {
     var header = "<h3>" + _("Assistant") + "</h3>";
