@@ -187,47 +187,47 @@ $snakeResearch = [
 ];
 
 $birdTravelCost = [
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
 
-  [[CAR => 1]],
-  [[CAR => 1]],
-  [[SHIP => 1]],
-  [[SHIP => 1]],
-  [[CAR => 1]],
-  [[CAR => 1]],
-  [[SHIP => 1]],
-  [[SHIP => 1]],
+  [[CAR]],
+  [[CAR]],
+  [[SHIP]],
+  [[SHIP]],
+  [[CAR]],
+  [[CAR]],
+  [[SHIP]],
+  [[SHIP]],
 
-  [[CAR => 2]],
-  [[CAR => 2]],
-  [[SHIP => 2]],
-  [[SHIP => 2]]
+  [[CAR, CAR]],
+  [[CAR, CAR]],
+  [[SHIP, SHIP]],
+  [[SHIP, SHIP]]
 ];
 
 $snakeTravelCost = [
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
-  [[BOOT => 1], [BOOT => 2]],
- 
-  [[CAR => 1]],
-  [[CAR => 1]],
-  [[SHIP => 1]],
-  [[SHIP => 1]],
-  [[CAR => 1]],
-  [[BOOT => 2]],
-  [[PLANE => 1]],
-  [[SHIP => 1]],
- 
-  [[CAR => 2]],
-  [[BOOT => 1, PLANE => 1]],
-  [[SHIP => 1, CAR => 1]],
-  [[SHIP => 2]]
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+  [[BOOT], [BOOT, BOOT]],
+
+  [[CAR]],
+  [[CAR]],
+  [[SHIP]],
+  [[SHIP]],
+  [[CAR]],
+  [[BOOT, BOOT]],
+  [[PLANE]],
+  [[SHIP]],
+
+  [[CAR, CAR]],
+  [[BOOT, PLANE]],
+  [[SHIP, CAR]],
+  [[SHIP, SHIP]]
 ];
 
 $sites = [
@@ -261,21 +261,21 @@ $sites = [
 ];
 
 $guardians = [
-    1 =>  ["cost" => ["compass" => 1, "coins" => 1, "arrowhead" => 1],           "boon" => ["travel" => SHIP]],
-    2 =>  ["cost" => ["discard" => 1, "coins" => 1, "arrowhead" => 1],           "boon" => ["exile" => 1]],
-    3 =>  ["cost" => ["travel" => [BOOT => 1], "coins" => 1, "arrowhead" => 1],  "boon" => ["travel" => CAR]],
-    4 =>  ["cost" => ["coins" => 2, "arrowhead" => 1],                           "boon" => ["travel" => CAR]],
-    5 =>  ["cost" => ["travel" => [BOOT => 1], "tablet" => 1, "arrowhead" => 1], "boon" => ["exile" => 1]],
-    6 =>  ["cost" => ["travel" => [PLANE => 1], "arrowhead" => 1],               "boon" => ["exile" => 1]],
-    7 =>  ["cost" => ["compass" => 1, "discard" => 1, "arrowhead" => 1],         "boon" => ["card" => 1]],
-    8 =>  ["cost" => ["coins" => 4],                                             "boon" => ["upgrade" => 1]],
-    9 =>  ["cost" => ["travel" => [SHIP => 1], "arrowhead" => 1],                "boon" => ["travel" => CAR]],
-    10 => ["cost" => ["travel" => [CAR => 1], "arrowhead" => 1],                 "boon" => ["travel" => SHIP]],
-    11 => ["cost" => ["travel" => [BOOT => 2], "compass" => 1],                  "boon" => ["exile" => 1]],
-    12 => ["cost" => ["travel" => [BOOT => 1], "jewel" => 1],                    "boon" => ["travel" => PLANE]],
-    13 => ["cost" => ["tablet" => 3],                                            "boon" => ["travel" => PLANE]],
-    14 => ["cost" => ["travel" => [PLANE => 1], "arrowhead" => 1],               "boon" => ["exile" => 1]],
-    15 => ["cost" => ["compass" => 2, "arrowhead" => 1],                         "boon" => ["travel" => SHIP]]
+    1 =>  ["cost" => ["compass" => 1, "coins" => 1, "arrowhead" => 1],      "boon" => ["travel" => [SHIP]]],
+    2 =>  ["cost" => ["discard" => 1, "coins" => 1, "arrowhead" => 1],      "boon" => ["exile" => 1]],
+    3 =>  ["cost" => ["travel" => [BOOT], "coins" => 1, "arrowhead" => 1],  "boon" => ["travel" => [CAR]]],
+    4 =>  ["cost" => ["coins" => 2, "arrowhead" => 1],                      "boon" => ["travel" => [CAR]]],
+    5 =>  ["cost" => ["travel" => [BOOT], "tablet" => 1, "arrowhead" => 1], "boon" => ["exile" => 1]],
+    6 =>  ["cost" => ["travel" => [PLANE], "arrowhead" => 1],               "boon" => ["exile" => 1]],
+    7 =>  ["cost" => ["compass" => 1, "discard" => 1, "arrowhead" => 1],    "boon" => ["card" => 1]],
+    8 =>  ["cost" => ["coins" => 4],                                        "boon" => ["upgrade" => 1]],
+    9 =>  ["cost" => ["travel" => [SHIP], "arrowhead" => 1],                "boon" => ["travel" => [CAR]]],
+    10 => ["cost" => ["travel" => [CAR], "arrowhead" => 1],                 "boon" => ["travel" => [SHIP]]],
+    11 => ["cost" => ["travel" => [BOOT, BOOT], "compass" => 1],            "boon" => ["exile" => 1]],
+    12 => ["cost" => ["travel" => [BOOT], "jewel" => 1],                    "boon" => ["travel" => [PLANE]]],
+    13 => ["cost" => ["tablet" => 3],                                       "boon" => ["travel" => [PLANE]]],
+    14 => ["cost" => ["travel" => [PLANE], "arrowhead" => 1],               "boon" => ["exile" => 1]],
+    15 => ["cost" => ["compass" => 2, "arrowhead" => 1],                    "boon" => ["travel" => [SHIP]]]
 ];
 
 $this->material = [

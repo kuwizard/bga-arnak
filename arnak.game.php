@@ -982,7 +982,7 @@ class arnak extends Table
     }
   }
 
-  function payTravel($travelReqs, $payment) {
+  function payTravel($iconReqs, $payment) {
     $paymentAvailable = [
     BOOT => max(0, $this->getGameStateValue("discount-boot")),
     CAR => max(0, $this->getGameStateValue("discount-car")),
@@ -990,10 +990,15 @@ class arnak extends Table
     PLANE => max(0, $this->getGameStateValue("discount-plane"))
     ];
 
-    foreach([BOOT, SHIP, CAR, PLANE] as $type) {
-      if (!array_key_exists($type, $travelReqs)) {
-        $travelReqs[$type] = 0;
-      }
+    $travelReqs = [
+      BOOT => 0,
+      SHIP => 0,
+      CAR => 0,
+      PLANE => 0
+    ];
+
+    foreach ($iconReqs as $icon) {
+      $travelReqs[$icon]++;
     }
 
     $playerId = $this->getActivePlayerId();
@@ -1071,11 +1076,16 @@ class arnak extends Table
           if(!isset($boon["travel"])) {
             throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
           }
-          $travelType = $boon["travel"];
-          if (!$this->travelUseful($travelReqs, $travelType)) {
+          $useful = false;
+          foreach ($boon["travel"] as $travelType) {
+            if ($this->travelUseful($travelReqs, $travelType)) {
+              $useful = true;
+            }
+            $paymentAvailable[$travelType]++;
+          }
+          if (!$useful) {
             break;
           }
-          $paymentAvailable[$travelType] += 1;
           $this->getNonEmptyObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $num");
           $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $num");
           $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian for travel symbol'), array(
@@ -1717,7 +1727,7 @@ class arnak extends Table
         break;
       case 3:
         if (!$gold) {
-          $this->payTravel([BOOT => 1], json_decode($assArg, true));
+          $this->payTravel([BOOT], json_decode($assArg, true));
         }
         $this->gainResource("arrowhead", $playerId, 1, $resArg);
         break;
