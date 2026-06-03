@@ -1052,12 +1052,10 @@ function (dojo, declare) {
             x = box.x + 3.3 + j * 5.2;
             y = box.y + 0.2;
           }
-          else if (i == 8 && !this.bird_temple) {
-            console.log(this.bird_temple); //DEBUG THAT
-            var skip = dojo.query(".assistant.position-4")[0] ? 2.5 : 0;
+          else if (i == 8 && dojo.query(".assistant.position-4")[0]) {
             var pos = +j;
             if (pos > 1) {
-              pos += skip;
+              pos += 2.5;
             }
             x = box.x + 0.5 + pos * dx;
           }
