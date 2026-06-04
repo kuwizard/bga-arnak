@@ -56,7 +56,7 @@ class CardEffects {
         break;
       case Artefact::Crystal_Earring:
         if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
-          $game->game->artDone();
+          $game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
           $game->drawCard($this->playerId, false, "earring");
@@ -249,7 +249,7 @@ class CardEffects {
         break;
       case Artefact::Obsidian_Earring:
         if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $this->playerId")) == 0) {
-          $game->game->artDone();
+          $game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
           $game->drawCard($this->playerId, true, "earring");
