@@ -157,6 +157,10 @@ class GameData {
     return $this->game->material["cards"][$card->type()][$card->value]["varname"];
   }
 
+  public function assistantPower($num, $gold) {
+    return $this->game->material["assistants"][$num][$gold?"gold":"silver"];
+  }
+
   public function siteTravelCost($no, $slot) {
     $travelCosts = $this->game->birdTemple() ? $this->game->material["birdTravelCost"] : $this->game->material["snakeTravelCost"];
     return $travelCosts[$no][$slot];
