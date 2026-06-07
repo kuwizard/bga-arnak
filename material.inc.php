@@ -108,6 +108,21 @@ $cards = [
   ]
 ];
 
+$assistants = [
+  1  => ["silver" => ["ressources" => ["coins" => 2]],                       "gold" => ["ressources" => ["coins" => 3]]],
+  2  => ["silver" => ["ressources" => ["tablet" => 1]],                      "gold" => ["ressources" => ["tablet" => 1, "coins" => 1]]],
+  3  => ["silver" => ["payboot" => 1, "ressources" => ["arrowhead" => 1]],   "gold" => ["ressources" => ["arrowhead" => 1]]],
+  4  => ["silver" => ["ressources" => ["coins" => -1, "arrowhead" => 1]],    "gold" => ["ressourcesChoice" => [["coins" => -1, "arrowhead" => 1], ["coins" => -1, "jewel" => 1]]]],
+  5  => ["silver" => ["exile" => 1],                                         "gold" => ["exile" => 1, "ressources" => ["compass" => 1]]],
+  6  => ["silver" => ["ressources" => ["card" => 1], "discard" => 1],        "gold" => ["ressources" => ["card" => 1]]],
+  7  => ["silver" => ["ressources" => ["coins" => 1], "travel" => [PLANE]],  "gold" => ["ressources" => ["coins" => 2], "travel" => [PLANE, PLANE]]],
+  8  => ["silver" => ["ressources" => ["compass" => 1], "travel" => [CAR]],  "gold" => ["ressources" => ["compass" => 1, "coins" => 1], "travel" => [CAR, CAR]]],
+  9  => ["silver" => ["ressources" => ["compass" => 1], "travel" => [SHIP]], "gold" => ["ressources" => ["compass" => 1, "coins" => 1], "travel" => [SHIP, SHIP]]],
+  10 => ["silver" => ["discount" => 1],                                      "gold" => ["discount" => 2]],
+  11 => ["silver" => ["upgrade" => 1],                                       "gold" => ["upgrade" => 1, "ressources" => ["compass" => 1]]],
+  12 => ["silver" => ["ressources" => ["compass" => 1]],                     "gold" => ["ressources" => ["compass" => 2]]]
+];
+
 $birdResearch = [
   "squares" => [
     ["possibilities" => [1, 2],    "step" => 0, "cost" => []],
@@ -280,6 +295,7 @@ $guardians = [
 
 $this->material = [
   "cards" => $cards,
+  "assistants" => $assistants,
   "birdResearch" => $birdResearch,
   "snakeResearch" => $snakeResearch,
   "birdTravelCost" => $birdTravelCost,

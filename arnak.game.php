@@ -465,6 +465,7 @@ class arnak extends Table
 
     $result['material'] = [
       "cards" => $this->material["cards"],
+      "assistants" => $this->material["assistants"],
       "research" => $this->birdTemple() ? $this->material["birdResearch"] : $this->material["snakeResearch"],
       "travelCost" => $this->birdTemple() ? $this->material["birdTravelCost"] : $this->material["snakeTravelCost"],
       "sites" => $this->material["sites"],
@@ -970,18 +971,18 @@ class arnak extends Table
           $assNum = $pay["num"];
           $assistant = $this->getObjectFromDB("SELECT * FROM assistant WHERE num = $assNum AND ready = 1 AND in_hand = $playerId");
           if ($assistant) {
-            $amt = $assistant["gold"] == 1 ? 2 : 1;
-            $travelType;
-            switch($assNum) {
-              case 7: $travelType = PLANE; break;
-              case 8: $travelType = CAR; break;
-              case 9: $travelType = SHIP; break;
-              default: throw new BgaUserException("Cannot pay with that assistant");
+            $effect = $this->gameData->assistantPower($assNum, $assistant["gold"]);
+            if (!$effect["travel"]) {
+              throw new BgaUserException("Cannot pay with that assistant");
             }
-            if (!$this->travelUseful($travelReqs, $travelType)) {
+            $travelUseful = false;
+            foreach ($effect["travel"] as $icon) {
+              $travelUseful |= $this->travelUseful($travelReqs, $icon);
+              $paymentAvailable[$icon]++;
+            }
+            if (!$travelUseful) {
               break;
             }
-            $paymentAvailable[$travelType] += $amt;
             $this->dbQuery("UPDATE assistant SET ready = 0 WHERE num = $assNum");
             $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses his assistant for travel icons'), array(
               "player_name" => $this->getActivePlayerName(),
@@ -1547,10 +1548,11 @@ class arnak extends Table
         $this->revealLocation();
       }
       else if ($assistant["ready"] == 1) {
-        if( $assNum == 10 ) {
+        $effect = $this->gameData->assistantPower($assNum, $assistant["gold"]);
+        if (isset($effect["discount"])) {
           $this->checkAction("useActionAssistant");
         }
-        $this->assistantEffect($assNum, $assArg);
+        $this->assistantEffect($assNum, $assArg, $assistant["gold"]);
         return;
       }
 
@@ -1566,15 +1568,17 @@ class arnak extends Table
       }
       if ($artActive >=0 && is_null($assistant["in_hand"])) {
         if (Artefact::from($artActive) == Artefact::Ancient_Wine) {
-          $this->assistantEffect($assNum, $assArg, "gold");
-          if ($assNum != 10) {
+          $effect = $this->gameData->assistantPower($assNum, true);
+          $this->assistantEffect($assNum, $assArg, true);
+          if (!isset($effect["discount"])) {
             $this->artDone();
           }
           return;
         }
         if (Artefact::from($artActive) == Artefact::Coconut_Flask) {
-          $this->assistantEffect($assNum, $assArg, "silver");
-          if ($assNum != 10 && $assNum != 6) {
+          $effect = $this->gameData->assistantPower($assNum, false);
+          $this->assistantEffect($assNum, $assArg, false);
+          if (!isset($effect["discount"]) && !isset($effect["discard"])) {
             $this->artDone();
           }
           return;
@@ -1625,7 +1629,7 @@ class arnak extends Table
       $this->didResearch();
     }
   }
-  function assistantEffect($assNum, $assArg, $color = null) {
+  function assistantEffect($assNum, $assArg, $gold) {
     $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $assNum");
     if ($assistant["in_hand"]) {
       $this->dbQuery("UPDATE assistant SET ready = 0 WHERE num = $assNum AND ready = 1");
@@ -1637,86 +1641,46 @@ class arnak extends Table
     }
 
     $assArg = base64_decode($assArg);
-    $gold = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $assNum")["gold"] == "1";
-    if (!is_null($color)) {
-      $gold = $color == "gold" ? true : false;
-    }
     $playerId = $this->getActivePlayerId();
     $this->incStat(1, "assistant-activated", $playerId);
     $this->incStat(1, "assistant-activated-".($gold ? "gold" : "silver"), $playerId);
     $resArg = array("component" => "assistant", "num" => $assNum);
-    switch($assNum) {
-      case 1:
-        $this->gainResource("coins", $playerId, $gold ? 3 : 2, $resArg);
-        break;
-      case 2:
-        $this->gainResource("tablet", $playerId, 1, $resArg);
-        if ($gold) {
-          $this->gainResource("coins", $playerId, 1, $resArg);
-        }
-        break;
-      case 3:
-        if (!$gold) {
-          $this->payTravel([BOOT], json_decode($assArg, true));
-        }
-        $this->gainResource("arrowhead", $playerId, 1, $resArg);
-        break;
-      case 4:
-        $this->gainResource("coins", $playerId, -1, $resArg);
-        if ($gold && $assArg == "jewel") {
-          $this->gainResource("jewel", $playerId, 1, $resArg);
-        }
-        else {
-          $this->gainResource("arrowhead", $playerId, 1, $resArg);
-        }
-        break;
-      case 5:
-        $this->exile($assArg);
-        if ($gold) {
-          $this->gainResource("compass", $playerId, 1, $resArg);
-        }
-        break;
-      case 6:
-        $this->gainResource("card", $playerId, 1);
-        if (!$gold) {
-          $this->gamestate->nextState("assistantDiscard");
-          //$this->discardCard($assArg);
-        }
-        break;
-      case 7:
-        $this->gainResource("coins", $playerId, $gold ? 2 : 1, $resArg);
-        break;
-      case 8: case 9:
-        $this->gainResource("compass", $playerId, 1, $resArg);
-        if ($gold) {
-          $this->gainResource("coins", $playerId, 1, $resArg);
-        }
-        break;
-      case 10:
-        $amt = $gold ? 2 : 1;
-        $this->setGameStateValue("discount-coins", $amt);
-        $this->setGameStateValue("discount-compass", $amt);
-        $artActive = $this->getGameStateValue("art-active");
-        $freeAction = false;
-        $card = $this->sqlWrapper->getCardFromId($assArg);
-        if ($artActive >=0 && (Artefact::from($artActive) == Artefact::Coconut_Flask || Artefact::from($artActive) == Artefact::Ancient_Wine) && $card["info"]->type() == "art") {
+    $effect = $this->gameData->assistantPower($assNum, $gold);
+    $ressources = [];
+    if (isset($effect["ressourcesChoice"])) {
+      $choice = ($assArg == "jewel") ? 1 : 0;
+      $ressources = $effect["ressourcesChoice"][$choice];
+    }
+    else if (isset($effect["ressources"])) {
+      $ressources = $effect["ressources"];
+    }
+    if (isset($effect["payboot"])) {
+      $this->payTravel([BOOT], json_decode($assArg, true));
+    }
+    if (isset($effect["exile"])) {
+      $this->exile($assArg);
+    }
+    if (isset($effect["discard"])) {
+      $this->gamestate->nextState("assistantDiscard");
+    }
+    if (isset($effect["upgrade"])) {
+      $this->upgrade($assArg, true);
+    }
+    if (isset($effect["discount"])) {
+      $this->setGameStateValue("discount-coins", $effect["discount"]);
+      $this->setGameStateValue("discount-compass", $effect["discount"]);
+      $artActive = $this->getGameStateValue("art-active");
+      $freeAction = false;
+      $card = $this->sqlWrapper->getCardFromId($assArg);
+      if ($artActive >=0 && (Artefact::from($artActive) == Artefact::Coconut_Flask || Artefact::from($artActive) == Artefact::Ancient_Wine) && $card["info"]->type() == "art") {
+        $freeAction = true;
+      }
+      $this->buyCard($assArg, false, !$freeAction);
+      // not main action if on board
+    }
 
-          $freeAction = true;
-          //$this->gamestate->nextState("artWaitArgs");
-        }
-        $this->buyCard($assArg, false, !$freeAction);
-
-        // not main action if on board
-        break;
-      case 11:
-        $this->upgrade($assArg, true);
-        if ($gold) {
-          $this->gainResource("compass", $playerId, 1, $resArg);
-        }
-        break;
-      case 12:
-        $this->gainResource("compass", $playerId, $gold ? 2 : 1, $resArg);
-        break;
+    foreach ($ressources as $ressource => $amt) {
+      $this->gainResource($ressource, $playerId, $amt, $resArg);
     }
   }
   function upgradeAssistant($assNum) {

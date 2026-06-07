@@ -1821,7 +1821,6 @@ function (dojo, declare) {
         }, this, function(result) {});
         return;
       }
-      var callAction = false;
       var a = this.gamedatas.gamestate.args;
       var spec;
       if (a) {
@@ -1829,48 +1828,33 @@ function (dojo, declare) {
       }
       var playInHand = !exhausted && inHand && spec != "assistant-gold";
       var playAtBoard = !inHand && this.gamedatas.gamestate.name == "artActivateAss";
+      var callAction = false;
       if (this.isCurrentPlayerActive() && (playInHand || playAtBoard)) {
+        var assistantEffect = this.material.assistants[num][gold?"gold":"silver"];
         var state = this.gamedatas.gamestate.name;
-        if ((state == "payTravel" || state == "assTravel") && [7, 8, 9].indexOf(+num) > -1) {
+        if ("travel" in assistantEffect && (state == "payTravel" || state == "assTravel")) {
           this.travelSelected.push({type: "assistant", num: num});
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
         }
+        else if ("payboot" in assistantEffect) {
+          this.setClientState("assTravel", {descriptionmyturn: _("Pay travel:") + " <div class='travel-costs'><div class='travel-icon icon boot'>"});
+        }
+        else if ("ressourcesChoice" in assistantEffect) {
+          this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource")});
+        }
+        else if ("exile" in assistantEffect) {
+          this.setClientState("assExile", {descriptionmyturn: _("Select card to exile")});
+        }
+        else if ("discount" in assistantEffect && (playAtBoard || state == "selectAction")) {
+          this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
+          dojo.query(".card.supply").addClass("highlight-turn");
+        }
+        else if ("upgrade" in assistantEffect) {
+          this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade")});
+        }
         else {
-          switch(num) {
-            case 3: // pay boot
-              if (gold) {
-                callAction = true;
-              }
-              else {
-                this.setClientState("assTravel", {descriptionmyturn: _("Pay travel:") + " <div class='travel-costs'><div class='travel-icon icon boot'>"});
-              }
-              break;
-            case 4: // gold select jewel vs arrowhead
-              if (gold) {
-                this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource")});
-              }
-              else {
-                callAction = true;
-              }
-              break;
-            case 5: // exile
-              this.setClientState("assExile", {descriptionmyturn: _("Select card to exile")});
-              break;
-            case 10:
-              if (playAtBoard || this.gamedatas.gamestate.name == "selectAction") {
-                this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
-                dojo.query(".card.supply").addClass("highlight-turn");
-              }
-              else {
-                callAction = true;
-              }
-              break;
-            case 11: // choose upgrade
-              this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade")});
-              break;
-            default: callAction = true;
-          }
+          callAction = true;
         }
       }
       else {
