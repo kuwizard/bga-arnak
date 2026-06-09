@@ -452,7 +452,7 @@ class arnak extends Table
       $result['players'][$idPlayer]["play"] = $this->sqlWrapper->getPublicCards($idPlayer, 'play');
       $result['players'][$idPlayer]["deck_amt"] = count($this->sqlWrapper->getPublicCards($idPlayer, 'deck'));
       $result['players'][$idPlayer]["hand_amt"] = count($this->sqlWrapper->getPublicCards($idPlayer, 'hand')) + count($this->sqlWrapper->getPublicCards($idPlayer, 'keep'));
-      $result['players'][$idPlayer]["assistants"] = $this->getObjectListFromDb("SELECT idassistant id, gold gold, num num, ready ready FROM assistant WHERE in_hand = $idPlayer");
+      $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
       $result['players'][$idPlayer]["guardian"] = count($this->getObjectListFromDb("SELECT * FROM guardian WHERE in_hand = $idPlayer"));
       $result['players'][$idPlayer]["guardians_ready"] = $this->getObjectListFromDb("SELECT idguardian id, num num FROM guardian WHERE in_hand = $idPlayer AND ready = 1");
     }
@@ -477,10 +477,9 @@ class arnak extends Table
     }
     $stackAmt = $this->birdTemple() ? 3 : 4;
     for ($stackId = 1; $stackId <= $stackAmt; ++$stackId) {
-      $result["assistants"][$stackId] = $this->getObjectFromDB("SELECT * FROM assistant WHERE in_offer = $stackId AND in_hand IS NULL ORDER BY offer_order LIMIT 1");
-      if ($result["assistants"][$stackId]) {
-        $result["assistants"][$stackId]["deckHeight"] = $this->getObjectFromDB("SELECT COUNT(idassistant) count FROM assistant WHERE in_offer = $stackId")["count"];
-      }
+      $assistants = $this->sqlWrapper->getAssistantsStack($stackId);
+      $result["assistants"][$stackId] = (count($assistants) > 0) ? $assistants[0] : [];
+      $result["assistants"][$stackId]["deckHeight"] = count($assistants);
     }
     $result['bird_temple'] = $this->birdTemple();
     $result["turn_based"] = $this->isTurnBased();
@@ -692,7 +691,7 @@ class arnak extends Table
 
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
-      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $player")) == 0) {
+      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player))) {
         $clientArgs = false;
       }
 
@@ -789,10 +788,7 @@ class arnak extends Table
     if ($this->getGameStateValue("special-research-done") == 0) {
       $result["special"] = $this->currentSpecialResearch();
       if ($result["special"] == "assistant-special") {
-        $result["_private"]["active"]["special_assistants"] = array_map(
-          function($a) {return intval($a["num"]);},
-          $this->getObjectListFromDb("SELECT num FROM assistant WHERE in_offer = 4")
-        );
+        $result["_private"]["active"]["special_assistants"] = $this->sqlWrapper->getAssistantsStack(4);
       }
     }
     if ($this->getGameStateValue("research-token-done") == 0) {
@@ -992,8 +988,8 @@ class arnak extends Table
           break;
         case "assistant":
           $assNum = $pay["num"];
-          $assistant = $this->getObjectFromDB("SELECT * FROM assistant WHERE num = $assNum AND ready = 1 AND in_hand = $playerId");
-          if ($assistant) {
+          $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
+          if ($assistant["ready"] == 1 && $assistant["in_hand"] == $playerId) {
             $effect = $this->gameData->assistantPower($assNum, $assistant["gold"]);
             if (!$effect["travel"]) {
               throw new BgaUserException("Cannot pay with that assistant");
@@ -1285,7 +1281,7 @@ class arnak extends Table
 
           break;
         case "refresh":
-          if (count($this->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $playerId")) > 0) {
+          if (count($this->sqlWrapper->getPlayerAssistants($playerId)) > 0) {
             $this->gamestate->nextState("idolRefresh");
           }
           else {
@@ -1546,7 +1542,7 @@ class arnak extends Table
   }
 
   function useAssistant($assNum, $assArg = "") {
-    $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $assNum");
+    $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
     $playerId = $this->getActivePlayerId();
     if ($this->getCurrentPlayerId() != $playerId) {
       throw new BgaUserException("It is not your turn");
@@ -1612,16 +1608,24 @@ class arnak extends Table
   }
   function getNewAssistant($assNum, $free = false, $gold = false) {
     $playerId = $this->getActivePlayerId();
-    $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $assNum AND in_hand IS NULL");
+    $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
+    if ($assistant["in_hand"]) {
+      throw new BgaUserException(clienttranslate("Trying to get assistant not in a stack"));
+    }
     $stackId = $assistant["in_offer"];
-    $topAssistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE in_hand IS NULL AND in_offer = $stackId ORDER BY offer_order LIMIT 1");
+    $assistants = $this->sqlWrapper->getAssistantsStack($stackId);
+    $numAssistants = count($assistants);
+    if ($numAssistants == 0) {
+      throw new BgaUserException(clienttranslate("No assistant available in this stack"));
+    }
+    $topAssistantNum = $assistants[0]["num"];
     if ($this->currentSpecialResearch() == "assistant-special") {
       if ($assistant["in_offer"] != 4) {
         throw new BgaUserException(clienttranslate("You must select an assistant from the current research space"));
       }
     }
     else {
-      if ($topAssistant["num"] !== $assistant["num"]) {
+      if ($topAssistantNum != $assNum) {
         throw new BgaUserException(clienttranslate("trying to get assistant that is not at the top of the deck"));
       }
       if ($assistant["in_offer"] == 4) {
@@ -1630,19 +1634,17 @@ class arnak extends Table
     }
     $color = $gold ? 1 : 0;
     $this->dbQuery("UPDATE assistant SET in_hand = $playerId, gold = $color, in_offer = NULL WHERE num = $assNum");
-    $topAssistant = $this->getObjectFromDB("SELECT * FROM assistant WHERE in_hand IS NULL AND in_offer = $stackId ORDER BY offer_order LIMIT 1");
-    if ($topAssistant) {
-      $revealedNum = $topAssistant["num"];
+    $newStack = $this->sqlWrapper->getAssistantsStack($stackId);
+    $revealedNum = null;
+    if (count($newStack) > 0) {
+      $revealedNum = $newStack[0]["num"];
       $this->undoSavePoint();
-    }
-    else {
-      $revealedNum = null;
     }
     $this->notifyAllPlayers("getAssistant", clienttranslate('${player_name} got an assistant'), array(
       "player_name" => $this->getActivePlayerName(),
       "player_id" => $this->getActivePlayerId(),
       "revealedAss" => $revealedNum,
-      "newHeight" => $this->getObjectFromDB("SELECT COUNT(idassistant) count FROM assistant WHERE in_offer = $stackId")["count"],
+      "newHeight" => count($newStack),
       "assNum" => $assNum,
       "gold" => $gold
     ));
@@ -1653,7 +1655,7 @@ class arnak extends Table
     }
   }
   function assistantEffect($assNum, $assArg, $gold) {
-    $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $assNum");
+    $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
     if ($assistant["in_hand"]) {
       $this->dbQuery("UPDATE assistant SET ready = 0 WHERE num = $assNum AND ready = 1");
       $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses an assistant'), array(
@@ -1708,7 +1710,10 @@ class arnak extends Table
   }
   function upgradeAssistant($assNum) {
     $playerId = $this->getActivePlayerId();
-    $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE in_hand = $playerId AND num = $assNum AND gold = 0");
+    $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
+    if (!$assistant["in_hand"] || $assistant["gold"] == 1) {
+      throw new BgaUserException(clienttranslate("Cannot upgrade this assistant"));
+    }
     $this->dbQuery("UPDATE assistant SET gold = 1 WHERE num = $assNum");
     $this->notifyAllPlayers("upgradeAss", clienttranslate('${player_name} upgrades his assistant to gold'), array(
     "player_name" => $this->getActivePlayerName(),

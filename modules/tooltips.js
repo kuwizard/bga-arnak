@@ -372,7 +372,7 @@ class Tooltips {
     effectText = effectText[0].toUpperCase() + effectText.substr(1);
     return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, type) + "</ul>";
   }
-  assistant(num, gold = false, height) {
+  assistant(num, gold, height) {
     var header = "<h3>" + _("Assistant") + "</h3>";
     var silverEffect = "<li>" + ["",
       _("Gain 2 coins"),
