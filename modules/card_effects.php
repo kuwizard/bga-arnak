@@ -170,12 +170,18 @@ class CardEffects {
         $args = JSON_DECODE($arg);
         $old = $args->oldAss;
         $new = $args->newAss;
-        $oldAss = $game->getNonEmptyObjectFromDb("SELECT * FROM assistant WHERE num = $old AND in_hand = $this->playerId");
-        $newAss = $game->getNonEmptyObjectFromDb("SELECT * FROM assistant WHERE num = $new AND in_hand IS NULL");
+        $oldAss = $game->sqlWrapper->getAssistantFromNum($old);
+        if ($oldAss["in_hand"] != $this->playerId) {
+          throw new BgaUserException(clienttranslate("You must select an assistant from your board"));
+        }
+        $newAss = $game->sqlWrapper->getAssistantFromNum($new);
+        if ($newAss["in_hand"]) {
+          throw new BgaUserException(clienttranslate("You must select an assistant from a stack"));
+        }
         $slot = $newAss["in_offer"];
-        $gold = $oldAss["gold"] == 1;
+        $gold = $oldAss["gold"];
         $game->dbQuery("UPDATE assistant SET offer_order = offer_order - 1 WHERE num = $new");
-        $order = $game->getObjectFromDb("SELECT * FROM assistant WHERE num = $new")["offer_order"] + 1;
+        $order = $newAss["offer_order"];
         $game->dbQuery("UPDATE assistant SET in_hand = NULL, in_offer = $slot, offer_order = $order, ready = true, gold = false WHERE num = $old");
         $game->notifyAllPlayers('returnAss', '${player_name} returns his assistant to the supply', 
         array(
@@ -224,7 +230,7 @@ class CardEffects {
           break;
         }
 
-        $assistant = $game->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $arg");
+        $assistant = $game->sqlWrapper->getAssistantFromNum($arg);
         if($assistant['in_hand'] != $this->playerId) {
           throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
         }
@@ -232,9 +238,11 @@ class CardEffects {
         break;
       case Artefact::Sacred_Drum:
         $game->discardCard($arg);
-        $assistants = $game->getCollectionFromDb("SELECT * FROM assistant WHERE in_hand = $this->playerId AND ready = 0");
+        $assistants = $game->sqlWrapper->getPlayerAssistants($this->playerId);
         foreach($assistants as $assId => $ass) {
-          $game->refreshAssistant($ass["num"]);
+          if ($ass["ready"] == 0) {
+            $game->refreshAssistant($ass["num"]);
+          }
         }
         break;
       case Artefact::Traders_Coins:

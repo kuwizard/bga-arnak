@@ -256,5 +256,46 @@ class SqlWrapper {
     }
     return $card;
   }
+
+  public function getAssistantFromNum($num) {
+    $assistants = $this->getAssistants(["num" => $num], ["in_hand", "in_offer", "gold", "ready"]);
+    if (count($assistants) > 0) {
+      $assistants[0]["gold"] = ($assistants[0]["gold"] == 1);
+      $assistants[0]["ready"] = ($assistants[0]["ready"] == 1);
+      $assistants[0]["in_hand"] = is_null($assistants[0]["in_hand"])?NULL:intval($assistants[0]["in_hand"]);
+      $assistants[0]["in_offer"] = intval($assistants[0]["in_offer"]);
+    }
+    return (count($assistants) > 0)?$assistants[0]:NULL;
+  }
+
+  public function getAssistantsStack($stack) {
+    $assistants = $this->getAssistants(["in_hand" => NULL, "in_offer" => $stack], ["num", "gold", "ready"]);
+    foreach ($assistants as $idx => $ass) {
+      $assistants[$idx]["num"] = (intval($ass["num"]));
+      $assistants[$idx]["gold"] = ($ass["gold"] == 1);
+      $assistants[$idx]["ready"] = ($ass["ready"] == 1);
+    }
+    return $assistants;
+  }
+
+  public function getPlayerAssistants($playerId) {
+    $assistants = $this->getAssistants(["in_hand" => $playerId], ["num", "gold", "ready"]);
+    foreach ($assistants as $idx => $ass) {
+      $assistants[$idx]["num"] = (intval($ass["num"]));
+      $assistants[$idx]["gold"] = ($ass["gold"] == 1);
+      $assistants[$idx]["ready"] = ($ass["ready"] == 1);
+    }
+    return $assistants;
+  }
+
+  private function getAssistants($conditions, $fields) {
+    $conds = [];
+    foreach ($conditions as $key => $value) {
+      array_push($conds, ($value === NULL)?"$key IS NULL":"$key = $value");
+    }
+    $conds_str = implode(' AND ', $conds);
+    $fields_str = implode(', ', $fields);
+    return $this->game->getObjectListFromDb("SELECT $fields_str FROM assistant WHERE $conds_str ORDER BY offer_order");
+  }
 }
 ?>

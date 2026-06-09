@@ -286,7 +286,7 @@ function (dojo, declare) {
         for (var assistant of player.assistants) {
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
           dojo.place(assDiv, handDiv);
-          this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold == 1 ? true : false));
+          this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold));
         }
         for (var idolBonus of ["jewel", "arrowhead", "tablet", "coins", "card"]) {
           var div = dojo.query(".idol-bonus.bonus-" + idolBonus, handDiv)[0];
@@ -374,13 +374,13 @@ function (dojo, declare) {
         ++id;
       }
 
-      for (var assistant of Object.values(gamedatas.assistants)) {
-        if (assistant) {
+      for (var stack in gamedatas.assistants) {
+        var assistant = gamedatas.assistants[stack];
+        if (assistant.deckHeight > 0) {
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
-
-          dojo.addClass(assDiv, "position-" + assistant.in_offer);
+          dojo.addClass(assDiv, "position-" + stack);
           dojo.place(assDiv, board);
-          this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, false, assistant.deckHeight));
+          this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold, assistant.deckHeight));
         }
       }
       dojo.query(".assistant").connect("click", this, "assistantClick");
@@ -550,7 +550,7 @@ function (dojo, declare) {
       assDiv.id = "assistant-" + num;
 
       var rotateWrap = dojo.create("div");
-      dojo.addClass(rotateWrap, "assistant-inner assistant-" +num + " " + (gold == "1" ? "gold" : "silver") + " " + (ready == "1" ? "ready" : "exhausted"));
+      dojo.addClass(rotateWrap, "assistant-inner assistant-" +num + " " + (gold ? "gold" : "silver") + " " + (ready ? "ready" : "exhausted"));
       assDiv.dataset.num = num;
       dojo.place(rotateWrap, assDiv);
       return assDiv;
@@ -1084,18 +1084,19 @@ function (dojo, declare) {
         x -= 40;
       }
     },
-    specialAssistants: function(assNums) {
+    specialAssistants: function(assistants) {
       var position = 4;
-      for (aNum of assNums) {
+      for (assistant of assistants) {
+        var aNum = assistant.num;
         var assDiv = dojo.query(`.assistant[data-num=${aNum}]`)[0];
         if (!assDiv) {
-          assDiv = this.assistantDiv(aNum, 0, 0);
+          assDiv = this.assistantDiv(aNum, assistant.gold, assistant.ready);
           dojo.connect(assDiv, "click", this, "assistantClick");
         }
         var board = dojo.query(".arnak-board")[0];
         dojo.addClass(assDiv, "position-" + position);
         dojo.place(assDiv, board);
-        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, false));
+        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, assistant.gold));
         ++position;
       }
     },
