@@ -246,7 +246,7 @@ class arnak extends Table
       $this->DbQuery("UPDATE player SET compass = ".$compassGain[$playerOrder].", coins = ".$coinGain[$playerOrder].", idol_slot = 4 WHERE player_id = $playerId");
 
       if ($this->debugMode()) {
-        $this->DbQuery("UPDATE player SET tablet = 50, arrowhead = 50, jewel = 50, coins = 50, compass = 50, idol = 4, research_glass = 12, research_book = 0 WHERE player_id = $playerId");
+        $this->DbQuery("UPDATE player SET tablet = 50, arrowhead = 50, jewel = 50, coins = 50, compass = 50, idol = 4, research_glass = 6, research_book = 0 WHERE player_id = $playerId");
       }
 
     }
@@ -353,6 +353,10 @@ class arnak extends Table
     if ($this->debugMode()) {
       $arts = [
         Artefact::Guardians_Ocarina,
+        Artefact::Decorated_Horn,
+        Artefact::Sacred_Drum,
+        Artefact::Coconut_Flask,
+        Artefact::Ancient_Wine,
         Artefact::Crystal_Earring,
         Artefact::Obsidian_Earring,
         Artefact::Pathfinders_Sandals,
