@@ -302,5 +302,36 @@ class SqlWrapper {
     $fields_str = implode(', ', $fields);
     return $this->game->getObjectListFromDb("SELECT $fields_str FROM assistant WHERE $conds_str ORDER BY offer_order");
   }
+  
+  public function changeAssistantUpgarded($num, $upgraded) {
+    $gold = $upgraded ? 1 : 0;
+    $this->game->DbQuery("UPDATE assistant SET gold = $gold WHERE num = $num");
+  }
+
+  public function changeAssistantUsed($num, $used) {
+    $ready = $used ? 0 : 1;
+    $this->game->DbQuery("UPDATE assistant SET ready = $ready WHERE num = $num");
+  }
+
+  public function moveAssistantFromStack($num, $playerId) {
+    $assistants = $this->getAssistants(["in_hand" => $playerId], ["offer_order"]);
+    $order = 0;
+    if (count($assistants) > 0 && $assistants[0]["offer_order"] == 0) {
+      $order = 1;
+    }
+    $this->game->DbQuery("UPDATE assistant SET in_offer = NULL, offer_order = $order, in_hand = $playerId WHERE num = $num");
+  }
+
+  public function moveAssistantHiddenInStack($num, $slot) {
+    $assistants = $this->getAssistants(["in_hand" => NULL, "in_offer" => $slot], ["num, offer_order"]);
+    $order = 0;
+    if (count($assistants) > 0) {
+      $firstAss = $assistants[0];
+      $order = $firstAss["offer_order"];
+      $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = ".($order - 1).", in_hand = NULL WHERE num = ".$firstAss["num"]);
+    }
+    $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = $order, in_hand = NULL WHERE num = $num");
+  }
+
 }
 ?>

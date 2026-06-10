@@ -1002,7 +1002,7 @@ class arnak extends Table
             if (!$travelUseful) {
               break;
             }
-            $this->dbQuery("UPDATE assistant SET ready = 0 WHERE num = $assNum");
+            $this->sqlWrapper->changeAssistantUsed($assNum, true);
             $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses his assistant for travel icons'), array(
               "player_name" => $this->getActivePlayerName(),
               "player_id" => $this->getActivePlayerId(),
@@ -1632,8 +1632,8 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("You must select an assistant from one of the 3 stacks at the bottom right of the board"));
       }
     }
-    $color = $gold ? 1 : 0;
-    $this->dbQuery("UPDATE assistant SET in_hand = $playerId, gold = $color, in_offer = NULL WHERE num = $assNum");
+    $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId);
+    $this->sqlWrapper->changeAssistantUpgarded($assNum, $gold);
     $newStack = $this->sqlWrapper->getAssistantsStack($stackId);
     $revealedNum = null;
     if (count($newStack) > 0) {
@@ -1657,7 +1657,7 @@ class arnak extends Table
   function assistantEffect($assNum, $assArg, $gold) {
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
     if ($assistant["in_hand"]) {
-      $this->dbQuery("UPDATE assistant SET ready = 0 WHERE num = $assNum AND ready = 1");
+      $this->sqlWrapper->changeAssistantUsed($assNum, true);
       $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses an assistant'), array(
         "player_name" => $this->getActivePlayerName(),
         "player_id" => $this->getActivePlayerId(),
@@ -1714,7 +1714,7 @@ class arnak extends Table
     if (!$assistant["in_hand"] || $assistant["gold"] == 1) {
       throw new BgaUserException(clienttranslate("Cannot upgrade this assistant"));
     }
-    $this->dbQuery("UPDATE assistant SET gold = 1 WHERE num = $assNum");
+    $this->sqlWrapper->changeAssistantUpgarded($assNum, true);
     $this->notifyAllPlayers("upgradeAss", clienttranslate('${player_name} upgrades his assistant to gold'), array(
     "player_name" => $this->getActivePlayerName(),
     "player_id" => $this->getActivePlayerId(),
@@ -1724,7 +1724,7 @@ class arnak extends Table
     $this->didResearch();
   }
   function refreshAssistant($assNum) {
-    $this->dbQuery("UPDATE assistant SET ready = 1 WHERE num = $assNum");
+    $this->sqlWrapper->changeAssistantUsed($assNum, false);
     $this->notifyAllPlayers("refreshAss", clienttranslate('${player_name} refreshes his assistant'),
       array(
       "player_name" => $this->getActivePlayerName(),
@@ -2128,7 +2128,10 @@ class arnak extends Table
       }
     }
 
-    $this->DbQuery("UPDATE assistant SET ready = 1 WHERE in_hand IS NOT NULL");
+    $assistants = $this->sqlWrapper->getPlayerAssistants($playerId);
+    foreach ($assistants as $assistant) {
+      $this->sqlWrapper->changeAssistantUsed($assistant["num"], false);
+    }
     $this->notifyAllPlayers("refreshAll", clienttranslate("Everyone refreshes their assistants"), array());
 
     if (!$firstRound) {
