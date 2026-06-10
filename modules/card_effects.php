@@ -180,9 +180,9 @@ class CardEffects {
         }
         $slot = $newAss["in_offer"];
         $gold = $oldAss["gold"];
-        $game->dbQuery("UPDATE assistant SET offer_order = offer_order - 1 WHERE num = $new");
-        $order = $newAss["offer_order"];
-        $game->dbQuery("UPDATE assistant SET in_hand = NULL, in_offer = $slot, offer_order = $order, ready = true, gold = false WHERE num = $old");
+        $game->sqlWrapper->changeAssistantUpgarded($old, false);
+        $game->sqlWrapper->changeAssistantUsed($old, false);
+        $game->sqlWrapper->moveAssistantHiddenInStack($old, $slot);
         $game->notifyAllPlayers('returnAss', '${player_name} returns his assistant to the supply', 
         array(
           "player_name" => $game->getActivePlayerName(),
