@@ -1627,8 +1627,8 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("You must select an assistant from one of the 3 stacks at the bottom right of the board"));
       }
     }
-    $revealedNum = ($numAssistants > 1 && $topAssistantNum == $assNum)?$assistants[1]["num"]:NULL;
-    $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId, clienttranslate('${player_name} got an assistant'), $revealedNum, ($numAssistants - 1), $stackId);
+    $revealedAss = ($numAssistants > 1 && $topAssistantNum == $assNum)?$assistants[1]:NULL;
+    $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId, clienttranslate('${player_name} got an assistant'), $revealedAss, ($numAssistants - 1), $stackId);
     $this->sqlWrapper->changeAssistantUpgarded($assNum, $gold);
     if ($numAssistants > 1) {
       $this->undoSavePoint();
