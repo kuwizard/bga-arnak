@@ -288,6 +288,7 @@ function (dojo, declare) {
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
           this.setAssistantPosition(assDiv, "camp" + i);
           dojo.place(assDiv, handDiv);
+          dojo.connect(assDiv, "click", this, "assistantClick");
           this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold));
         }
         for (var idolBonus of ["jewel", "arrowhead", "tablet", "coins", "card"]) {
@@ -382,10 +383,10 @@ function (dojo, declare) {
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
           this.setAssistantPosition(assDiv, (stack == 4)?("special1"):("stack" + stack));
           dojo.place(assDiv, board);
+          dojo.connect(assDiv, "click", this, "assistantClick");
           this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold, assistant.deckHeight));
         }
       }
-      dojo.query(".assistant").connect("click", this, "assistantClick");
 
       this.updateResearchTrack();
 
@@ -1091,14 +1092,14 @@ function (dojo, declare) {
       for (assistant of assistants) {
         var aNum = assistant.num;
         var assDiv = dojo.query(`.assistant[data-num=${aNum}]`)[0];
+        var board = dojo.query(".arnak-board")[0];
         if (!assDiv) {
           assDiv = this.assistantDiv(aNum, assistant.gold, assistant.ready);
+          this.setAssistantPosition(assDiv, "special" + position);
+          dojo.place(assDiv, board);
+          this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, assistant.gold));
           dojo.connect(assDiv, "click", this, "assistantClick");
         }
-        var board = dojo.query(".arnak-board")[0];
-        this.setAssistantPosition(assDiv, "special" + position);
-        dojo.place(assDiv, board);
-        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, assistant.gold));
         ++position;
       }
     },
@@ -2664,6 +2665,8 @@ function (dojo, declare) {
 
       this.notifqueue.setSynchronous("moveCard", 800);
 
+      this.notifqueue.setSynchronous("returnAss",1000);
+      this.notifqueue.setSynchronous("getAssistant",100);
       this.notifqueue.setSynchronous("gainRes", 500);
       this.notifqueue.setSynchronous("score", 2000);
       this.notifqueue.setSynchronous("moveWorker", 800);
@@ -2978,13 +2981,13 @@ function (dojo, declare) {
     },
     notif_getAssistant: function(notif) {
       var assDiv = dojo.query(".assistant[data-num=" + notif.args.assNum + "]")[0];
-      if (assDiv) {
-        var newAssDiv = assDiv.cloneNode(true);
-      }
-      else {
-        assDiv = dojo.query(".assistant.position-special1")[0];
-        var newAssDiv = this.assistantDiv(notif.args.assNum, false, false);
-        dojo.place(newAssDiv, dojo.query(".arnak-board")[0]);
+      var board = dojo.query(".arnak-board")[0];
+      if (!assDiv) {
+        assDiv = this.assistantDiv(notif.args.assNum, false, false);
+        dojo.place(assDiv, board);
+        this.setAssistantPosition(assDiv, "special1");
+        dojo.connect(assDiv, "click", this, "assistantClick");
+        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(notif.args.assNum, false));
       }
 
       var targetBoard = dojo.query(".camp-" + notif.args.player_id)[0];
@@ -2994,38 +2997,52 @@ function (dojo, declare) {
       var s = targetB.w / targetBoard.offsetWidth;
       x += (1-s) * (x) * (1/s);
       y += (1-s) * (y) * (1/s);
-      //dojo.removeClass(newAssDiv.childNodes[0], "exhausted");
-      dojo.style(newAssDiv, "left", x + "px");
-      dojo.style(newAssDiv, "top", y + "px");
-      dojo.place(newAssDiv, targetBoard);
-      this.addTooltipHtml(newAssDiv.id, this.tooltips.assistant(notif.args.assNum, false));
-      this.setAssistantPosition(newAssDiv, "camp" + notif.args.playerSlot);
-      for (var i = 2; i <= 4; ++i) {
-        dojo.query(".assistant.position-special" + i).forEach(function(n) {dojo.destroy(n)});
-      }
-      var newNum = notif.args.revealedAss;
-      if (newNum) {
-        var oldInner = dojo.query(".assistant-inner", assDiv)[0];
-        for (var i = 1; i <= 12; ++i) {
-          dojo.removeClass(oldInner, "assistant-" + i);
-        }
-        dojo.addClass(oldInner, "assistant-" + notif.args.revealedAss);
-        assDiv.dataset.num = newNum;
-        assDiv.id = "assistant-" + newNum;
-        this.addTooltipHtml(assDiv.id, this.tooltips.assistant(newNum, false, notif.args.newHeight));
-      }
-      if (notif.args.newHeight == 0) {
-        dojo.destroy(assDiv);
-      }
-      dojo.connect(newAssDiv, "click", this, "assistantClick");
 
-      setTimeout(function(assDiv) {
-        assDiv.style.left = null;
-        assDiv.style.top = null;
-      }, 0, newAssDiv);
+      dojo.style(assDiv, "left", x + "px");
+      dojo.style(assDiv, "top", y + "px");
+      dojo.place(assDiv, targetBoard);
+
+      var newAss = notif.args.revealedAss;
+      if (newAss) {
+        var revealedDiv = dojo.query(".assistant[data-num=" + newAss.num + "]")[0];
+        if (!revealedDiv) {
+          revealedDiv = this.assistantDiv(newAss.num, newAss.gold, newAss.ready);
+          dojo.place(revealedDiv, board);
+          dojo.connect(revealedDiv, "click", this, "assistantClick");
+          var pos = (notif.args.revealedStack == 4)?"special1":("stack" + notif.args.revealedStack);
+          this.setAssistantPosition(revealedDiv, pos);
+          this.addTooltipHtml(revealedDiv.id, this.tooltips.assistant(newAss.num, newAss.gold, notif.args.newHeight));
+        }
+      }
+
+      setTimeout(() => {
+        dojo.removeAttr(assDiv, "style");
+        this.setAssistantPosition(assDiv, "camp" + notif.args.playerSlot);
+        for (var i = 2; i <= 4; ++i) {
+          dojo.query(".assistant.position-special" + i).forEach(function(n) {dojo.destroy(n)});
+        }
+      }, 0);
     },
     notif_returnAssistant: function(notif) {
-      this.fadeOutAndDestroy(dojo.query(`.assistant[data-num=${notif.args.num}]`)[0], 200);
+      var assDiv = dojo.query(".assistant[data-num=" + notif.args.num + "]")[0];
+
+      var targetBoard = dojo.query(".camp-" + notif.args.player_id)[0];
+      var targetDiv = dojo.query(".assistant.position-stack" + notif.args.slot)[0];
+      var targetB = dojo.position(targetBoard);
+      var x = dojo.position(targetDiv).x - targetB.x;
+      var y = dojo.position(targetDiv).y - targetB.y;
+      var s = targetB.w / targetBoard.offsetWidth;
+      x += (1-s) * (x) * (1/s);
+      y += (1-s) * (y) * (1/s);
+      dojo.style(assDiv, "left", x + "px");
+      dojo.style(assDiv, "top", y + "px");
+
+      setTimeout(() => {
+        dojo.removeAttr(assDiv, "style");
+        var board = dojo.query(".arnak-board")[0];
+        this.setAssistantPosition(assDiv, "stack" + notif.args.slot);
+        dojo.place(assDiv, board);
+      }, 1000);
     },
     notif_upgradeAss: function(notif) {
       dojo.query(".assistant-inner.assistant-" + notif.args.assNum).toggleClass("gold", notif.args.gold);
