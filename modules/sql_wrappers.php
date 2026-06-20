@@ -298,23 +298,43 @@ class SqlWrapper {
     return $this->game->getObjectListFromDb("SELECT $fields_str FROM assistant WHERE $conds_str ORDER BY offer_order");
   }
   
-  public function changeAssistantUpgarded($num, $upgraded) {
+  public function changeAssistantUpgarded($num, $upgraded, $notif = "") {
     $gold = $upgraded ? 1 : 0;
     $this->game->DbQuery("UPDATE assistant SET gold = $gold WHERE num = $num");
+    $this->game->notifyAllPlayers("upgradeAss", $notif, array(
+      "player_name" => $this->game->getActivePlayerName(),
+      "player_id" => $this->game->getActivePlayerId(),
+      "gold" => $upgraded,
+      "assNum" => $num
+    ));
   }
 
-  public function changeAssistantUsed($num, $used) {
+  public function changeAssistantUsed($num, $used, $msg = "") {
     $ready = $used ? 0 : 1;
     $this->game->DbQuery("UPDATE assistant SET ready = $ready WHERE num = $num");
+    $this->game->notifyAllPlayers("useAssistant", $msg, array(
+      "player_name" => $this->game->getActivePlayerName(),
+      "player_id" => $this->game->getActivePlayerId(),
+      "used" => $used,
+      "assNum" => $num
+    ));
   }
 
-  public function moveAssistantFromStack($num, $playerId) {
+  public function moveAssistantFromStack($num, $playerId, $msg, $revealedAss, $deckHeight, $stack) {
     $assistants = $this->getAssistants(["in_hand" => $playerId], ["offer_order"]);
     $order = 0;
     if (count($assistants) > 0 && $assistants[0]["offer_order"] == 0) {
       $order = 1;
     }
     $this->game->DbQuery("UPDATE assistant SET in_offer = NULL, offer_order = $order, in_hand = $playerId WHERE num = $num");
+    $this->game->notifyAllPlayers("getAssistant", $msg, array(
+      "player_name" => $this->game->getActivePlayerName(),
+      "player_id" => $this->game->getActivePlayerId(),
+      "revealedAss" => $revealedAss,
+      "revealedStack" => $stack,
+      "newHeight" => $deckHeight,
+      "assNum" => $num
+    ));
   }
 
   public function moveAssistantHiddenInStack($num, $slot) {
@@ -326,6 +346,12 @@ class SqlWrapper {
       $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = ".($order - 1).", in_hand = NULL WHERE num = ".$firstAss["num"]);
     }
     $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = $order, in_hand = NULL WHERE num = $num");
+    $this->game->notifyAllPlayers('returnAss', '${player_name} returns his assistant to the supply', array(
+        "player_name" => $this->game->getActivePlayerName(),
+        "player_id" => $this->game->getActivePlayerId(),
+        "num" => $num,
+        "slot" => $slot
+    ));
   }
 
 }

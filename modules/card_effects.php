@@ -182,14 +182,7 @@ class CardEffects {
         $gold = $oldAss["gold"];
         $game->sqlWrapper->changeAssistantUpgarded($old, false);
         $game->sqlWrapper->changeAssistantUsed($old, false);
-        $game->sqlWrapper->moveAssistantHiddenInStack($old, $slot);
-        $game->notifyAllPlayers('returnAss', '${player_name} returns his assistant to the supply', 
-        array(
-          "player_name" => $game->getActivePlayerName(),
-          "player_id" => $game->getActivePlayerId(),
-          "num" => $old,
-          "slot" => $slot
-        ));
+        $game->sqlWrapper->moveAssistantHiddenInStack($old, $slot, '${player_name} returns his assistant to the supply');
         $game->getNewAssistant($new, true, $gold);
         break;
       case Artefact::Ornate_Hammer:

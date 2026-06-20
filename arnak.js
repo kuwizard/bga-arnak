@@ -2655,8 +2655,6 @@ function (dojo, declare) {
       dojo.subscribe("getAssistant", this, "notif_getAssistant");
       dojo.subscribe("returnAss", this, "notif_returnAssistant");
       dojo.subscribe("upgradeAss", this, "notif_upgradeAss");
-      dojo.subscribe("refreshAss", this, "notif_refreshAss");
-      dojo.subscribe("refreshAll", this, "notif_refreshAll");
       dojo.subscribe("passStartMarker", this, "notif_passStartMarker");
       dojo.subscribe("endTurn", this, "notif_endTurn");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
@@ -2973,7 +2971,7 @@ function (dojo, declare) {
       }
     },
     notif_useAssistant: function(notif) {
-      dojo.query(".player-camp .assistant-" + notif.args.assNum).addClass("exhausted");
+      dojo.query(".player-camp .assistant-" + notif.args.assNum).toggleClass("exhausted", notif.args.used);
       this.restoreServerGameState();
     },
     notif_getAssistant: function(notif) {
@@ -3002,25 +3000,21 @@ function (dojo, declare) {
       dojo.style(newAssDiv, "top", y + "px");
       dojo.place(newAssDiv, targetBoard);
       this.addTooltipHtml(newAssDiv.id, this.tooltips.assistant(notif.args.assNum, false));
-      if (notif.args.gold) {
-        dojo.query("div", newAssDiv).addClass("gold");
-      }
-      var oldInner = dojo.query(".assistant-inner", assDiv)[0];
-      for (var i = 1; i <= 12; ++i) {
-        dojo.removeClass(oldInner, "assistant-" + i);
-
-      }
       for (var i = 5; i < 10; ++i) {
         dojo.query(".assistant.position-" + i).forEach(function(n) {dojo.destroy(n)});
       }
       var newNum = notif.args.revealedAss;
       if (newNum) {
+        var oldInner = dojo.query(".assistant-inner", assDiv)[0];
+        for (var i = 1; i <= 12; ++i) {
+          dojo.removeClass(oldInner, "assistant-" + i);
+        }
         dojo.addClass(oldInner, "assistant-" + notif.args.revealedAss);
         assDiv.dataset.num = newNum;
         assDiv.id = "assistant-" + newNum;
         this.addTooltipHtml(assDiv.id, this.tooltips.assistant(newNum, false, notif.args.newHeight));
       }
-      else {
+      if (notif.args.newHeight == 0) {
         dojo.destroy(assDiv);
       }
       dojo.connect(newAssDiv, "click", this, "assistantClick");
@@ -3031,24 +3025,10 @@ function (dojo, declare) {
       }, 0, newAssDiv);
     },
     notif_returnAssistant: function(notif) {
-      var a = notif.args;
-      var assList = this.gamedatas.players[a.player_id].assistants;
-      for (var i in assList) {
-        if (assList[i].num == a.num) {
-          assList[i].gold = false;
-          assList.splice(i, 1);
-        }
-      }
-      this.fadeOutAndDestroy(dojo.query(`.assistant[data-num=${a.num}]`)[0], 200);
+      this.fadeOutAndDestroy(dojo.query(`.assistant[data-num=${notif.args.num}]`)[0], 200);
     },
     notif_upgradeAss: function(notif) {
-      dojo.query(".assistant-inner.assistant-" + notif.args.assNum).addClass("gold");
-    },
-    notif_refreshAss: function(notif) {
-      dojo.query(".assistant-inner.assistant-" + notif.args.assNum).removeClass("exhausted");
-    },
-    notif_refreshAll: function(notif) {
-      dojo.query(".assistant:not(.position-4) .assistant-inner.exhausted").removeClass("exhausted");
+      dojo.query(".assistant-inner.assistant-" + notif.args.assNum).toggleClass("gold", notif.args.gold);
     },
     notif_research: function(notif) {
       var a = notif.args;
