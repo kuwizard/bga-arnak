@@ -160,13 +160,13 @@
     transition: transform 1s;
     pointer-events: none;
 }
-.player-camp .assistant {
+.player-camp .assistant.position-camp0 {
     transform: scale(0.43);
     top: 16px;
     left: 583px;
     cursor: pointer;
 }
-.player-camp .assistant ~ .assistant {
+.player-camp .assistant.position-camp1 {
     transform: scale(0.43);
     top: 152px;
     left: 583px;
@@ -179,32 +179,32 @@
     cursor: pointer;
     pointer-events: all;
 }
-.assistant.position-1 {
+.assistant.position-stack1 {
     left: 488px;
     top: 934px;
 }
-.assistant.position-2 {
+.assistant.position-stack2 {
     left: 568px;
     top: 934px;
 }
 
-.assistant.position-3 {
+.assistant.position-stack3 {
     left: 648px;
     top: 934px;
 }
-.assistant.position-4 {
+.assistant.position-special1 {
     top: 58%;
     left: 76%;
 }
-.assistant.position-5 {
+.assistant.position-special2 {
     left: 86%;
     top: 58%;
 }
-.assistant.position-6 {
+.assistant.position-special3 {
     left: 78%;
     top: 50.5%;
 }
-.assistant.position-7 {
+.assistant.position-special4 {
     left: 76%;
     top: 65.5%;
 }
