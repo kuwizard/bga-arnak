@@ -1002,12 +1002,7 @@ class arnak extends Table
             if (!$travelUseful) {
               break;
             }
-            $this->sqlWrapper->changeAssistantUsed($assNum, true);
-            $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses his assistant for travel icons'), array(
-              "player_name" => $this->getActivePlayerName(),
-              "player_id" => $this->getActivePlayerId(),
-              "assNum" => $assNum
-            ));
+            $this->sqlWrapper->changeAssistantUsed($assNum, true, clienttranslate('${player_name} uses his assistant for travel icons'));
           }
           break;
         case "guardian":
@@ -1632,22 +1627,12 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("You must select an assistant from one of the 3 stacks at the bottom right of the board"));
       }
     }
-    $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId);
+    $revealedNum = ($numAssistants > 1 && $topAssistantNum == $assNum)?$assistants[1]["num"]:NULL;
+    $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId, clienttranslate('${player_name} got an assistant'), $revealedNum, ($numAssistants - 1), $stackId);
     $this->sqlWrapper->changeAssistantUpgarded($assNum, $gold);
-    $newStack = $this->sqlWrapper->getAssistantsStack($stackId);
-    $revealedNum = null;
-    if (count($newStack) > 0) {
-      $revealedNum = $newStack[0]["num"];
+    if ($numAssistants > 1) {
       $this->undoSavePoint();
     }
-    $this->notifyAllPlayers("getAssistant", clienttranslate('${player_name} got an assistant'), array(
-      "player_name" => $this->getActivePlayerName(),
-      "player_id" => $this->getActivePlayerId(),
-      "revealedAss" => $revealedNum,
-      "newHeight" => count($newStack),
-      "assNum" => $assNum,
-      "gold" => $gold
-    ));
 
     if (!$free) {
       $this->setGameStateValue("special-research-done", 1);
@@ -1657,12 +1642,7 @@ class arnak extends Table
   function assistantEffect($assNum, $assArg, $gold) {
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
     if ($assistant["in_hand"]) {
-      $this->sqlWrapper->changeAssistantUsed($assNum, true);
-      $this->notifyAllPlayers("useAssistant", clienttranslate('${player_name} uses an assistant'), array(
-        "player_name" => $this->getActivePlayerName(),
-        "player_id" => $this->getActivePlayerId(),
-        "assNum" => $assNum
-      ));
+      $this->sqlWrapper->changeAssistantUsed($assNum, true, clienttranslate('${player_name} uses an assistant'));
     }
 
     $assArg = base64_decode($assArg);
@@ -1714,24 +1694,12 @@ class arnak extends Table
     if (!$assistant["in_hand"] || $assistant["gold"] == 1) {
       throw new BgaUserException(clienttranslate("Cannot upgrade this assistant"));
     }
-    $this->sqlWrapper->changeAssistantUpgarded($assNum, true);
-    $this->notifyAllPlayers("upgradeAss", clienttranslate('${player_name} upgrades his assistant to gold'), array(
-    "player_name" => $this->getActivePlayerName(),
-    "player_id" => $this->getActivePlayerId(),
-    "assNum" => $assNum
-    ));
+    $this->sqlWrapper->changeAssistantUpgarded($assNum, true, clienttranslate('${player_name} upgrades his assistant to gold'));
     $this->setGameStateValue("special-research-done", 1);
     $this->didResearch();
   }
   function refreshAssistant($assNum) {
-    $this->sqlWrapper->changeAssistantUsed($assNum, false);
-    $this->notifyAllPlayers("refreshAss", clienttranslate('${player_name} refreshes his assistant'),
-      array(
-      "player_name" => $this->getActivePlayerName(),
-      "player_id" => $this->getActivePlayerId(),
-      "assNum" => $assNum
-      )
-    );
+    $this->sqlWrapper->changeAssistantUsed($assNum, false, clienttranslate('${player_name} refreshes his assistant'));
   }
   function clickResearch($researchId) {
     $this->checkAction("research");
