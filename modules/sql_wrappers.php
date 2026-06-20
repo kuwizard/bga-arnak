@@ -330,6 +330,7 @@ class SqlWrapper {
     $this->game->notifyAllPlayers("getAssistant", $msg, array(
       "player_name" => $this->game->getActivePlayerName(),
       "player_id" => $this->game->getActivePlayerId(),
+      "playerSlot" => $order,
       "revealedAss" => $revealedAss,
       "revealedStack" => $stack,
       "newHeight" => $deckHeight,

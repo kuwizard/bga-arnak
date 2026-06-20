@@ -283,8 +283,10 @@ function (dojo, declare) {
           dojo.place(clockInner, clockDiv);
           dojo.place(clockDiv, playerBoard);
         }
-        for (var assistant of player.assistants) {
+        for (var i in player.assistants) {
+          var assistant = player.assistants[i];
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
+          this.setAssistantPosition(assDiv, "camp" + i);
           dojo.place(assDiv, handDiv);
           this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold));
         }
@@ -378,7 +380,7 @@ function (dojo, declare) {
         var assistant = gamedatas.assistants[stack];
         if (assistant.deckHeight > 0) {
           var assDiv = this.assistantDiv(assistant.num, assistant.gold, assistant.ready);
-          dojo.addClass(assDiv, "position-" + stack);
+          this.setAssistantPosition(assDiv, (stack == 4)?("special1"):("stack" + stack));
           dojo.place(assDiv, board);
           this.addTooltipHtml(assDiv.id, this.tooltips.assistant(assistant.num, assistant.gold, assistant.deckHeight));
         }
@@ -1048,7 +1050,7 @@ function (dojo, declare) {
             x = box.x + 3.3 + j * 5.2;
             y = box.y + 0.2;
           }
-          else if (i == 8 && dojo.query(".assistant.position-4")[0]) {
+          else if (i == 8 && dojo.query(".assistant.position-special1")[0]) {
             var pos = +j;
             if (pos > 1) {
               pos += 2.5;
@@ -1085,7 +1087,7 @@ function (dojo, declare) {
       }
     },
     specialAssistants: function(assistants) {
-      var position = 4;
+      var position = 1;
       for (assistant of assistants) {
         var aNum = assistant.num;
         var assDiv = dojo.query(`.assistant[data-num=${aNum}]`)[0];
@@ -1094,7 +1096,7 @@ function (dojo, declare) {
           dojo.connect(assDiv, "click", this, "assistantClick");
         }
         var board = dojo.query(".arnak-board")[0];
-        dojo.addClass(assDiv, "position-" + position);
+        this.setAssistantPosition(assDiv, "special" + position);
         dojo.place(assDiv, board);
         this.addTooltipHtml(assDiv.id, this.tooltips.assistant(aNum, assistant.gold));
         ++position;
@@ -2225,14 +2227,14 @@ function (dojo, declare) {
         case "special":
           switch(arg) {
             case "assistant-silver":
-              elements = dojo.query(".arnak-board .assistant:not(.position-4)");
+              elements = dojo.query(".arnak-board .assistant:not(.position-special1)");
               elements.addClass("selectable");
               break;
             case "assistant-gold":
               elements = dojo.query(".camp-" + this.player_id + " .assistant .silver:not(.gold)");
               break;
             case "assistant-special":
-              elements = dojo.query(".arnak-board .assistant:not(.position-1, .position-2, .position-3) .assistant-inner");
+              elements = dojo.query(".arnak-board .assistant:is(.position-special1, .position-special2, .position-special3, .position-special4) .assistant-inner");
               break;
             case "exile":
               this.setClientState("mayExile");
@@ -2378,7 +2380,7 @@ function (dojo, declare) {
           dojo.query(".card.supply[data-cardtype='art']").addClass("highlight-turn");
           break;
         case "artActivateAss":
-          dojo.query(".arnak-board .assistant:not(.position-4)").addClass("highlight-turn");
+          dojo.query(".arnak-board .assistant:not(.position-special1)").addClass("highlight-turn");
           break;
       case 'dummmy':
         break;
@@ -2980,7 +2982,7 @@ function (dojo, declare) {
         var newAssDiv = assDiv.cloneNode(true);
       }
       else {
-        assDiv = dojo.query(".assistant.position-4")[0];
+        assDiv = dojo.query(".assistant.position-special1")[0];
         var newAssDiv = this.assistantDiv(notif.args.assNum, false, false);
         dojo.place(newAssDiv, dojo.query(".arnak-board")[0]);
       }
@@ -2989,9 +2991,6 @@ function (dojo, declare) {
       var targetB = dojo.position(targetBoard);
       var x = dojo.position(assDiv).x - targetB.x;
       var y = dojo.position(assDiv).y - targetB.y;
-      for (var i = 0; i < 10; ++i) {
-        dojo.removeClass(newAssDiv, "position-" + i);
-      }
       var s = targetB.w / targetBoard.offsetWidth;
       x += (1-s) * (x) * (1/s);
       y += (1-s) * (y) * (1/s);
@@ -3000,8 +2999,9 @@ function (dojo, declare) {
       dojo.style(newAssDiv, "top", y + "px");
       dojo.place(newAssDiv, targetBoard);
       this.addTooltipHtml(newAssDiv.id, this.tooltips.assistant(notif.args.assNum, false));
-      for (var i = 5; i < 10; ++i) {
-        dojo.query(".assistant.position-" + i).forEach(function(n) {dojo.destroy(n)});
+      this.setAssistantPosition(newAssDiv, "camp" + notif.args.playerSlot);
+      for (var i = 2; i <= 4; ++i) {
+        dojo.query(".assistant.position-special" + i).forEach(function(n) {dojo.destroy(n)});
       }
       var newNum = notif.args.revealedAss;
       if (newNum) {
@@ -3029,6 +3029,13 @@ function (dojo, declare) {
     },
     notif_upgradeAss: function(notif) {
       dojo.query(".assistant-inner.assistant-" + notif.args.assNum).toggleClass("gold", notif.args.gold);
+    },
+    setAssistantPosition: function(div, pos) {
+      div.classList.forEach((c)=>{
+        if(/^position-/.test(c))
+          dojo.removeClass(div, c);
+      });
+      dojo.addClass(div, "position-" + pos);
     },
     notif_research: function(notif) {
       var a = notif.args;
