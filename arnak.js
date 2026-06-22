@@ -557,7 +557,7 @@ function (dojo, declare) {
       assDiv.id = "assistant-" + num;
 
       var rotateWrap = dojo.create("div");
-      dojo.addClass(rotateWrap, "assistant-inner assistant-" +num + " " + (gold ? "gold" : "silver") + " " + (ready ? "ready" : "exhausted"));
+      dojo.addClass(rotateWrap, "assistant-inner assistant-" +num + " " + (gold ? "gold" : "") + " " + (ready ? "" : "exhausted"));
       assDiv.dataset.num = num;
       dojo.place(rotateWrap, assDiv);
       return assDiv;
@@ -2236,7 +2236,7 @@ function (dojo, declare) {
               elements.addClass("selectable");
               break;
             case "assistant-gold":
-              elements = dojo.query(".camp-" + this.player_id + " .assistant .silver:not(.gold)");
+              elements = dojo.query(".camp-" + this.player_id + " .assistant :not(.gold)");
               break;
             case "assistant-special":
               elements = dojo.query(".arnak-board .assistant:is(.position-special1, .position-special2, .position-special3, .position-special4) .assistant-inner");
@@ -3059,7 +3059,10 @@ function (dojo, declare) {
       }, 1000);
     },
     notif_upgradeAss: function(notif) {
-      dojo.query(".assistant-inner.assistant-" + notif.args.assNum).toggleClass("gold", notif.args.gold);
+      var innerDiv = dojo.query(".assistant-inner.assistant-" + notif.args.assNum);
+      innerDiv.toggleClass("gold gold-animate", notif.args.gold);
+      var assDiv = dojo.query(".assistant[data-num=" + notif.args.assNum + "]")[0];
+      this.addTooltipHtml(assDiv.id, this.tooltips.assistant(notif.args.assNum, notif.args.gold));
     },
     setAssistantPosition: function(div, pos) {
       div.classList.forEach((c)=>{

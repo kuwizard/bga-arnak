@@ -171,7 +171,7 @@
     top: 152px;
     left: 583px;
 }
-/*.player-camp */.assistant-inner.exhausted {
+.assistant-inner.exhausted {
     transform: rotate(90deg);
     cursor: default;
 }
@@ -257,17 +257,19 @@
     width: 236px; height: 296px;
     background: url('../img/cardboard_css_sprite.jpg') -10px -2695px;
 }
-.assistant-inner.gold.assistant-9::after {
-    position: absolute;
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -326px;
-    animation: 3s fadeIn;
-}
-
 .assistant-inner.assistant-10 {
     width: 236px; height: 296px;
     background: url('../img/cardboard_css_sprite.jpg') -266px -2695px;
 }
+.assistant-inner.assistant-11 {
+    width: 236px; height: 296px;
+    background: url('../img/cardboard_css_sprite.jpg') -522px -2695px;
+}
+.assistant-inner.assistant-12 {
+    width: 236px; height: 296px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -2695px;
+}
+
 .assistant-inner.gold.assistant-1::after {
     background: url('../img/cardboard_css_sprite.jpg') -1034px -2695px;
 }
@@ -304,21 +306,14 @@
 .assistant-inner.gold.assistant-12::after {
     background: url('../img/cardboard_css_sprite.jpg') -570px -2379px;
 }
-.assistant-inner.gold::after {
+.assistant-inner.gold::after{
     position: absolute;
     content: "";
     width: 236px; height: 296px;
-    animation: 3s fadeIn;
     border-radius: 29px;
 }
-.assistant-inner.assistant-11 {
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -522px -2695px;
-}
-
-.assistant-inner.assistant-12 {
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -778px -2695px;
+.assistant-inner.gold-animate::after{
+    animation: 3s fadeIn;
 }
 
 div#start-player {
