@@ -1601,7 +1601,7 @@ class arnak extends Table
     }
     throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
   }
-  function getNewAssistant($assNum, $free = false, $gold = false) {
+  function getNewAssistant($assNum) {
     $playerId = $this->getActivePlayerId();
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
     if ($assistant["in_hand"]) {
@@ -1629,15 +1629,12 @@ class arnak extends Table
     }
     $revealedAss = ($numAssistants > 1 && $topAssistantNum == $assNum)?$assistants[1]:NULL;
     $this->sqlWrapper->moveAssistantFromStack($assNum, $playerId, clienttranslate('${player_name} got an assistant'), $revealedAss, ($numAssistants - 1), $stackId);
-    $this->sqlWrapper->changeAssistantUpgarded($assNum, $gold);
     if ($numAssistants > 1) {
       $this->undoSavePoint();
     }
 
-    if (!$free) {
-      $this->setGameStateValue("special-research-done", 1);
-      $this->didResearch();
-    }
+    $this->setGameStateValue("special-research-done", 1);
+    $this->didResearch();
   }
   function assistantEffect($assNum, $assArg, $gold) {
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);

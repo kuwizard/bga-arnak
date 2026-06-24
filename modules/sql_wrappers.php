@@ -343,20 +343,27 @@ class SqlWrapper {
     ));
   }
 
-  public function moveAssistantHiddenInStack($num, $slot) {
-    $assistants = $this->getAssistants(["in_hand" => NULL, "in_offer" => $slot], ["num, offer_order"]);
-    $order = 0;
-    if (count($assistants) > 0) {
-      $firstAss = $assistants[0];
-      $order = $firstAss["offer_order"];
-      $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = ".($order - 1).", in_hand = NULL WHERE num = ".$firstAss["num"]);
-    }
-    $this->game->DbQuery("UPDATE assistant SET in_offer = $slot, offer_order = $order, in_hand = NULL WHERE num = $num");
-    $this->game->notifyAllPlayers('returnAss', '${player_name} returns his assistant to the supply', array(
+  public function swapAssistants($oldNum, $newNum, $playerId, $notifOld, $notifNew, $deckHeight, $stack) {
+    $playerSlot = $this->getAssistants(["num" => $oldNum], ["offer_order"])[0]["offer_order"];
+    $stackOrder = $this->getAssistants(["num" => $newNum], ["offer_order"])[0]["offer_order"];
+
+    $this->game->DbQuery("UPDATE assistant SET in_offer = $stack, offer_order = $stackOrder, in_hand = NULL WHERE num = $oldNum");
+    $this->game->DbQuery("UPDATE assistant SET in_offer = NULL, offer_order = $playerSlot, in_hand = $playerId WHERE num = $newNum");
+
+    $this->game->notifyAllPlayers('returnAss', $notifOld, array(
         "player_name" => $this->game->getActivePlayerName(),
         "player_id" => $this->game->getActivePlayerId(),
-        "num" => $num,
-        "slot" => $slot
+        "num" => $oldNum,
+        "slot" => $stack
+    ));
+    $this->game->notifyAllPlayers("getAssistant", $notifNew, array(
+      "player_name" => $this->game->getActivePlayerName(),
+      "player_id" => $this->game->getActivePlayerId(),
+      "playerSlot" => $playerSlot,
+      "revealedAss" => NULL,
+      "revealedStack" => $stack,
+      "newHeight" => $deckHeight,
+      "assNum" => $newNum
     ));
   }
 
