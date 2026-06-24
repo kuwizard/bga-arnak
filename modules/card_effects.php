@@ -180,10 +180,24 @@ class CardEffects {
         }
         $slot = $newAss["in_offer"];
         $gold = $oldAss["gold"];
+
+        $stackId = $newAss["in_offer"];
+        $assistants = $game->sqlWrapper->getAssistantsStack($stackId);
+        $numAssistants = count($assistants);
+        if ($numAssistants == 0) {
+          throw new BgaUserException(clienttranslate("No assistant available in this stack"));
+        }
+        if ($assistants[0]["num"] != $args->newAss) {
+          throw new BgaUserException(clienttranslate("trying to get assistant that is not at the top of the deck"));
+        }
+        if ($newAss["in_offer"] == 4) {
+          throw new BgaUserException(clienttranslate("You must select an assistant from one of the 3 stacks at the bottom right of the board"));
+        }
+
         $game->sqlWrapper->changeAssistantUpgarded($old, false);
         $game->sqlWrapper->changeAssistantUsed($old, false);
-        $game->sqlWrapper->moveAssistantHiddenInStack($old, $slot, '${player_name} returns his assistant to the supply');
-        $game->getNewAssistant($new, true, $gold);
+        $game->sqlWrapper->swapAssistants($old, $new, $this->playerId, '${player_name} returns his assistant to the supply', clienttranslate('${player_name} got an assistant'), $numAssistants, $stackId);
+        $game->sqlWrapper->changeAssistantUpgarded($args->newAss, $gold);
         break;
       case Artefact::Ornate_Hammer:
         $cards = $game->sqlWrapper->getCards(null, 'supply', 'item');
