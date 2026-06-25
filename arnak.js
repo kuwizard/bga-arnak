@@ -1806,7 +1806,7 @@ function (dojo, declare) {
       if (inHand && this.gamedatas.gamestate["name"] == "hornSelectAss") {
         this.hornOld = num;
         this.setClientState("hornSelectNew", {descriptionmyturn: _("Select a new assistant")});
-        dojo.query(".arnak-board .assistant").addClass("highlight-turn");
+        dojo.query(".arnak-board .assistant:is(.position-stack1, .position-stack2, .position-stack3)").addClass("highlight-turn");
         return;
       }
       if (!inHand && this.gamedatas.gamestate["name"] == "hornSelectNew") {
