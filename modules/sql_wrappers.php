@@ -367,5 +367,14 @@ class SqlWrapper {
     ));
   }
 
+  public function createAssistants($stacks) {
+    foreach ($stacks as $idx => $stack) {
+      $ready = ($idx != 4) ? 1 : 0;
+      foreach ($stack as $order => $num) {
+        $this->game->DbQuery("INSERT INTO assistant (gold, ready, num, in_offer, offer_order) VALUES(0, $ready, $num, $idx, $order)");
+      }
+    }
+  }
+
 }
 ?>

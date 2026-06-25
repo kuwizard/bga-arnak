@@ -408,21 +408,22 @@ class arnak extends Table
     if ($this->debugMode()) {
       $assistantIds = [1, 2, 10, 3, 4, 5, 6, 7, 8, 9, 11, 12];
     }
-    $offer = [1, 1, 1, 1, 2, 2, 2, 2, 3, 3, 3, 3];
+    $stacks = [1 => [], 2 => [], 3 => [], 4 => []];
     if (!$this->birdTemple()) {
-      $offer = [];
       for ($i = 0; $i < count($players); ++$i) {
-        array_push($offer, 4);
+        array_push($stacks[4], array_shift($assistantIds));
       }
-      $offer = array_merge($offer, [1, 1, 1, 2, 2, 2, 3, 3, 3, 3, 3]);
     }
-    $deckOrder = 0;
-    foreach ($assistantIds as $i => $id) {
-      $offerId = $offer[$deckOrder];
-      $ready = $offerId == 4 ? 0 : 1;
-      $this->DbQuery("INSERT INTO assistant (gold, ready, num, in_offer, offer_order) VALUES(0, $ready, $id, $offerId, $deckOrder)");
-      ++$deckOrder;
+    $numPerStack = $this->birdTemple() ? 4 : 3;
+    for ($stackIdx = 1; $stackIdx <= 2; $stackIdx++) {
+      for ($i = 0; $i < $numPerStack; $i++) {
+        array_push($stacks[$stackIdx], array_shift($assistantIds));
+      }
     }
+    while(count($assistantIds) > 0) {
+      array_push($stacks[3], array_shift($assistantIds));
+    }
+    $this->sqlWrapper->createAssistants($stacks);
 
     // we need some player active for giveExtraTime()
     $this->activeNextPlayer();
