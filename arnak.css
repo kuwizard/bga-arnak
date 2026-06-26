@@ -88,6 +88,7 @@ input[type='checkbox'] {
     background-position: center;
     filter: drop-shadow(6px 8px 3px black);
     border-radius: 4px;
+    color: black;
 }
 table#score-table {
     margin-left: 78px;
@@ -435,8 +436,13 @@ button.layout-button {
 .player-board {
     transition: background-color 1s;
 }
-.player-board.passed {
+
+html:not(.dark) .player-board.passed {
     background-color: #b7b0a8;
+}
+
+html:is(.dark) .player-board.passed {
+    background-color: #3f3f3f;
 }
 
 .card-wrap {
@@ -450,6 +456,7 @@ button.layout-button {
     border-style: outset;
     border-radius: 10px;
     background: beige;
+    color: black;
 }
 
 .display-deck:hover {
