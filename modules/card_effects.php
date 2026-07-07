@@ -1,7 +1,7 @@
 <?php
 
 
-class CardEffects extends APP_GameClass {
+class CardEffects {
   public function __construct($game, $playerId) {
     $this->game = $game;
     $this->playerId = $playerId;
