@@ -1,14 +1,12 @@
 <?php
 
 
-class CardEffects extends APP_GameClass {
+class CardEffects {
   public function __construct($game, $playerId) {
     $this->game = $game;
     $this->playerId = $playerId;
   }
   public function cardEffect($type, $num, $cardId, $arg = "") {
-    //$this->game->gainResource("coins", $playerId, -1000);
-    //throw new BgaUserException("Here in class for card effects with $type $num $cardId $arg");
     $playerId = $this->playerId;
     $this->activeCard = $cardId;
     switch($type) {
@@ -39,7 +37,7 @@ class CardEffects extends APP_GameClass {
     $game = $this->game;
     $playerId = $this->playerId;
     $game->gamestate->nextState("playArt");
-    
+
     switch($num) {
       case 1: case 2:
         $movement = JSON_DECODE($arg);
@@ -69,7 +67,7 @@ class CardEffects extends APP_GameClass {
         $this->gainCardResource("arrowhead", $playerId, 1);
         break;
       case 6:
-        if (count($this->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
+        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
           $game->game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
@@ -134,14 +132,14 @@ class CardEffects extends APP_GameClass {
         $exile = $arg->exile;
         $game->exile($exile);
         $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $siteId");
-        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
+        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
         if (!$site) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
         }
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
-        $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
+        $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
         $game->siteEffect("basic", $siteTile["num"]);
         break;
       case 15:
@@ -155,7 +153,7 @@ class CardEffects extends APP_GameClass {
         }
         else {
           $this->gainCardResource("tablet", $playerId, 2);
-          $this->game->artDone();
+          $game->artDone();
         }
         break;
       case 17:
@@ -235,7 +233,7 @@ class CardEffects extends APP_GameClass {
           break;
         }
 
-        $assistant = $this->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $arg");
+        $assistant = $game->getNonEmptyObjectFromDB("SELECT * FROM assistant WHERE num = $arg");
         if($assistant['in_hand'] != $playerId) {
           throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
         }
@@ -253,7 +251,7 @@ class CardEffects extends APP_GameClass {
         $this->gainCardResource("coins", $playerId, 2);
         break;
       case 30:
-        if ($this->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $playerId")["idol_slot"] >= 4) {
+        if ($game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $playerId")["idol_slot"] >= 4) {
           $game->notifyAllPlayers("cantIdol", "No idols in slots", array());
         }
         else {
@@ -262,7 +260,7 @@ class CardEffects extends APP_GameClass {
         }
         break;
       case 31:
-        if (count($this->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
+        if (count($game->getCollectionFromDb("SELECT * FROM card WHERE card_position = 'deck' && player = $playerId")) == 0) {
           $game->game->artDone();
         }
         for ($i = 0; $i < $arg; ++$i) {
@@ -325,7 +323,7 @@ class CardEffects extends APP_GameClass {
         break;
     }
     if (in_array(intval($num), [3, 4, 5, 7, 8, 9, 10, 13, 15, 17, 18, 22, 25, 27, 28, 29, 30, 34])) {
-      $this->game->artDone();
+      $game->artDone();
     }
     else {
       $game->setGameStateValue("art-active", $num);
@@ -335,7 +333,7 @@ class CardEffects extends APP_GameClass {
     $game = $this->game;
     $playerId = $this->playerId;
     if (in_array(intval($num), [11, 13, 23, 24, 25, 26, 33])) {
-      $this->game->exile($cardId);
+      $game->exile($cardId);
     }
     switch($num) {
       case 1:
@@ -427,15 +425,15 @@ class CardEffects extends APP_GameClass {
         }
         break;
       case 17:
-        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
+        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a small discovered site"));
         }
         $game->siteEffect("small", $siteTile["num"]);
         break;
       case 18:
-        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
-        if (!$siteTile || !$this->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $arg")) {
+        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
+        if (!$siteTile || !$game->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $arg")) {
           throw new BgaUserException(clienttranslate("You must have an archeologist on the site"));
         }
         if ($siteTile["size"] == "big") {
@@ -518,7 +516,7 @@ class CardEffects extends APP_GameClass {
         $game->gamestate->nextState("cardExile");
         break;
       case 35:
-        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
+        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
@@ -526,14 +524,14 @@ class CardEffects extends APP_GameClass {
         break;
       case 36:
         $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $arg");
-        $siteTile = $this->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
+        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         if (!$site) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
         }
         if (!$siteTile) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
-        $siteTile = $this->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
+        $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         $this->gainCardResource("compass", $playerId, 1);
         $game->siteEffect("basic", $siteTile["num"]);
         break;
@@ -564,7 +562,7 @@ class CardEffects extends APP_GameClass {
         throw new BgaUserException("cannot use item $num");
     }
     if (in_array(intval($num), [3, 4, 9, 10, 14, 16, 21, 24, 25, 26, 27, 28, 29, 30, 31, 33, 37, 38, 40])) {
-      $this->game->gamestate->nextState("main_action_done");
+      $game->gamestate->nextState("main_action_done");
     }
   }
 }
