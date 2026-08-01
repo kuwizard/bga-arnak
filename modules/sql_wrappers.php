@@ -371,5 +371,86 @@ class SqlWrapper {
     }
   }
 
+  private function formatSite($position) {
+    $site = ["slots" => []];
+    foreach (["slot1", "slot2"] as $slot) {
+      if (is_null($position[$slot])) {
+        array_push($site["slots"], NULL);
+      }
+      else if($position[$slot] != -1) {
+        array_push($site["slots"], $position[$slot]);
+      }
+    }
+    $site["discovered"] = !is_null($position["location_id"]);
+    if($site["discovered"]) {
+      $site["location_num"] = intval($position["location_num"]);
+      $site["location_id"] = intval($position["location_id"]);
+      $site["size"] = $position["size"];
+    }
+    else {
+      $site["idol_bonus"] = $position["idol_bonus"];
+    }
+    $site["threat"] = !is_null($position["guardian_id"]);
+    if($site["threat"]) {
+      $site["guardian_num"] = intval($position["guardian_num"]);
+      $site["guardian_id"] = intval($position["guardian_id"]);
+    }
+    return $site;
+  }
+
+  private function locationRequest($siteId = NULL) {
+    $sql =  "SELECT slot1, slot2, idol_bonus, loc.num location_num, idlocation location_id, loc.size size, g.num guardian_num, g.idguardian guardian_id FROM board_position board ";
+    $sql .= "LEFT JOIN location loc ON board.idboard_position = loc.is_at_position ";
+    $sql .= "LEFT JOIN guardian g ON board.idboard_position = g.at_location ";
+    if (!is_null($siteId)) {
+      $sql .= "WHERE board.idboard_position = $siteId";
+    }
+    return $sql;
+  }
+
+  public function getSite($siteId) {
+    return $this->formatSite($this->game->getObjectFromDB($this->locationRequest($siteId)));
+  }
+
+  public function getAllSites() {
+    $positions = $this->game->getObjectListFromDb($this->locationRequest());
+    $sites = [];
+    foreach ($positions as $idx => $position) {
+      $sites[$idx] = $this->formatSite($position);
+    }
+    return $sites; 
+  }
+
+  public function getBoons($playerId, $available) {
+    $readyStr = $available ? 1 : 0;
+    $guardianNums = $this->game->getObjectListFromDb("SELECT num FROM guardian WHERE in_hand = $playerId AND ready = $readyStr ORDER BY deckorder");
+    $boons = [];
+    foreach ($guardianNums as $guardian) {
+      array_push($boons, intval($guardian["num"]));
+    }
+    return $boons;
+  }
+
+  public function getAvailableBoons($playerId) {
+    $guardianNums = $this->game->getObjectListFromDb("SELECT num FROM guardian WHERE in_hand = $playerId AND ready = 1 ORDER BY deckorder");
+    $boons = [];
+    foreach ($guardianNums as $guardian) {
+      array_push($boons, intval($guardian["num"]));
+    }
+    return $boons;
+  }
+
+  public function getTopSiteDeck($small) {
+    $sizeStr = $small ? "small" : "big";
+    $site = $this->game->getObjectFromDB("SELECT idlocation location_id, num location_num FROM location WHERE is_at_position IS NULL AND size = '$sizeStr' ORDER BY deck_order LIMIT 1");
+    $site["location_num"] = intval($site["location_num"]);
+    return $site;
+  }
+
+  public function getTopGuardianDeck() {
+    $guardian = $this->game->getObjectFromDB("SELECT idguardian guardian_id, num guardian_num FROM guardian WHERE at_location IS NULL AND in_hand IS NULL ORDER BY deckorder LIMIT 1");
+    $guardian["guardian_num"] = intval($guardian["guardian_num"]);
+    return $guardian;
+  }
 }
 ?>
