@@ -454,8 +454,8 @@ class arnak extends Table
       $result['players'][$idPlayer]["deck_amt"] = count($this->sqlWrapper->getPublicCards($idPlayer, 'deck'));
       $result['players'][$idPlayer]["hand_amt"] = count($this->sqlWrapper->getPublicCards($idPlayer, 'hand')) + count($this->sqlWrapper->getPublicCards($idPlayer, 'keep'));
       $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
-      $result['players'][$idPlayer]["guardian"] = count($this->getObjectListFromDb("SELECT * FROM guardian WHERE in_hand = $idPlayer"));
-      $result['players'][$idPlayer]["guardians_ready"] = $this->getObjectListFromDb("SELECT idguardian id, num num FROM guardian WHERE in_hand = $idPlayer AND ready = 1");
+      $result['players'][$idPlayer]["guardian"] = count($this->sqlWrapper->getDefeatedGuardians($idPlayer, true));
+      $result['players'][$idPlayer]["guardians"] = $this->sqlWrapper->getDefeatedGuardians($idPlayer);
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
@@ -465,10 +465,9 @@ class arnak extends Table
     $result['artDeck'] = count($this->sqlWrapper->getPublicCards(null, 'deck', 'art'));
     $result['artExile'] = count($this->sqlWrapper->getPublicCards(null, 'discard', 'art'));
 
-    $result['board_position'] = $this->getCollectionFromDb("SELECT * FROM board_position");
     $result['round'] = $this->staffPosition();
-    $result['locations'] = $this->getCollectionFromDb("SELECT idlocation id, size size, num num, is_at_position position FROM location WHERE is_open");
-    $result['guardians'] = $this->getCollectionFromDb("SELECT * FROM guardian WHERE at_location IS NOT NULL OR in_hand IS NOT NULL");
+    $result['sites'] = $this->sqlWrapper->getAllSites();
+
     $result['research_bonus'] = $this->getCollectionFromDb("SELECT * FROM research_bonus");
     $result['temple_tile'] = $this->getCollectionFromDb("SELECT idtemple_tile id, amt amt FROM temple_tile");
     foreach($result['research_bonus'] as $i => $bonus) {
@@ -910,8 +909,16 @@ class arnak extends Table
   }
 
   function freeWorkerAmt($player) {
-    return 2 - count($this->getCollectionFromDb("SELECT * FROM board_position WHERE slot1 = $player")) -
-    count($this->getCollectionFromDb("SELECT * FROM board_position WHERE slot2 = $player"));
+    $sites = $this->sqlWrapper->getAllSites();
+    $meeples = 0;
+    foreach ($sites as $site) {
+      foreach ($site["slots"] as $slot) {
+        if ($slot === $player) {
+          $meeples++;
+        }
+      }
+    }
+    return 2 - $meeples;
   }
 
   function travelUseful($travelReqs, $icon) {
@@ -1009,7 +1016,8 @@ class arnak extends Table
         case "guardian":
           $num = $pay["num"];
           $playerId = $this->getCurrentPlayerId();
-          if (!$this->getObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $num AND in_hand = $playerId")) {
+          $boons = $this->sqlWrapper->getDefeatedGuardians($playerId);
+          if (!in_array($num, $boons)) {
             throw new BgaUserException(clienttranslate("That is not your guardian boon"));
           }
           $boon = $this->gameData->guardianBoon($num);
@@ -1082,24 +1090,26 @@ class arnak extends Table
   function availableGuardians($targetLocation = -1, $notOccupiedbyAnyOtherPlayer = false)
   {
     $playerId = $this->getActivePlayerId();
-    $guards = $this->getObjectListFromDb(
-    "SELECT *
-    FROM guardian g
-    INNER JOIN board_position p ON g.at_location = p.idboard_position
-    ");
-    $available_guards = array();
-    foreach ($guards as $guard) {
-      if ($targetLocation >= 0 && $guard["at_location"] != $targetLocation) {
-        continue;
-      }
-      if ($notOccupiedbyAnyOtherPlayer) {
-        if (($guard["slot1"] == $playerId || is_null($guard["slot1"]) ) && ($guard["slot2"] == $playerId || is_null($guard["slot2"]) || $guard["slot2"] == -1)) {
-          $available_guards[count($available_guards)] = $guard;
+    $available_guards = [];
+    $sites = [];
+    if ($targetLocation == -1) {
+      $sites = $this->sqlWrapper->getAllSites();
+    }
+    else {
+      $sites[0] = $this->sqlWrapper->getSite($targetLocation);
+    }
+
+    foreach ($sites as $site) {
+      if ($site["threat"]) {
+        if ($notOccupiedbyAnyOtherPlayer) {
+          if ($this->isUnoccupiedByAnyOtherPlayer($site, $playerId)) {
+            array_push($available_guards, $site["guardian_num"]);
+          }
         }
-      }
-      else {
-        if ($guard["slot1"] == $playerId || $guard["slot2"] == $playerId) {
-          $available_guards[count($available_guards)] = $guard;
+        else {
+          if ($this->isOccupied($site, $playerId)) {
+            array_push($available_guards, $site["guardian_num"]);
+          }
         }
       }
     }
@@ -1110,7 +1120,7 @@ class arnak extends Table
     $guards = $this->availableGuardians($locationId);
     switch (count($guards)) {
       case 0: throw new BgaUserException(clienttranslate("Select a valid guardian")); break;
-      case 1: $this->overcomeGuard($guards[0]["num"], "", true); break;
+      case 1: $this->overcomeGuard($guards[0], "", true); break;
       default: throw new BgaUserException(clienttranslate("Incorrect number of guards found"));
     }
   }
@@ -1148,6 +1158,50 @@ class arnak extends Table
     "guardNum" => $guardNum
     ));
   }
+
+  function getFirstSlotIdx($site, $player) {
+    foreach ($site["slots"] as $idx => $occupied) {
+      if ($player === $occupied) {
+        return $idx;
+      }
+    }
+    return NULL;
+  }
+
+  function isOccupied($site, $player) {
+    return !is_null($this->getFirstSlotIdx($site, $player));
+  }
+
+  function isUnoccupied($site) {
+    foreach ($site["slots"] as $slot) {
+      if (!is_null($slot)) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function isUnoccupiedByAnyOtherPlayer($site, $player) {
+    foreach ($site["slots"] as $slot) {
+      if (!is_null($slot) && $slot != $player) {
+        return false;
+      }
+    }
+    return true;
+  }
+
+  function checkSiteSize($site, $possibilities) {
+    if (!$site["discovered"]) {
+      return false;
+    }
+    foreach ($possibilities as $possibility) {
+      if ($possibility == $site["size"]) {
+        return true;
+      }
+    }
+    return false;
+  }
+
   function moveToSite($siteId, $movePayment, $relocateFrom = null) {
     $playerId = $this->getActivePlayerId();
     $guards = array();
@@ -1161,7 +1215,7 @@ class arnak extends Table
         if (count($guards) == 0) {
           throw new BgaUserException(clienttranslate("Select a valid guardian"));
         }
-        $this->overcomeGuard($guards[0]["num"], $movePayment, true);
+        $this->overcomeGuard($guards[0], $movePayment, true);
         $this->setGameStateValue("special-research-done", 1);
         $this->didResearch();
         return;
@@ -1174,28 +1228,25 @@ class arnak extends Table
       $this->checkAction("digSite");
     }
 
-
-
+    $targetSlotNo = NULL;
+    $site = NULL;
     if ($siteId != "home") {
       if (count($guards) > 0 ) {
-        $this->overcomeGuard($guards[0]["num"], $movePayment);
+        $this->overcomeGuard($guards[0], $movePayment);
         $this->gamestate->nextState("main_action_done");
         return;
       }
-      $site = $this->getObjectFromDB("SELECT * FROM board_position WHERE idboard_position = $siteId");
-      $targetSlot = "slot1";
-      if ($site["slot1"]) {
-        $targetSlot = "slot2";
-        if ($site["slot2"]) {
-          throw new BgaUserException(clienttranslate("There is no free spot on that site"));
-        }
+
+      $site = $this->sqlWrapper->getSite($siteId);
+      $targetSlotNo = $this->getFirstSlotIdx($site, NULL);
+
+      if (is_null($targetSlotNo)) {
+        throw new BgaUserException(clienttranslate("There is no free spot on that site"));
       }
 
       if ($this->freeWorkerAmt($playerId) <= 0 && is_null($relocateFrom)) {
         throw new BgaUserException(clienttranslate("You have no free archaeologist"));
       }
-
-      $targetSlotNo = $targetSlot === "slot1" ? 0 : 1;
     }
 
     $artActive = $this->getGameStateValue("art-active");
@@ -1205,14 +1256,13 @@ class arnak extends Table
 
     $fromSlot = null;
     if (!is_null($relocateFrom)) {
-      $position = $this->getObjectFromDB("SELECT * FROM board_position WHERE (slot1 = $playerId OR slot2 = $playerId) AND idboard_position = $relocateFrom");
-      if( $position ) {
-        $fromSlot = ( $position['slot2'] == $playerId ) ? 2 : 1;
-      }
-      else {
+      $siteFrom = $this->sqlWrapper->getSite($relocateFrom);
+      $fromSlot = $this->getFirstSlotIdx($siteFrom, $playerId);
+
+      if (is_null($fromSlot)) {
         throw new BgaUserException(clienttranslate("You don't have an archaeologist at the location you are trying to move from"));
       }
-      $slotField = 'slot'.$fromSlot;
+      $slotField = 'slot'.($fromSlot+1);
       $this->dbQuery("UPDATE board_position SET $slotField = NULL WHERE idboard_position = $relocateFrom");
 
       if ($siteId == "home") {
@@ -1231,22 +1281,20 @@ class arnak extends Table
       $this->payTravel($this->gameData->siteTravelCost($siteId, $targetSlotNo), $movePayment);
     }
 
-
+    $targetSlot = 'slot'.($targetSlotNo+1);
     $this->dbQuery("UPDATE board_position SET $targetSlot = $playerId WHERE idboard_position = $siteId");
     $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist to a site'),
     array(
     "player_name" => $this->getCurrentPlayerName(),
     "playerId" => $this->getCurrentPlayerId(),
     "siteId" => $siteId,
-    "slot" => $targetSlot === "slot1" ? 1 : 2,
+    "slot" => $targetSlotNo,
     "from" => $relocateFrom,
     "fromSlot" => $fromSlot
     ));
 
-    $siteTile = $this->getObjectFromDB("SELECT * FROM location WHERE is_at_position = $siteId");
-    if ($siteTile) {
-      $this->siteEffect($siteTile["size"], $siteTile["num"]);
-
+    if ($site["discovered"]) {
+      $this->siteEffect($site["size"], $site["location_num"]);
     }
     else {
       if ($siteId < 5) {
@@ -1268,10 +1316,10 @@ class arnak extends Table
         "player_name" => $this->getCurrentPlayerName(),
         "playerId" => $this->getCurrentPlayerId()
       ));
-      $idolEffect = $this->getNonEmptyObjectFromDB("SELECT * FROM board_position WHERE idboard_position = $siteId")["idol_bonus"];
       $this->setGameStateValue("site-buffer", $siteId);
       $this->gamestate->nextState("discover");
-      switch($idolEffect) {
+      $idolEffect = $site["idol_bonus"];
+      switch ($idolEffect) {
         case "exile":
           $this->gamestate->nextState("idolExile");
           break;
@@ -1332,8 +1380,8 @@ class arnak extends Table
     $this->gainResource("idol", $playerId, $amt);
     $this->dbQuery("UPDATE board_position SET idol_bonus = NULL WHERE idboard_position = $siteId");
 
-    $newSite = $this->getObjectFromDB("SELECT * FROM location WHERE size = '$size' AND is_open = 0  ORDER BY deck_order LIMIT 1");
-    $id = $newSite['idlocation'];
+    $newSite = $this->sqlWrapper->getTopSiteDeck($size == "small");
+    $id = $newSite["location_id"];
 
     $this->dbQuery("UPDATE location SET is_open = 1, is_at_position = $siteId WHERE idlocation = $id");
     $this->notifyAllPlayers(
@@ -1343,7 +1391,7 @@ class arnak extends Table
         "player_name" => $this->getCurrentPlayerName(),
         "player_id" => $this->getCurrentPlayerId(),
         "locationSize" => $size,
-        "locationNum" => $newSite["num"],
+        "locationNum" => $newSite["location_num"],
         "locationId" => $id,
         "boardPosition" => $siteId
       )
@@ -1353,19 +1401,19 @@ class arnak extends Table
     $this->undoSavePoint();
     $this->setGameStateValue("site-buffer", -1);
     $this->setGameStateValue("guard-buffer", $siteId);
-    $this->siteEffect($newSite["size"], $newSite["num"]);
+    $this->siteEffect($size, $newSite["location_num"]);
   }
 
   function placeGuard($siteId) {
-    $guard = $this->getObjectFromDB("SELECT * FROM guardian WHERE at_location IS NULL AND in_hand IS NULL ORDER BY deckorder LIMIT 1");
-    $id = $guard["idguardian"];
+    $guard = $this->sqlWrapper->getTopGuardianDeck();
+    $id = $guard["guardian_id"];
     $this->dbQuery("UPDATE guardian SET at_location = $siteId WHERE idguardian = $id");
     $this->notifyAllPlayers(
       "newGuardian",
       clienttranslate('A wild guardian appears'),
       array(
         "guardId" => $id,
-        "guardNum" => $guard["num"],
+        "guardNum" => $guard["guardian_num"],
         "boardPosition" => $siteId
       )
     );
@@ -1515,7 +1563,8 @@ class arnak extends Table
     $this->checkAction("useGuardPower");
     $arg = base64_decode($arg);
     $playerId = $this->getCurrentPlayerId();
-    if (!$this->getObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $guardNum AND in_hand = $playerId")) {
+    $boons = $this->sqlWrapper->getDefeatedGuardians($playerId);
+    if (!in_array($guardNum, $boons)) {
       throw new BgaUserException(clienttranslate("That is not your guardian boon"));
     }
     $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $guardNum");
@@ -1786,7 +1835,7 @@ class arnak extends Table
           break;
         }
         if (count($guards) == 1) {
-          $this->overcomeGuard($guards[0]["num"], array(), true);
+          $this->overcomeGuard($guards[0], array(), true);
           break;
         }
         if (count($guards) == 2) {
@@ -1989,14 +2038,21 @@ class arnak extends Table
     $this->notifyAllPlayers("nextRound", clienttranslate("Setting up next round"), array());
     //$this->activeNextPlayer();
 
-    $guardedMeeple = $this->getObjectListFromDb("SELECT p.idboard_position pos, p.slot1 player FROM guardian g INNER JOIN board_position p ON p.idboard_position = g.at_location WHERE slot1 IS NOT NULL");
-    $guardedMeeple = array_merge($guardedMeeple, $this->getObjectListFromDb("SELECT p.idboard_position pos, p.slot2 player FROM guardian g INNER JOIN board_position p ON p.idboard_position = g.at_location WHERE slot2 IS NOT NULL AND slot2 != -1"));
-    foreach($guardedMeeple as $g) {
-      $playerId = $g["player"];
-      
+    $allSites = $this->sqlWrapper->getAllSites();
+    $guardedMeeple = [];
+    foreach ($allSites as $site) {
+      if ($site["threat"]) {
+        foreach ($site["slots"] as $meeple) {
+          if (!is_null($meeple))
+            array_push($guardedMeeple, $meeple);
+        }
+      }
+    }
+
+    foreach($guardedMeeple as $playerMeeple) {
       $safe = false;
       if( $this->getGameStateValue("warmask-played") == 1 ) {
-        $cards = $this->sqlWrapper->getCards($playerId, 'play', 'art');
+        $cards = $this->sqlWrapper->getCards($playerMeeple, 'play', 'art');
         foreach ($cards as $card) {
           if ($card["info"] == Artefact::War_Mask) {
             $safe = true;
@@ -2006,10 +2062,10 @@ class arnak extends Table
       }
 
       if ($safe) {
-        $this->notifyAllPlayers("noFear", clienttranslate('${player_name} does not get fear thanks to the War Mask'), array("player_name" =>$this->loadPlayersBasicInfos()[$playerId]["player_name"]));
+        $this->notifyAllPlayers("noFear", clienttranslate('${player_name} does not get fear thanks to the War Mask'), array("player_name" =>$this->loadPlayersBasicInfos()[$playerMeeple]["player_name"]));
       }
       else {
-        $this->gainResource("fear", $playerId, 1);
+        $this->gainResource("fear", $playerMeeple, 1);
       }
     }
     $this->setGameStateValue("warmask-played", 0);
@@ -2209,7 +2265,7 @@ class arnak extends Table
         $score = [12, 13, 13, 12, 10][$player["idol_slot"]] + 3 * $player["idol"];
         break;
       case "guardians":
-        $score = count($this->getCollectionFromDb("SELECT * FROM guardian WHERE in_hand = $playerId")) * 5;
+        $score = count($this->sqlWrapper->getDefeatedGuardians($playerId, true)) * 5;
         break;
       case "cards":
         foreach ($this->sqlWrapper->getCards($playerId) as $card) {

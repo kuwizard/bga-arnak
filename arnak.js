@@ -216,9 +216,10 @@ function (dojo, declare) {
         this.updateDeck(player_id);
 
         this.updateResources(player_id);
-        for (var p of gamedatas.board_position) {
-          player.meeple -= p.slot1 == player_id;
-          player.meeple -= p.slot2 == player_id;
+        for (var site of gamedatas.sites) {
+          for (var playerMeeple of site["slots"]) {
+            player.meeple -= playerMeeple == player_id;
+          }
         }
         var playerBoard = dojo.query("#player_board_" + player_id)[0];
         if (gamedatas.turn_based) {
@@ -319,8 +320,8 @@ function (dojo, declare) {
       //dojo.query(".hand.card, .play.card").connect("click", this, "handClick");
       dojo.addClass(dojo.query(".staff-parent")[0], "round" + this.round);
 
-      for (var locationId in gamedatas.board_position)
-        this.siteBoxes[locationId].numSlots = (gamedatas.board_position[locationId]["slot2"] == -1)? 1 : 2;
+      for (var locationId in gamedatas.sites)
+        this.siteBoxes[locationId].numSlots = gamedatas.sites[locationId].slots.length;
 
       var id = 0;
       for (var b of this.siteBoxes) {
@@ -335,36 +336,35 @@ function (dojo, declare) {
 
         box.dataset.id = id;
         box.id = "site-box-" + id;
-        var currPos = gamedatas.board_position[id];
-        for (var slot of ["slot1", "slot2"]) {
-          var playerId = currPos[slot];
-          if (playerId && playerId != -1) {
+        var site = gamedatas.sites[id];
+        for (var slotIdx in site.slots) {
+          var playerId = site.slots[slotIdx];
+          if (playerId) {
             var meepleDiv = dojo.create("div");
             dojo.addClass(meepleDiv, "onboard meeple meeple-" + (playerMeeples[playerId]++) + " " + this.playerColor(playerId));
             meepleDiv.dataset.position = id;
-            meepleDiv.dataset.slot = (slot === "slot1" ? 1 : 2);
+            meepleDiv.dataset.slot = slotIdx;
 
             dojo.place(meepleDiv, board);
-            var p = this.workerPosition(id, slot === "slot1" ? 1 : 2);
+            var p = this.workerPosition(id, slotIdx);
             dojo.style(meepleDiv, "left", p.x + "px");
             dojo.style(meepleDiv, "top", p.y + "px");
           }
-          if (playerId && playerId == -1 && id < 5) {
-            var blockDiv = dojo.create("div");
-            dojo.addClass(blockDiv, "blocking-tile");
-            blockDiv.dataset.position = id;
-            var p = this.workerPosition(id, slot === "slot1" ? 1 : 2);
-            dojo.style(blockDiv, "left", (p.x + 2) + "px");
-            dojo.style(blockDiv, "top", p.y + "px");
-            dojo.place(blockDiv, board);
-          }
+        }
+        if (id < 5 && site.slots.length < 2) {
+          var blockDiv = dojo.create("div");
+          dojo.addClass(blockDiv, "blocking-tile");
+          blockDiv.dataset.position = id;
+          var p = this.workerPosition(id, 1);
+          dojo.style(blockDiv, "left", (p.x + 2) + "px");
+          dojo.style(blockDiv, "top", p.y + "px");
+          dojo.place(blockDiv, board);
         }
 
-
-        if (currPos.idol_bonus !== "" && currPos.idol_bonus) {
+        if (!site.discovered) {
           var idolDiv = dojo.create("div");
-          dojo.addClass(idolDiv, "idol " + currPos.idol_bonus);
-          idolDiv.dataset.bonus = currPos.idol_bonus;
+          dojo.addClass(idolDiv, "idol " + site.idol_bonus);
+          idolDiv.dataset.bonus = site.idol_bonus;
           idolDiv.dataset.id = id;
           dojo.place(idolDiv, box);
           if (id >= 13) {
@@ -374,10 +374,6 @@ function (dojo, declare) {
             dojo.place(idolDiv, box);
           }
         }
-        var site = Object.values(gamedatas.locations).filter(a => a.position == id)[0];
-        var guard = Object.values(gamedatas.guardians).filter(a => a.at_location == id)[0];
-        //this.addTooltipHtml(box.id, this.tooltips.siteBox(b, site, guard, gamedatas.bird_temple));
-
         ++id;
       }
 
@@ -462,12 +458,12 @@ function (dojo, declare) {
       }
       this.updateTempleTooltips();
 
-      for (var site of Object.values(gamedatas.locations)) {
-        this.newSite(site.size, site.num, site.position);
-      }
-      for (var guard of Object.values(gamedatas.guardians)) {
-        if(!guard.in_hand)
-          this.newGuard(guard.at_location, guard.num);
+      for (var pos in gamedatas.sites) {
+        var site = gamedatas.sites[pos];
+        if (site.discovered)
+          this.newSite(site.size, site.location_num, pos);
+        if (site.threat)
+          this.newGuard(pos, site.guardian_num);
       }
       this.updateSiteTooltips();
 
@@ -596,7 +592,7 @@ function (dojo, declare) {
       var result = dojo.create("div");
       var inner = dojo.create("div");
       dojo.addClass(result, "guardian-hand-wrap");
-      if ([1, 3, 4, 9, 10, 12, 13, 15].indexOf(+num) > -1) {
+      if ([1, 3, 4, 9, 10, 12, 13, 15].indexOf(num) > -1) {
         dojo.addClass(inner, "small");
       }
       dojo.addClass(inner, "guardian-hand guardian guardian-" + num);
@@ -942,11 +938,11 @@ function (dojo, declare) {
       var left = 356;
       var player = this.gamedatas.players[playerId];
       var handDiv = dojo.query(".player-camp.camp-" + playerId)[0];
-      for (var guard of player.guardians_ready) {
-        var guardChild = dojo.query(".guardian-hand.guardian-" + guard.num)[0];
+      for (var guardNum of player.guardians) {
+        var guardChild = dojo.query(".guardian-hand.guardian-" + guardNum)[0];
         var guardDiv;
         if (!guardChild) {
-          guardDiv = this.handGuard(guard.num);
+          guardDiv = this.handGuard(guardNum);
           dojo.place(guardDiv, handDiv);
         }
         else {
@@ -1168,7 +1164,7 @@ function (dojo, declare) {
 
       return newEl;
     },
-    workerPosition(siteNo, spotNo) {
+    workerPosition(siteNo, spotIdx) {
       var board = dojo.query(".arnak-board")[0];
       var bw = board.offsetWidth;
       var bh = board.offsetHeight;;
@@ -1180,7 +1176,7 @@ function (dojo, declare) {
       var y = b.y + b.h;
       if (siteNo < 5) {
         x -= 3;
-        if (spotNo == 2) {
+        if (spotIdx == 1) {
           x += 6;
         }
       }
@@ -1878,9 +1874,9 @@ function (dojo, declare) {
       }
     },
     guardEffect: function(evt) {
-      var num = evt.target.dataset.num;
+      var num = +evt.target.dataset.num;
       this.selectedGuard = num;
-      switch(+num) {
+      switch(num) {
         case 7:
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardNum: num,
@@ -2930,7 +2926,7 @@ function (dojo, declare) {
       var resNumber = dojo.query("#player_board_" + a.playerId +
       " .counter-number-guardian")[0];
       resNumber.innerHTML = +resNumber.innerHTML + 1;
-      this.gamedatas.players[a.playerId].guardians_ready.push({num: a.guardNum});
+      this.gamedatas.players[a.playerId].guardians.push(a.guardNum);
       var newDiv = this.handGuard(a.guardNum);
       var targetB = dojo.position(targetBoard);
       var x = dojo.position(toDestroy).x - targetB.x;
@@ -2956,9 +2952,9 @@ function (dojo, declare) {
     },
     notif_useGuard: function(notif) {
       var a = notif.args;
-      var guards = this.gamedatas.players[a.player_id].guardians_ready;
+      var guards = this.gamedatas.players[a.player_id].guardians;
       for (var i in guards) {
-        if (guards[i].num == a.guardNum) {
+        if (guards[i] == a.guardNum) {
           guards.splice(i, 1);
           break;
         }

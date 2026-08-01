@@ -31,13 +31,9 @@ class CardEffects {
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
-        if ($artefact == Artefact::Pathfinders_Sandals) {
-          $site = $game->getObjectFromDb("SELECT * FROM location WHERE size='basic' AND is_at_position = $to");
-        }
-        else {
-          $site = $game->getObjectFromDb("SELECT * FROM location WHERE (size='basic' OR size='small') AND is_at_position = $to");
-        }
-        if (!$site) {
+        $site = $game->sqlWrapper->getSite($to);
+        if (($artefact == Artefact::Pathfinders_Sandals && !$game->checkSiteSize($site, ["basic"])) ||
+            ($artefact == Artefact::Pathfinders_Staff && !$game->checkSiteSize($site, ["basic", "small"]))) {
           throw new BgaUserException(clienttranslate("The site you are trying to move to is not valid"));
         }
         $game->moveToSite($to, [], $from);
@@ -119,16 +115,14 @@ class CardEffects {
         $siteId = $arg->site;
         $exile = $arg->exile;
         $game->exile($exile);
-        $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $siteId");
-        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
-        if (!$site) {
+        $site = $game->sqlWrapper->getSite($siteId);
+        if (!$game->isUnoccupied($site)) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
         }
-        if (!$siteTile) {
+        if (!$game->checkSiteSize($site, ["basic"])) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
-        $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $siteId AND size = 'basic'");
-        $game->siteEffect("basic", $siteTile["num"]);
+        $game->siteEffect("basic", $site["location_num"]);
         break;
       case Artefact::War_Club:
         $game->freeOvercome($arg);
@@ -281,19 +275,19 @@ class CardEffects {
           $size = "big";
           $this->gainCardResource("compass", -1);
         }
-        $newSite = $game->getObjectFromDB("SELECT * FROM location WHERE size = '$size' AND is_open = 0  ORDER BY deck_order LIMIT 1");
+        $newSite = $game->sqlWrapper->getTopSiteDeck($size == "small");
         $game->notifyAllPlayers("siteReveal", clienttranslate('${player_name} reveals a ${size} location from the deck'), array(
           "size" => $size,
           "player_name" => $game->getActivePlayerName(),
           "player_id" => $this->playerId,
-          "num" => $newSite["num"],
+          "num" => $newSite["location_num"],
           "cardNum" => $artefact
         ));
         $deckOrder = $game->getObjectFromDB("SELECT * FROM location WHERE size = '$size' ORDER BY deck_order DESC LIMIT 1")["deck_order"] + 1;
-        $siteId = $newSite["idlocation"];
+        $siteId = $newSite["location_id"];
         $game->dbQuery("UPDATE location SET deck_order = $deckOrder WHERE size = '$size' AND idlocation = $siteId");
         $game->undoSavePoint();
-        $game->siteEffect($size, $newSite["num"]);
+        $game->siteEffect($size, $newSite["location_num"]);
         break;
       case Artefact::Runes_of_the_Dead:
         $this->gainCardResource("fear", 1);
@@ -304,19 +298,15 @@ class CardEffects {
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
-        $siteFrom = $game->getObjectFromDb("
-        SELECT * FROM location loc INNER JOIN board_position pos ON loc.is_at_position = pos.idboard_position INNER JOIN guardian g ON g.at_location = pos.idboard_position WHERE g.at_location = $from AND (slot1 = $this->playerId OR slot2 = $this->playerId)");
-
-        if (!$siteFrom) {
+        $siteFrom = $game->sqlWrapper->getSite($from);
+        if (!$game->isOccupied($siteFrom, $this->playerId) || !$siteFrom["threat"]) {
           throw new BgaUserException(clienttranslate("You did not select a valid guardian"));
         }
-        $siteTo = $game->getObjectFromDb("
-        SELECT loc.num num , loc.size size FROM location loc INNER JOIN board_position pos ON loc.is_at_position = pos.idboard_position WHERE (loc.size='basic' OR loc.size='small') AND pos.idboard_position = $to AND (slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1))");
-        if (!$siteTo) {
+        $siteTo = $game->sqlWrapper->getSite($to);
+        if (!$game->isUnoccupied($siteTo) || !$game->checkSiteSize($siteTo, ["basic", "small"])) {
           throw new BgaUserException(clienttranslate("You did not select a valid destination"));
         }
-        $newGuard = $game->getObjectFromDB("SELECT * FROM guardian WHERE at_location = $to");
-        if ($newGuard) {
+        if ($siteTo["threat"]) {
           throw new BgaUserException(clienttranslate("There is already a guardian there"));
         }
         $game->dbQuery("UPDATE guardian SET at_location = $to WHERE at_location = $from");
@@ -326,7 +316,7 @@ class CardEffects {
           "from" => $from,
           "to" => $to
         ));
-        $game->siteEffect($siteTo["size"], $siteTo["num"]);
+        $game->siteEffect($siteTo["size"], $siteTo["location_num"]);
         break;
     }
     if( $artefact == Artefact::War_Mask ||
@@ -448,21 +438,21 @@ class CardEffects {
         }
         break;
       case Item::Binoculars:
-        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'small'");
-        if (!$siteTile) {
+        $site = $game->sqlWrapper->getSite($arg);
+        if (!$game->checkSiteSize($site, ["small"])) {
           throw new BgaUserException(clienttranslate("That is not a small discovered site"));
         }
-        $game->siteEffect("small", $siteTile["num"]);
+        $game->siteEffect("small", $site["location_num"]);
         break;
       case Item::Tent:
-        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg");
-        if (!$siteTile || !$game->getObjectFromDb("SELECT * FROM board_position WHERE (slot1 = $this->playerId OR slot2 = $this->playerId) AND idboard_position = $arg")) {
+        $site = $game->sqlWrapper->getSite($arg);
+        if (!$game->isOccupied($site, $this->playerId)) {
           throw new BgaUserException(clienttranslate("You must have an archeologist on the site"));
         }
-        if ($siteTile["size"] == "big") {
+        if ($game->checkSiteSize($site, ["big"])) {
           $this->gainCardResource("compass", -2);
         }
-        $game->siteEffect($siteTile["size"], $siteTile["num"]);
+        $game->siteEffect($site["size"], $site["location_num"]);
         break;
       case Item::Fishing_Rod:
         $newCard = $game->revealCard("item");
@@ -475,12 +465,14 @@ class CardEffects {
         $game->gamestate->nextState("buyArt");
         break;
       case Item::Bow_and_Arrows:
-        $guards = $game->getCollectionFromDb(
-        "SELECT * FROM guardian g
-        LEFT JOIN board_position p ON g.at_location = p.idboard_position 
-        WHERE g.in_hand = $this->playerId OR p.slot1 = $this->playerId OR p.slot2 = $this->playerId");
-
-        $this->gainCardResource("compass", min(3, count($guards)));
+        $numGuards = count($game->sqlWrapper->getDefeatedGuardians($this->playerId, true));
+        $sites = $game->sqlWrapper->getAllSites();
+        foreach ($sites as $site) {
+          if ($site["threat"] && $game->isOccupied($site, $this->playerId)) {
+            $numGuards++;
+          }
+        }
+        $this->gainCardResource("compass", min(3, $numGuards));
         break;
       case Item::Carrier_Pigeon:
         $this->gainCardResource("tablet", 2);
@@ -528,7 +520,7 @@ class CardEffects {
         $guards = $game->availableGuardians($arg, true);
         switch (count($guards)) {
           case 0: throw new BgaUserException(clienttranslate("Select a valid guardian"));
-          case 1: $game->overcomeGuard($guards[0]["num"], "", true); break;
+          case 1: $game->overcomeGuard($guards[0], "", true); break;
           default: throw new BgaUserException(clienttranslate("Incorrect number of guards found"));
           break;
         }
@@ -539,24 +531,22 @@ class CardEffects {
         $game->gamestate->nextState("cardExile");
         break;
       case Item::Lantern:
-        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
-        if (!$siteTile) {
+        $site = $game->sqlWrapper->getSite($arg);
+        if (!$game->checkSiteSize($site, ["basic"])) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
-        $game->siteEffect("basic", $siteTile["num"]);
+        $game->siteEffect("basic", $site["location_num"]);
         break;
       case Item::Dog:
-        $site = $game->getObjectFromDb("SELECT * FROM board_position WHERE slot1 IS NULL AND (slot2 IS NULL OR slot2 = -1) AND idboard_position = $arg");
-        $siteTile = $game->getObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
-        if (!$site) {
+        $site = $game->sqlWrapper->getSite($arg);
+        if (!$game->isUnoccupied($site)) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
         }
-        if (!$siteTile) {
+        if (!$game->checkSiteSize($site, ["basic"])) {
           throw new BgaUserException(clienttranslate("That is not a camp site"));
         }
-        $siteTile = $game->getNonEmptyObjectFromDb("SELECT * FROM location WHERE is_at_position = $arg AND size = 'basic'");
         $this->gainCardResource("compass", 1);
-        $game->siteEffect("basic", $siteTile["num"]);
+        $game->siteEffect("basic", $site["location_num"]);
         break;
       case Item::Brush:
         $player =  $game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $this->playerId");
