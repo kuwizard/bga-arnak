@@ -985,6 +985,10 @@ class arnak extends Table
           break;
         case "guardian":
           $num = $pay["num"];
+          $playerId = $this->getCurrentPlayerId();
+          if (!$this->getObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $num AND in_hand = $playerId")) {
+            throw new BgaUserException(clienttranslate("That is not your guardian boon"));
+          }
           $boon = $this->gameData->guardianBoon($num);
           if(!isset($boon["travel"])) {
             throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
@@ -999,7 +1003,6 @@ class arnak extends Table
           if (!$useful) {
             break;
           }
-          $this->getNonEmptyObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $num");
           $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $num");
           $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian for travel symbol'), array(
             "player_name" => $this->getActivePlayerName(),
@@ -1490,7 +1493,7 @@ class arnak extends Table
     $arg = base64_decode($arg);
     $playerId = $this->getCurrentPlayerId();
     if (!$this->getObjectFromDB("SELECT * FROM guardian WHERE ready = 1 AND num = $guardNum AND in_hand = $playerId")) {
-      throw new BgaUserException("That is not your guardian boon");
+      throw new BgaUserException(clienttranslate("That is not your guardian boon"));
     }
     $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $guardNum");
     $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian boon'), array(
