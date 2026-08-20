@@ -1034,7 +1034,7 @@ class arnak extends Table
           if (!$useful) {
             break;
           }
-          $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $num");
+          $this->sqlWrapper->setGuardianBoonUsed($num);
           $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian for travel symbol'), array(
             "player_name" => $this->getActivePlayerName(),
             "player_id" => $this->getActivePlayerId(),
@@ -1148,7 +1148,7 @@ class arnak extends Table
         }
       }
     }
-    $this->dbQuery("UPDATE guardian SET in_hand = $playerId, ready = 1, at_location = NULL WHERE num = $guardNum");
+    $this->sqlWrapper->setGuardianToPlayer($guardNum, $playerId);
     $this->incStat(1, "guardians", $playerId);
     $this->incStat(1, "guardians-".$this->getGameStateValue("round"), $playerId);
     $this->notifyAllPlayers("overcomeGuard", clienttranslate('${player_name} overcame the guardian'),
@@ -1254,46 +1254,47 @@ class arnak extends Table
       throw new BgaUserException(clienttranslate("You must travel to a camp site"));
     }
 
-    $fromSlot = null;
-    if (!is_null($relocateFrom)) {
-      $siteFrom = $this->sqlWrapper->getSite($relocateFrom);
-      $fromSlot = $this->getFirstSlotIdx($siteFrom, $playerId);
-
-      if (is_null($fromSlot)) {
-        throw new BgaUserException(clienttranslate("You don't have an archaeologist at the location you are trying to move from"));
-      }
-      $slotField = 'slot'.($fromSlot+1);
-      $this->dbQuery("UPDATE board_position SET $slotField = NULL WHERE idboard_position = $relocateFrom");
-
-      if ($siteId == "home") {
-        $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist back to the camp'),
-          array(
-          "player_name" => $this->getCurrentPlayerName(),
-          "playerId" => $this->getCurrentPlayerId(),
-          "siteId" => "home",
-          "from" => $relocateFrom,
-          "fromSlot" => $fromSlot
-          ));
-        return;
-      }
-    }
-    else {
+    if (is_null($relocateFrom)) {
       $this->payTravel($this->gameData->siteTravelCost($siteId, $targetSlotNo), $movePayment);
     }
 
-    $targetSlot = 'slot'.($targetSlotNo+1);
-    $this->dbQuery("UPDATE board_position SET $targetSlot = $playerId WHERE idboard_position = $siteId");
-    $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist to a site'),
-    array(
-    "player_name" => $this->getCurrentPlayerName(),
-    "playerId" => $this->getCurrentPlayerId(),
-    "siteId" => $siteId,
-    "slot" => $targetSlotNo,
-    "from" => $relocateFrom,
-    "fromSlot" => $fromSlot
-    ));
+    $fromSlot = NULL;
+    if (!is_null($relocateFrom)) {
+      $siteFrom = $this->sqlWrapper->getSite($relocateFrom);
+      $fromSlot = $this->getFirstSlotIdx($siteFrom, $playerId);
+      if (is_null($fromSlot)) {
+        throw new BgaUserException(clienttranslate("You don't have an archaeologist at the location you are trying to move from"));
+      }
+    }
+    $targetSite = ($siteId == "home") ? NULL : $siteId;
+    $this->sqlWrapper->moveSlotWorker($playerId, $relocateFrom, $fromSlot, $targetSite, $targetSlotNo);
 
-    if ($site["discovered"]) {
+    if ($siteId == "home") {
+      $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist back to the camp'),
+        array(
+        "player_name" => $this->getCurrentPlayerName(),
+        "playerId" => $this->getCurrentPlayerId(),
+        "siteId" => "home",
+        "from" => $relocateFrom,
+        "fromSlot" => $fromSlot
+        ));
+    }
+    else {
+      $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist to a site'),
+      array(
+      "player_name" => $this->getCurrentPlayerName(),
+      "playerId" => $this->getCurrentPlayerId(),
+      "siteId" => $siteId,
+      "slot" => $targetSlotNo,
+      "from" => $relocateFrom,
+      "fromSlot" => $fromSlot
+      ));
+    }
+
+    if ($siteId == "home") {
+      return;
+    }
+    else if ($site["discovered"]) {
       $this->siteEffect($site["size"], $site["location_num"]);
     }
     else {
@@ -1378,12 +1379,9 @@ class arnak extends Table
     }*/
     $playerId = $this->getActivePlayerId();
     $this->gainResource("idol", $playerId, $amt);
-    $this->dbQuery("UPDATE board_position SET idol_bonus = NULL WHERE idboard_position = $siteId");
-
     $newSite = $this->sqlWrapper->getTopSiteDeck($size == "small");
     $id = $newSite["location_id"];
-
-    $this->dbQuery("UPDATE location SET is_open = 1, is_at_position = $siteId WHERE idlocation = $id");
+    $this->sqlWrapper->setSitePosition($id, $siteId);
     $this->notifyAllPlayers(
       "discoverLocation",
       clienttranslate('${player_name} discovers a new location'),
@@ -1407,7 +1405,7 @@ class arnak extends Table
   function placeGuard($siteId) {
     $guard = $this->sqlWrapper->getTopGuardianDeck();
     $id = $guard["guardian_id"];
-    $this->dbQuery("UPDATE guardian SET at_location = $siteId WHERE idguardian = $id");
+    $this->sqlWrapper->setGuardianPosition($id, $siteId);
     $this->notifyAllPlayers(
       "newGuardian",
       clienttranslate('A wild guardian appears'),
@@ -1567,7 +1565,7 @@ class arnak extends Table
     if (!in_array($guardNum, $boons)) {
       throw new BgaUserException(clienttranslate("That is not your guardian boon"));
     }
-    $this->dbQuery("UPDATE guardian SET ready = 0 WHERE num = $guardNum");
+    $this->sqlWrapper->setGuardianBoonUsed($guardNum);
     $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian boon'), array(
       "player_name" => $this->getActivePlayerName(),
       "player_id" => $this->getActivePlayerId(),
@@ -2076,8 +2074,7 @@ class arnak extends Table
       return;
 
     }
-    $this->DbQuery("UPDATE board_position SET slot1 = NULL WHERE slot1 != -1");
-    $this->DbQuery("UPDATE board_position SET slot2 = NULL WHERE slot2 != -1");
+    $this->sqlWrapper->clearBoardSlots();
     $this->notifyAllPlayers("returnWorkers", clienttranslate("Returning all archaeologists home"), array());
     $firstRound = $this->getGameStateValue("round") == "0";
 
