@@ -283,9 +283,7 @@ class CardEffects {
           "num" => $newSite["location_num"],
           "cardNum" => $artefact
         ));
-        $deckOrder = $game->getObjectFromDB("SELECT * FROM location WHERE size = '$size' ORDER BY deck_order DESC LIMIT 1")["deck_order"] + 1;
-        $siteId = $newSite["location_id"];
-        $game->dbQuery("UPDATE location SET deck_order = $deckOrder WHERE size = '$size' AND idlocation = $siteId");
+        $game->sqlWrapper->setSiteOnBottomDeck($newSite["location_id"], $size);
         $game->undoSavePoint();
         $game->siteEffect($size, $newSite["location_num"]);
         break;
@@ -309,7 +307,7 @@ class CardEffects {
         if ($siteTo["threat"]) {
           throw new BgaUserException(clienttranslate("There is already a guardian there"));
         }
-        $game->dbQuery("UPDATE guardian SET at_location = $to WHERE at_location = $from");
+        $this->game->sqlWrapper->setGuardianPosition($siteFrom["guardian_id"], $to);
         $game->notifyAllPlayers("guardMove", '${player_name} moves a guardian to another site', array(
           "player_name" => $game->getActivePlayerName(),
           "player_id" => $game->getActivePlayerId(),

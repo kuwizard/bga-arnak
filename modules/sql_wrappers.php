@@ -452,5 +452,46 @@ class SqlWrapper {
     $guardian["guardian_num"] = intval($guardian["guardian_num"]);
     return $guardian;
   }
+
+  public function clearBoardSlots() {
+    $this->game->DbQuery("UPDATE board_position SET slot1 = NULL WHERE slot1 != -1");
+    $this->game->DbQuery("UPDATE board_position SET slot2 = NULL WHERE slot2 != -1");
+  }
+
+  public function moveSlotWorker($playerId, $siteFrom, $fromSlot, $siteTo, $toSlot) {
+    if (!is_null($siteFrom)) {
+      $slotStr = 'slot'.($fromSlot+1);
+      $this->game->DbQuery("UPDATE board_position SET $slotStr = NULL WHERE idboard_position = $siteFrom");
+    }
+    if (!is_null($siteTo)) {
+      $slotStr = 'slot'.($toSlot+1);
+      $this->game->DbQuery("UPDATE board_position SET $slotStr = $playerId WHERE idboard_position = $siteTo");
+    }
+  }
+
+  public function setSitePosition($siteid, $positionId) {
+    $this->game->DbQuery("UPDATE board_position SET idol_bonus = NULL WHERE idboard_position = $positionId");
+    $this->game->DbQuery("UPDATE location SET is_at_position = $positionId WHERE idlocation = $siteid");
+  }
+
+  public function setSiteOnBottomDeck($locationId, $sizeDeck) {
+    $deckOrders = $this->game->getObjectListFromDb("SELECT deck_order FROM location WHERE size = '$sizeDeck' ORDER BY deck_order");
+    $newOrder = (count($deckOrders) > 0) ? (end($deckOrders)["deck_order"] + 1) : 0;
+    $this->game->DbQuery("UPDATE location SET deck_order = $newOrder WHERE idlocation = $locationId");
+  }
+
+  public function setGuardianPosition($guardianId, $siteId) {
+    $this->game->DbQuery("UPDATE guardian SET at_location = $siteId, deckorder = NULL WHERE idguardian = $guardianId");
+  }
+
+  public function setGuardianToPlayer($guardianNum, $playerId) {
+    $boonOrders = $this->game->getObjectListFromDb("SELECT deckorder FROM guardian WHERE in_hand = $playerId AND ready = 1 ORDER BY deckorder");
+    $newOrder = (count($boonOrders) > 0) ? (end($boonOrders)["deckorder"] + 1) : 0;
+    $this->game->DbQuery("UPDATE guardian SET in_hand = $playerId, ready = 1, deckorder = $newOrder, at_location = NULL WHERE num = $guardianNum");
+  }
+
+  public function setGuardianBoonUsed($guardianNum) {
+    $this->game->DbQuery("UPDATE guardian SET ready = 0, deckorder = NULL WHERE num = $guardianNum");
+  }
 }
 ?>
