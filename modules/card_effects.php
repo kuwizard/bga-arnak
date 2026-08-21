@@ -307,13 +307,7 @@ class CardEffects {
         if ($siteTo["threat"]) {
           throw new BgaUserException(clienttranslate("There is already a guardian there"));
         }
-        $this->game->sqlWrapper->setGuardianPosition($siteFrom["guardian_id"], $to);
-        $game->notifyAllPlayers("guardMove", '${player_name} moves a guardian to another site', array(
-          "player_name" => $game->getActivePlayerName(),
-          "player_id" => $game->getActivePlayerId(),
-          "from" => $from,
-          "to" => $to
-        ));
+        $this->game->sqlWrapper->setGuardianPosition($siteFrom, $to, ["msg" => clienttranslate('${player_name} moves a guardian to another site')]);
         $game->siteEffect($siteTo["size"], $siteTo["location_num"]);
         break;
     }

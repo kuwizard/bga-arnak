@@ -1012,12 +1012,7 @@ class arnak extends Table
           if (!$useful) {
             break;
           }
-          $this->sqlWrapper->setGuardianBoonUsed($num);
-          $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian for travel symbol'), array(
-            "player_name" => $this->getActivePlayerName(),
-            "player_id" => $this->getActivePlayerId(),
-            "guardNum" => $num
-          ));
+          $this->sqlWrapper->setGuardianBoonUsed($num, ["msg" => clienttranslate('${player_name} uses his guardian for travel symbol')]);
           break;
         }
       }
@@ -1126,15 +1121,9 @@ class arnak extends Table
         }
       }
     }
-    $this->sqlWrapper->setGuardianToPlayer($guardNum, $playerId);
+    $this->sqlWrapper->setGuardianToPlayer($guardNum, $playerId, ["msg" => clienttranslate('${player_name} overcame the guardian')]);
     $this->incStat(1, "guardians", $playerId);
     $this->incStat(1, "guardians-".$this->getGameStateValue("round"), $playerId);
-    $this->notifyAllPlayers("overcomeGuard", clienttranslate('${player_name} overcame the guardian'),
-    array(
-    "player_name" => $this->getCurrentPlayerName(),
-    "playerId" => $this->getCurrentPlayerId(),
-    "guardNum" => $guardNum
-    ));
   }
 
   function getFirstSlotIdx($site, $player) {
@@ -1245,29 +1234,8 @@ class arnak extends Table
       }
     }
     $targetSite = ($siteId == "home") ? NULL : $siteId;
-    $this->sqlWrapper->moveSlotWorker($playerId, $relocateFrom, $fromSlot, $targetSite, $targetSlotNo);
-
-    if ($siteId == "home") {
-      $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist back to the camp'),
-        array(
-        "player_name" => $this->getCurrentPlayerName(),
-        "playerId" => $this->getCurrentPlayerId(),
-        "siteId" => "home",
-        "from" => $relocateFrom,
-        "fromSlot" => $fromSlot
-        ));
-    }
-    else {
-      $this->notifyAllPlayers("moveWorker", clienttranslate('${player_name} moves his archaeologist to a site'),
-      array(
-      "player_name" => $this->getCurrentPlayerName(),
-      "playerId" => $this->getCurrentPlayerId(),
-      "siteId" => $siteId,
-      "slot" => $targetSlotNo,
-      "from" => $relocateFrom,
-      "fromSlot" => $fromSlot
-      ));
-    }
+    $msg = ($siteId == "home") ? clienttranslate('${player_name} moves his archaeologist back to the camp') : clienttranslate('${player_name} moves his archaeologist to a site');
+    $this->sqlWrapper->moveSlotWorker($playerId, $relocateFrom, $fromSlot, $targetSite, $targetSlotNo, ["msg" => $msg]);
 
     if ($siteId == "home") {
       return;
@@ -1358,20 +1326,8 @@ class arnak extends Table
     $playerId = $this->getActivePlayerId();
     $this->gainResource("idol", $playerId, $amt);
     $newSite = $this->sqlWrapper->getTopSiteDeck($size == "small");
-    $id = $newSite["location_id"];
-    $this->sqlWrapper->setSitePosition($id, $siteId);
-    $this->notifyAllPlayers(
-      "discoverLocation",
-      clienttranslate('${player_name} discovers a new location'),
-      array(
-        "player_name" => $this->getCurrentPlayerName(),
-        "player_id" => $this->getCurrentPlayerId(),
-        "locationSize" => $size,
-        "locationNum" => $newSite["location_num"],
-        "locationId" => $id,
-        "boardPosition" => $siteId
-      )
-    );
+    $notif = ["msg" => clienttranslate('${player_name} discovers a new location')];
+    $this->sqlWrapper->setSitePosition($newSite["location_id"], $siteId, $size, $newSite["location_num"], $notif);
     $this->incStat(1, "sites-discovered", $playerId);
     $this->incStat(1, "sites-discovered-".$size, $playerId);
     $this->undoSavePoint();
@@ -1382,17 +1338,7 @@ class arnak extends Table
 
   function placeGuard($siteId) {
     $guard = $this->sqlWrapper->getTopGuardianDeck();
-    $id = $guard["guardian_id"];
-    $this->sqlWrapper->setGuardianPosition($id, $siteId);
-    $this->notifyAllPlayers(
-      "newGuardian",
-      clienttranslate('A wild guardian appears'),
-      array(
-        "guardId" => $id,
-        "guardNum" => $guard["guardian_num"],
-        "boardPosition" => $siteId
-      )
-    );
+    $this->sqlWrapper->setGuardianPosition($guard, $siteId, ["msg" => clienttranslate('A wild guardian appears')]);
     $this->undoSavePoint();
     $this->setGameStateValue("guard-buffer", -1);
   }
@@ -1543,12 +1489,7 @@ class arnak extends Table
     if (!in_array($guardNum, $boons)) {
       throw new BgaUserException(clienttranslate("That is not your guardian boon"));
     }
-    $this->sqlWrapper->setGuardianBoonUsed($guardNum);
-    $this->notifyAllPlayers("useGuard", clienttranslate('${player_name} uses his guardian boon'), array(
-      "player_name" => $this->getActivePlayerName(),
-      "player_id" => $this->getActivePlayerId(),
-      "guardNum" => $guardNum
-    ));
+    $this->sqlWrapper->setGuardianBoonUsed($guardNum, ["msg" => clienttranslate('${player_name} uses his guardian boon')]);
 
     $boon = $this->gameData->guardianBoon($guardNum);
     if (isset($boon["card"])) {
@@ -2052,8 +1993,7 @@ class arnak extends Table
       return;
 
     }
-    $this->sqlWrapper->clearBoardSlots();
-    $this->notifyAllPlayers("returnWorkers", clienttranslate("Returning all archaeologists home"), array());
+    $this->sqlWrapper->clearBoardSlots(["msg" => clienttranslate("Returning all archaeologists home")]);
     $firstRound = $this->getGameStateValue("round") == "0";
 
     if ($firstRound) {
