@@ -2649,7 +2649,6 @@ function (dojo, declare) {
       dojo.subscribe("discoverLocation", this, "notif_discoverLocation");
       dojo.subscribe("siteReveal", this, "notif_siteReveal");
       dojo.subscribe("idolGain", this, "notif_idolGain");
-      dojo.subscribe("newGuardian", this, "notif_newGuardian");
       dojo.subscribe("overcomeGuard", this, "notif_overcomeGuardian");
       dojo.subscribe("useGuard", this, "notif_useGuard");
       dojo.subscribe("research", this, "notif_research");
@@ -2827,24 +2826,23 @@ function (dojo, declare) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
       var a = notif.args;
       var color = this.playerColor(a.playerId);
-      if (!a.from) {
+      if (!a.siteFrom) {
         this.fadeOutAndDestroy(dojo.query("#player_board_" + a.playerId + " .counter-wrap .meeple:not(.onboard)")[0]);
       }
       var toMove = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
-      if (a.from) {
-        toMove = dojo.query(`.onboard.meeple[data-position=${a.from}][data-slot=${a.fromSlot}]`)[0];
+      if (a.siteFrom) {
+        toMove = dojo.query(`.onboard.meeple[data-position=${a.siteFrom}][data-slot=${a.slotFrom}]`)[0];
       }
       dojo.addClass(toMove, "new-meeple");
       var board = dojo.query(".arnak-board")[0];
 
-      var fromHome = (a.siteId == "home");
-      if (fromHome) {
+      if (!a.siteTo) {
         var p = {x : '',  y: ''};
         var destination = dojo.query(".camp-" + a.playerId)[0];
         this.addOverviewMeeple(a.playerId);
       }
       else {
-        var workerPos = this.workerPosition(a.siteId, a.slot);
+        var workerPos = this.workerPosition(a.siteTo, a.slotTo);
         var p = {x : workerPos.x + "px",  y: workerPos.y + "px"};
         var destination = board;
       }
@@ -2876,11 +2874,11 @@ function (dojo, declare) {
 
       //this.attachToNewParent(toMove, destination);
       newMeepleDiv = dojo.query(".new-meeple")[0];
-      newMeepleDiv.dataset.position = fromHome ? '' : a.siteId;
-      newMeepleDiv.dataset.slot = fromHome ? '' : a.slot;
+      newMeepleDiv.dataset.position = a.siteTo ? a.siteTo : '';
+      newMeepleDiv.dataset.slot = a.siteTo ? a.slotTo : '';
       dojo.removeClass(newMeepleDiv, "new-meeple");
       dojo.removeClass(newMeepleDiv, "onboard")
-      if (!fromHome) {
+      if (a.siteTo) {
         dojo.addClass(newMeepleDiv, "onboard");
       }
 
@@ -2890,12 +2888,16 @@ function (dojo, declare) {
       //this.slideToObjectPos(toMove, destination, p.x, p.y).play();
     },
     notif_guardMove: function(notif) {
-      var from = notif.args.from;
-      var to = notif.args.to;
-      var guardDiv = dojo.query(`.location-wrap[data-position=${from}] .guardian-wrap`)[0];
-      var destination = dojo.query(`.location-wrap[data-position=${to}]`)[0];
-
-      dojo.place(guardDiv, destination);
+      var num = notif.args.guardNum;
+      var to = notif.args.boardPosition;
+      var guardDiv = dojo.query(`.guardian-wrap[data-num=${num}]`)[0];
+      if (guardDiv) {
+        var destination = dojo.query(`.location-wrap[data-position=${to}]`)[0];
+        dojo.place(guardDiv, destination);
+      }
+      else {
+        this.newGuard(to, num);
+      }
       this.updateSiteTooltips();
     },
     notif_returnWorkers: function(notif) {
@@ -2912,12 +2914,6 @@ function (dojo, declare) {
     notif_siteReveal: function(notif) {
       var a = notif.args;
       this.newSite(a.size, a.num, {type: "card", id: a.cardNum});
-    },
-    notif_newGuardian: function(notif) {
-      var a = notif.args;
-      this.newGuard(a.boardPosition, a.guardNum);
-      this.updateSiteTooltips();
-
     },
     notif_overcomeGuardian: function(notif) {
       var a = notif.args;

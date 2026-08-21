@@ -449,12 +449,13 @@ class SqlWrapper {
     return $guardian;
   }
 
-  public function clearBoardSlots() {
+  public function clearBoardSlots($notif) {
     $this->game->DbQuery("UPDATE board_position SET slot1 = NULL WHERE slot1 != -1");
     $this->game->DbQuery("UPDATE board_position SET slot2 = NULL WHERE slot2 != -1");
+    $this->game->notifyAllPlayers("returnWorkers", $notif["msg"], array());
   }
 
-  public function moveSlotWorker($playerId, $siteFrom, $fromSlot, $siteTo, $toSlot) {
+  public function moveSlotWorker($playerId, $siteFrom, $fromSlot, $siteTo, $toSlot, $notif) {
     if (!is_null($siteFrom)) {
       $slotStr = 'slot'.($fromSlot+1);
       $this->game->DbQuery("UPDATE board_position SET $slotStr = NULL WHERE idboard_position = $siteFrom");
@@ -463,11 +464,31 @@ class SqlWrapper {
       $slotStr = 'slot'.($toSlot+1);
       $this->game->DbQuery("UPDATE board_position SET $slotStr = $playerId WHERE idboard_position = $siteTo");
     }
+    $this->game->notifyAllPlayers("moveWorker", $notif["msg"],
+      array(
+        "player_name" => $this->game->getCurrentPlayerName(),
+        "playerId" => $this->game->getCurrentPlayerId(),
+        "siteTo" => $siteTo,
+        "slotTo" => $toSlot,
+        "siteFrom" => $siteFrom,
+        "slotFrom" => $fromSlot
+      )
+    );
   }
 
-  public function setSitePosition($siteid, $positionId) {
+  public function setSitePosition($siteid, $positionId, $size, $num, $notif) {
     $this->game->DbQuery("UPDATE board_position SET idol_bonus = NULL WHERE idboard_position = $positionId");
     $this->game->DbQuery("UPDATE location SET is_at_position = $positionId WHERE idlocation = $siteid");
+    $this->game->notifyAllPlayers("discoverLocation", $notif["msg"],
+      array(
+        "player_name" => $this->game->getCurrentPlayerName(),
+        "player_id" => $this->game->getCurrentPlayerId(),
+        "locationSize" => $size,
+        "locationNum" => $num,
+        "locationId" => $siteid,
+        "boardPosition" => $positionId
+      )
+    );
   }
 
   public function setSiteOnBottomDeck($locationId, $sizeDeck) {
@@ -476,18 +497,40 @@ class SqlWrapper {
     $this->game->DbQuery("UPDATE location SET deck_order = $newOrder WHERE idlocation = $locationId");
   }
 
-  public function setGuardianPosition($guardianId, $siteId) {
+  public function setGuardianPosition($guardian, $siteId, $notif) {
+    $guardianId = $guardian["guardian_id"];
     $this->game->DbQuery("UPDATE guardian SET at_location = $siteId, deckorder = NULL WHERE idguardian = $guardianId");
+    $this->game->notifyAllPlayers("guardMove", $notif["msg"],
+      array(
+        "player_name" => $this->game->getActivePlayerName(),
+        "player_id" => $this->game->getActivePlayerId(),
+        "guardNum" => $guardian["guardian_num"],
+        "boardPosition" => $siteId
+      )
+    );
   }
 
-  public function setGuardianToPlayer($guardianNum, $playerId) {
+  public function setGuardianToPlayer($guardianNum, $playerId, $notif) {
     $boonOrders = $this->game->getObjectListFromDb("SELECT deckorder FROM guardian WHERE in_hand = $playerId AND ready = 1 ORDER BY deckorder");
     $newOrder = (count($boonOrders) > 0) ? (end($boonOrders)["deckorder"] + 1) : 0;
     $this->game->DbQuery("UPDATE guardian SET in_hand = $playerId, ready = 1, deckorder = $newOrder, at_location = NULL WHERE num = $guardianNum");
+    $this->game->notifyAllPlayers("overcomeGuard", $notif["msg"],
+      array(
+      "player_name" => $this->game->getCurrentPlayerName(),
+      "playerId" => $this->game->getCurrentPlayerId(),
+      "guardNum" => $guardianNum
+      )
+    );
   }
 
-  public function setGuardianBoonUsed($guardianNum) {
+  public function setGuardianBoonUsed($guardianNum, $notif) {
     $this->game->DbQuery("UPDATE guardian SET ready = 0, deckorder = NULL WHERE num = $guardianNum");
+    $this->game->notifyAllPlayers("useGuard", $notif["msg"],
+      array(
+        "player_name" => $this->game->getActivePlayerName(),
+        "player_id" => $this->game->getActivePlayerId(),
+        "guardNum" => $guardianNum
+    ));
   }
 }
 ?>
