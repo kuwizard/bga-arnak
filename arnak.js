@@ -592,7 +592,7 @@ function (dojo, declare) {
       var result = dojo.create("div");
       var inner = dojo.create("div");
       dojo.addClass(result, "guardian-hand-wrap");
-      if ([1, 3, 4, 9, 10, 12, 13, 15].indexOf(num) > -1) {
+      if (Object.keys(this.material.guardians[num].boon)[0] == "travel") {
         dojo.addClass(inner, "small");
       }
       dojo.addClass(inner, "guardian-hand guardian guardian-" + num);
@@ -1876,21 +1876,22 @@ function (dojo, declare) {
     guardEffect: function(evt) {
       var num = +evt.target.dataset.num;
       this.selectedGuard = num;
-      switch(num) {
-        case 7:
+      var guardEffect = Object.keys(this.material.guardians[num].boon)[0];
+      switch(guardEffect) {
+        case "card":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardNum: num,
             arg: "",
             lock: true
           }, this, function(result) {});
           break;
-        case 2: case 5: case 6: case 11: case 14:
+        case "exile":
           this.setClientState("guardExile", {descriptionmyturn: _("Select card to exile")});
           break;
-        case 8:
+        case "upgrade":
           this.setClientState("guardUpgrade", {descriptionmyturn: _("Select upgrade")});
           break;
-        case 1: case 3: case 4: case 9: case 10: case 12: case 13: case 15:
+        case "travel":
           this.travelSelected.push({type: "guardian", num: num});
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
