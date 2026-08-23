@@ -532,5 +532,27 @@ class SqlWrapper {
         "guardNum" => $guardianNum
     ));
   }
+
+  public function createBoardPositions($boardPositions) {
+    foreach ($boardPositions as $i => $position) {
+      $slot2 = ($position["numSlots"] == 2) ? "NULL" : "-1";
+      $idol = is_null($position["idol"]) ? "NULL" : "'".$position["idol"]."'";
+      $this->game->DbQuery("INSERT INTO board_position (idboard_position, slot2, idol_bonus) VALUES ($i, $slot2, $idol)");
+    }
+  }
+
+  public function createLocations($locations, $size, $inDeck) {
+    foreach($locations as $order => $num) {
+      $orderStr = $inDeck ? $order : "NULL";
+      $positionStr = $inDeck ? "NULL" : $order;
+      $this->game->DbQuery("INSERT INTO location (is_at_position, size, num, deck_order) VALUES ($positionStr, '$size', $num, $orderStr)");
+    }
+  }
+
+  public function createGuardians($guardianIds) {
+    foreach($guardianIds as $order => $id) {
+      $this->game->DbQuery("INSERT INTO guardian (num, deckorder) VALUES ($id, $order)");
+    }
+  }
 }
 ?>
