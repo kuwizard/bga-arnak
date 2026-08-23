@@ -261,30 +261,24 @@ class arnak extends Table
     ];
     shuffle($idolBonus);
 
-    $positionIds = range(0, 16);
     $blocked = range(0, 4);
     shuffle($blocked);
     array_pop($blocked);
     array_pop($blocked);
-
-    foreach($positionIds as $i) {
-      $slot2 = -1;
+    $boardPositions = [];
+    foreach(range(0, 16) as $i) {
+      $position = ["numSlots" => 1, "idol" => NULL];
       if ($i < 5) {
-        $slot2 = "NULL";
-        if (count($players) == 2) {
-          $slot2 = -1;
+        if (count($players) == 4 || (count($players) == 3 && !in_array($i, $blocked))) {
+          $position["numSlots"] = 2;
         }
-        if (count($players) == 3 && in_array($i, $blocked)) {
-          $slot2 = -1;
-        }
-        $idol = "NULL";
       }
       else {
-        $idolStr = array_pop($idolBonus);
-        $idol = "'$idolStr'";
+        $position["idol"] = array_pop($idolBonus);
       }
-      $this->DbQuery("INSERT INTO board_position (idboard_position, slot2, idol_bonus) VALUES ($i, $slot2, $idol)");
+      $boardPositions[$i] = $position;
     }
+    $this->sqlWrapper->createBoardPositions($boardPositions);
 
     $researchBonus = [
       "coins", "coins", "coins",
@@ -323,30 +317,23 @@ class arnak extends Table
 
     $bigLocationIds = range(1, 6);
     shuffle($bigLocationIds);
-    foreach($bigLocationIds as $order => $id) {
-      $this->DbQuery("INSERT INTO location (size, num, is_open, deck_order) VALUES ('big', $id, 0, $order)");
-    }
+    $this->sqlWrapper->createLocations($bigLocationIds, "big", true);
+
     $smallLocationIds = range(1, 10);
     shuffle($smallLocationIds);
     if ($this->debugMode()) {
       $smallLocationIds = [5, 7, 8, 9, 1, 2, 3, 4];
     }
-    foreach($smallLocationIds as $order => $id) {
-      $this->DbQuery("INSERT INTO location (size, num, is_open, deck_order) VALUES ('small', $id, 0, $order)");
-    }
+    $this->sqlWrapper->createLocations($smallLocationIds, "small", true);
 
-    foreach(range(0, 4) as $i) {
-      $this->DbQuery("INSERT INTO location (size, num, is_open, is_at_position) VALUES('basic', $i, 1, $i)");
-    }
+    $this->sqlWrapper->createLocations(range(0, 4), "basic", false);
 
     $guardianIds = range(1, 15);
     shuffle($guardianIds);
     if ($this->debugMode()) {
       $guardianIds = [7, 8, 9, 1, 2, 3, 4];
     }
-    foreach($guardianIds as $order => $id) {
-      $this->DbQuery("INSERT INTO guardian (num, deckorder) VALUES ($id, $order)");
-    }
+    $this->sqlWrapper->createGuardians($guardianIds);
 
     $arts = Artefact::cases();
     shuffle($arts);
