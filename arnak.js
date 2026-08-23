@@ -185,7 +185,6 @@ function (dojo, declare) {
         bookDiv.id = "research-book-" + player_id;
         dojo.place(bookDiv, board);
 
-        player.meeple = 2;
         var handDiv = dojo.query(".camp-" + player_id)[0];
         this.plays[player_id] = CardPlace(Object.values(player.play));
         this.decks[player_id] = BackCardPlace(player.deck_amt);
@@ -216,11 +215,6 @@ function (dojo, declare) {
         this.updateDeck(player_id);
 
         this.updateResources(player_id);
-        for (var site of gamedatas.sites) {
-          for (var playerMeeple of site["slots"]) {
-            player.meeple -= playerMeeple == player_id;
-          }
-        }
         var playerBoard = dojo.query("#player_board_" + player_id)[0];
         if (gamedatas.turn_based) {
           dojo.place(dojo.create("button", {class: "display-deck", id: "display-deck-" + player_id, "data-id": player_id, innerHTML: _("Display player's deck")}), playerBoard);
@@ -311,11 +305,17 @@ function (dojo, declare) {
       this.addTooltipHtml("arn-staff", "<h3>" + this.tooltips.staff.header + "</h3><div>" + this.tooltips.staff.text + "</div>", this.tooltipDelay);
       this.addTooltipHtml("start-player", "<h3>" + this.tooltips.startPlayer.header + "</h3><div>" + this.tooltips.startPlayer.text + "</div>", this.tooltipDelay);
 
-      this.makeMeeple();
-
-      var playerMeeples = [];
-      for(var player of Object.values(this.gamedatas.players))
-        playerMeeples[player.id] = player.meeple;
+      var siteMeeples = [];
+      for (var i = 0; i < gamedatas.sites.length; i++) {
+        var site = gamedatas.sites[i];
+        for (var siteSlot = 0; siteSlot < site["slots"].length; siteSlot++) {
+          var playerMeeple = site["slots"][siteSlot];
+          if (playerMeeple) {
+            siteMeeples.push({playerId: playerMeeple, site: i, slot: siteSlot});
+          }
+        }
+      }
+      this.makeMeeple(siteMeeples);
 
       //dojo.query(".hand.card, .play.card").connect("click", this, "handClick");
       dojo.addClass(dojo.query(".staff-parent")[0], "round" + this.round);
@@ -337,20 +337,6 @@ function (dojo, declare) {
         box.dataset.id = id;
         box.id = "site-box-" + id;
         var site = gamedatas.sites[id];
-        for (var slotIdx in site.slots) {
-          var playerId = site.slots[slotIdx];
-          if (playerId) {
-            var meepleDiv = dojo.create("div");
-            dojo.addClass(meepleDiv, "onboard meeple meeple-" + (playerMeeples[playerId]++) + " " + this.playerColor(playerId));
-            meepleDiv.dataset.position = id;
-            meepleDiv.dataset.slot = slotIdx;
-
-            dojo.place(meepleDiv, board);
-            var p = this.workerPosition(id, slotIdx);
-            dojo.style(meepleDiv, "left", p.x + "px");
-            dojo.style(meepleDiv, "top", p.y + "px");
-          }
-        }
         if (id < 5 && site.slots.length < 2) {
           var blockDiv = dojo.create("div");
           dojo.addClass(blockDiv, "blocking-tile");
@@ -480,18 +466,43 @@ function (dojo, declare) {
       dojo.query(".idol-bonus").addClass("idol-highlight");
       setTimeout(function() {dojo.query(".idol-highlight").removeClass("idol-highlight");}, 500);
     },
-    makeMeeple: function(full = false) {
-      for (var player of Object.values(this.gamedatas.players)) {
-        for (var i = 0; i < (full ? 2 : player.meeple); ++i) {
-          var player = this.gamedatas.players[player.id];
-          var color = this.playerColor(player.id);
-          var handDiv = dojo.query(".camp-" + player.id)[0];
+    makeMeeple: function(siteMeeples) {
+      var playerMeeples = {};
+      for (var playerId of Object.keys(this.gamedatas.players))
+        playerMeeples[playerId] = [];
+
+      for (var siteMeeple of siteMeeples)
+        playerMeeples[siteMeeple.playerId].push({site: siteMeeple.site, slot: siteMeeple.slot});
+
+      for (var playerId of Object.keys(this.gamedatas.players)) {
+        while (playerMeeples[playerId].length < 2) {
+          playerMeeples[playerId].unshift({site: "hand"});
+        }
+      }
+
+      for (var playerId in playerMeeples) {
+        for (var i in playerMeeples[playerId]) {
+          var meeple = playerMeeples[playerId][i];
+          var color = this.playerColor(playerId);
+          var handMeeple = (meeple.site == "hand");
+          var placeDiv = handMeeple ? dojo.query(".camp-" + playerId)[0] : dojo.query(".arnak-board")[0];
 
           var meepleDiv = dojo.create("div");
-          dojo.addClass(meepleDiv, "meeple meeple-" + i + " " + color);
-          dojo.place(meepleDiv, handDiv);
+          if (handMeeple) {
+            this.addOverviewMeeple(playerId);
+          }
+          else {
+            dojo.addClass(meepleDiv, "onboard");
+            meepleDiv.dataset.position = meeple.site;
+            meepleDiv.dataset.slot = meeple.slot;
 
-          this.addOverviewMeeple(player.id);
+            var p = this.workerPosition(meeple.site, meeple.slot);
+            dojo.style(meepleDiv, "left", p.x + "px");
+            dojo.style(meepleDiv, "top", p.y + "px");
+          }
+
+          dojo.addClass(meepleDiv, "meeple meeple-" + i + " " + color);
+          dojo.place(meepleDiv, placeDiv);
         }
       }
     },
@@ -2906,7 +2917,7 @@ function (dojo, declare) {
       for (var meeple of meeples) {
         dojo.destroy(meeple);
       }
-      this.makeMeeple(true);
+      this.makeMeeple([]);
     },
     notif_discoverLocation: function(notif) {
       var a = notif.args;
