@@ -1256,7 +1256,7 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa(cardId),
-            assNum: 5,
+            assNum: this.selectedAssistant,
             lock: true
           }, this, function(result) {});
           break;
@@ -1589,7 +1589,7 @@ function (dojo, declare) {
           break;
         case "assTravel":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: 3,
+            assNum: this.selectedAssistant,
             assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
             lock: true
           }, this, function(result) {});
@@ -1643,7 +1643,7 @@ function (dojo, declare) {
           break;
         case "selectSupply":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: 10,
+            assNum: this.selectedAssistant,
             assArg: btoa(cardDiv.dataset.cardid),
             lock: true
           }, this, function(result) {});
@@ -1796,6 +1796,7 @@ function (dojo, declare) {
     },
     assistantClick: function(evt) {
       var num = +evt.target.dataset.num;
+      this.selectedAssistant = num;
       var gold = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "gold");
       if (this.gamedatas.gamestate.name == "artActivateAss" &&
       this.gamedatas.gamestate &&
@@ -1944,7 +1945,7 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa("cancel"),
-            assNum: 5,
+            assNum: this.selectedAssistant,
             lock: true
           }, this, function(result) {});
           break;
@@ -1981,7 +1982,7 @@ function (dojo, declare) {
       switch(this.gamedatas.gamestate.name) {
         case "assUpgrade":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: 11,
+            assNum: this.selectedAssistant,
             assArg: btoa(type),
             lock: true
           }, this, function(result) {});
@@ -2122,7 +2123,7 @@ function (dojo, declare) {
     },
     useJewelArrowheadAssistant: function(type) {
       this.ajaxcall("/arnak/arnak/useAssistant.html", {
-        assNum: 4,
+        assNum: this.selectedAssistant,
         assArg: btoa(type),
         lock: true
       }, this, function(result) {});
