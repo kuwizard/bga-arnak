@@ -1779,8 +1779,7 @@ class arnak extends Table
       $this->setGameStateValue("research-token-done", 1);
       $this->gamestate->nextState("research_bonus");
       $this->useToken($bonus["id"], "", true);
-      $this->dbQuery("DELETE FROM research_bonus WHERE idresearch_bonus = $id");
-      $this->notifyAllPlayers("removeResearchToken", "", array("tokenId" => $id));
+      $this->sqlWrapper->removeResearchToken($id);
     }
     else if (count($researchBonus) > 0) {
       $this->setGameStateValue("research-token-done", 0);
@@ -1815,20 +1814,15 @@ class arnak extends Table
     if ($tileAmt <= 0) {
       throw new BgaUserException(clienttranslate("There is no more temple tiles in this stack"));
     }
-    $this->dbQuery("UPDATE temple_tile SET amt = amt - 1 WHERE idtemple_tile = $num");
-    $this->notifyAllPlayers("getTempleTile", clienttranslate('${player_name} gets a ${colorText} temple tile'),
-    array(
-      "player_name" => $this->getActivePlayerName(),
-      "player_id" => $playerId,
-      "color" => $color,
-      "colorText" => array("bronze" => clienttranslate("bronze"), "silver" => clienttranslate("silver"), "gold" => clienttranslate("gold"))[$color],
-      "num" => $num,
-      "i18n" => ['colorText'],
-    )
-    );
+    $colorTexts = [
+      "bronze" => clienttranslate("bronze"),
+      "silver" => clienttranslate("silver"),
+      "gold" => clienttranslate("gold")
+    ];
+    $notif = ["msg" => clienttranslate('${player_name} gets a ${colorText} temple tile'), "colorText" => $colorTexts[$color]];
+    $this->sqlWrapper->decreaseTempleTileAmt($num, $notif);
     $this->incStat(1, "temple", $playerId);
     $this->incStat(1, "temple-".$color, $playerId);
-
   }
   function useToken($id, $arg = "", $noCheck = false) {
     if (!$noCheck) {
@@ -1852,9 +1846,9 @@ class arnak extends Table
 
     $this->incStat(1, "tokens-used", $playerId);
 
-    $this->dbQuery("DELETE FROM research_bonus WHERE idresearch_bonus = $id");
+    $this->sqlWrapper->removeResearchToken($id);
+
     $this->setGameStateValue("research-token-done", 1);
-    $this->notifyAllPlayers("removeResearchToken", "", array("tokenId" => $id));
     if ($this->researchDone()) {
       $this->gamestate->nextState("research_done");
     }
