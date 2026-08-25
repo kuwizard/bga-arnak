@@ -558,5 +558,42 @@ class SqlWrapper {
       $this->game->DbQuery("INSERT INTO guardian (num, deckorder) VALUES ($id, $order)");
     }
   }
+
+  public function getAllResearchBonus() {
+    $bonuses = $this->game->getObjectListFromDb("SELECT idresearch_bonus id, track_pos, bonus_type FROM research_bonus ORDER by track_pos");
+    foreach ($bonuses as $idx => $bonus) {
+      $bonuses[$idx]["track_pos"] = intval($bonus["track_pos"]);
+    }
+    return $bonuses;
+  }
+
+  public function getResearchBonus($trackPos) {
+    return $this->game->getObjectListFromDb("SELECT idresearch_bonus id, bonus_type FROM research_bonus WHERE track_pos = $trackPos");
+    foreach ($bonuses as $idx => $bonus) {
+      $bonuses[$idx] = intval($bonus["track_pos"]);
+    }
+    return $bonuses;
+  }
+  
+  public function getResearchBonusFromId($researchId) {
+    $bonus = $this->game->getObjectFromDB("SELECT track_pos, bonus_type FROM research_bonus WHERE idresearch_bonus = $researchId");
+    if (!is_null($bonus)) {
+      $bonus["track_pos"] = intval($bonus["track_pos"]);
+    }
+    return $bonus;
+  }
+
+  public function getAllTempleTiles () {
+    $tiles = $this->game->getCollectionFromDb("SELECT idtemple_tile id, amt amt FROM temple_tile");
+    foreach ($tiles as $idx => $tile) {
+      $tiles[$idx]["amt"] = intval($tile["amt"]);
+    }
+    return $tiles;
+  }
+
+  public function getTempleTileAmt ($id) {
+    $tile = $this->game->getObjectFromDB("SELECT amt FROM temple_tile WHERE idtemple_tile = $id");
+    return is_null($tile) ? NULL : intval($tile["amt"]);
+  }
 }
 ?>

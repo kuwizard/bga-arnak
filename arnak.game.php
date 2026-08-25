@@ -433,8 +433,8 @@ class arnak extends Table
     $result['round'] = $this->staffPosition();
     $result['sites'] = $this->sqlWrapper->getAllSites();
 
-    $result['research_bonus'] = $this->getCollectionFromDb("SELECT * FROM research_bonus");
-    $result['temple_tile'] = $this->getCollectionFromDb("SELECT idtemple_tile id, amt amt FROM temple_tile");
+    $result['research_bonus'] = $this->sqlWrapper->getAllResearchBonus();
+    $result['temple_tile'] = $this->sqlWrapper->getAllTempleTiles();
     foreach($result['research_bonus'] as $i => $bonus) {
       if ($bonus["track_pos"] == 14) {
         $result['research_bonus'][$i]["bonus_type"] = "hidden";
@@ -760,9 +760,8 @@ class arnak extends Table
       $space = $this->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
       $result["token"] = $space;
       if( $space == 14 ) {
-        $result["_private"]["active"]["tokens_left"] = $this->getCollectionFromDb("SELECT * FROM research_bonus WHERE track_pos = $space");
+        $result["_private"]["active"]["tokens_left"] = $this->sqlWrapper->getResearchBonus($space);
       }
-
     }
     return $result;
   }
@@ -1698,7 +1697,7 @@ class arnak extends Table
     $step = $this->gameData->researchStep($researchId);
     $rank = null;
     $stepBonus = "";
-    $researchBonus = $this->getCollectionFromDb("SELECT * FROM research_bonus WHERE track_pos = $researchId");
+    $researchBonus = $this->sqlWrapper->getResearchBonus($researchId);
     if ($step == 8) {
       $this->undoSavePoint();
       $rank = count($this->getCollectionFromDb("SELECT * FROM player WHERE research_glass = 14"));
@@ -1758,10 +1757,10 @@ class arnak extends Table
     $instaUse = false;
     if (count($researchBonus) === 1) {
       $this->setGameStateValue("research-token-done", 0);
-      $b = array_values($researchBonus)[0];
+      $bonus = array_values($researchBonus)[0];
       $instaUse = true;
       //throw new BgaUserException(JSON_ENCODE($b));
-      switch($b["bonus_type"]) {
+      switch($bonus["bonus_type"]) {
         case "upgrade":  case "exile":
           $instaUse = false;
           break;
@@ -1771,7 +1770,7 @@ class arnak extends Table
           }
           break;
       }
-      $id = $b["idresearch_bonus"];
+      $id = $bonus["id"];
     }
     else if (count($researchBonus) > 1) {
       $this->setGameStateValue("research-token-done", 0);
@@ -1779,7 +1778,7 @@ class arnak extends Table
     if ($instaUse) {
       $this->setGameStateValue("research-token-done", 1);
       $this->gamestate->nextState("research_bonus");
-      $this->useToken($b["idresearch_bonus"], "", true);
+      $this->useToken($bonus["id"], "", true);
       $this->dbQuery("DELETE FROM research_bonus WHERE idresearch_bonus = $id");
       $this->notifyAllPlayers("removeResearchToken", "", array("tokenId" => $id));
     }
@@ -1812,6 +1811,10 @@ class arnak extends Table
     }
     $color = $this->gameData->templeTileColor($num);
     $this->dbQuery("UPDATE player SET temple_$color = temple_$color + 1 WHERE player_id = $playerId");
+    $tileAmt = $this->sqlWrapper->getTempleTileAmt($num);
+    if ($tileAmt <= 0) {
+      throw new BgaUserException(clienttranslate("There is no more temple tiles in this stack"));
+    }
     $this->dbQuery("UPDATE temple_tile SET amt = amt - 1 WHERE idtemple_tile = $num");
     $this->notifyAllPlayers("getTempleTile", clienttranslate('${player_name} gets a ${colorText} temple tile'),
     array(
@@ -1833,9 +1836,9 @@ class arnak extends Table
     }
     $playerId = $this->getActivePlayerId();
     $trackPos = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
-    $b = $this->getNonEmptyObjectFromDB("SELECT * FROM research_bonus WHERE idresearch_bonus = $id AND track_pos = $trackPos");
+    $bonus = $this->sqlWrapper->getResearchBonusFromId($id);
 
-    switch($b["bonus_type"]) {
+    switch($bonus["bonus_type"]) {
       case "upgrade":
         $this->upgrade($arg, true);
         break;
@@ -1843,7 +1846,7 @@ class arnak extends Table
         $this->exile($arg);
         break;
       default:
-        $this->gainResource($b["bonus_type"], $playerId, 1, array("component" => "research", "id" => $trackPos));
+        $this->gainResource($bonus["bonus_type"], $playerId, 1, array("component" => "research", "id" => $trackPos));
         break;
     }
 
