@@ -3101,16 +3101,16 @@ function (dojo, declare) {
     },
     notif_getTempleTile: function(notif) {
       var a = notif.args;
-      this.gamedatas.temple_tile[a.num].amt -= 1;
-      var tileDiv = dojo.query(".tile-pos-" + a.num)[0];
-      if (this.gamedatas.temple_tile[a.num].amt <= 0) {
+      this.gamedatas.temple_tile[a.id].amt -= 1;
+      var tileDiv = dojo.query(".tile-pos-" + a.id)[0];
+      if (this.gamedatas.temple_tile[a.id].amt <= 0) {
         this.fadeOutAndDestroy(tileDiv);
       }
-      var color = a.color;
+      var color = this.material.research.tiles[a.id].color;
       var tileN = Math.floor(Math.random() * {"gold": 4, "silver": 6, "bronze": 8}[color] + 1);
       dojo.place(
       dojo.create("div", {class: "temple-tile tile-num-" + tileN + " " + color}),
-      dojo.query("#player_board_" + notif.args.player_id + " .temple-wrap")[0]
+      dojo.query("#player_board_" + a.player_id + " .temple-wrap")[0]
       );
       this.updateTempleTooltips();
     },

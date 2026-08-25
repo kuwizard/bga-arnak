@@ -579,6 +579,11 @@ class SqlWrapper {
     return $bonus;
   }
 
+  public function removeResearchToken($id) {
+    $this->game->DbQuery("DELETE FROM research_bonus WHERE idresearch_bonus = $id");
+    $this->game->notifyAllPlayers("removeResearchToken", "", array("tokenId" => $id));
+  }
+
   public function getAllTempleTiles () {
     $tiles = $this->game->getCollectionFromDb("SELECT idtemple_tile id, amt amt FROM temple_tile");
     foreach ($tiles as $idx => $tile) {
@@ -590,6 +595,19 @@ class SqlWrapper {
   public function getTempleTileAmt ($id) {
     $tile = $this->game->getObjectFromDB("SELECT amt FROM temple_tile WHERE idtemple_tile = $id");
     return is_null($tile) ? NULL : intval($tile["amt"]);
+  }
+
+  public function decreaseTempleTileAmt($id, $notif) {
+    $this->game->DbQuery("UPDATE temple_tile SET amt = amt - 1 WHERE idtemple_tile = $id");
+    $this->game->notifyAllPlayers("getTempleTile", $notif["msg"],
+      array(
+        "player_name" => $this->game->getActivePlayerName(),
+        "player_id" => $this->game->getActivePlayerId(),
+        "colorText" => $notif["colorText"],
+        "id" => $id,
+        "i18n" => ["colorText"]
+      )
+    );
   }
 }
 ?>
