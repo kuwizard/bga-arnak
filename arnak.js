@@ -2841,63 +2841,79 @@ function (dojo, declare) {
       if (!a.siteFrom) {
         this.fadeOutAndDestroy(dojo.query("#player_board_" + a.playerId + " .counter-wrap .meeple:not(.onboard)")[0]);
       }
-      var toMove = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
+      var meepleDiv = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
       if (a.siteFrom) {
-        toMove = dojo.query(`.onboard.meeple[data-position=${a.siteFrom}][data-slot=${a.slotFrom}]`)[0];
+        meepleDiv = dojo.query(`.onboard.meeple[data-position=${a.siteFrom}][data-slot=${a.slotFrom}]`)[0];
       }
-      dojo.addClass(toMove, "new-meeple");
+      var camp = dojo.query(".camp-" + a.playerId)[0];
       var board = dojo.query(".arnak-board")[0];
-
+      var destination = a.siteTo ? board : camp;
       if (!a.siteTo) {
-        var p = {x : '',  y: ''};
-        var destination = dojo.query(".camp-" + a.playerId)[0];
         this.addOverviewMeeple(a.playerId);
       }
+
+      if (a.siteFrom) {
+        var b1 = meepleDiv.getBoundingClientRect();
+        var b2 = destination.getBoundingClientRect();
+        var x = b1.x - b2.x;
+        var y = b1.y - b2.y;
+
+        var s = b2.width / destination.offsetWidth;
+        x += (1-s) * (x) * (1/s);
+        y += (1-s) * (y) * (1/s);
+
+        meepleDiv.style.left = x + "px";
+        meepleDiv.style.top = y + "px";
+        meepleDiv.style.transform = "scale(0.2)";
+
+        dojo.place(meepleDiv, destination);
+
+        setTimeout(() => {
+          if (a.siteTo) {
+            var workerPos = this.workerPosition(a.siteTo, a.slotTo);
+            meepleDiv.style.left = workerPos.x + "px";
+            meepleDiv.style.top = workerPos.y + "px";
+          }
+          else {
+            dojo.removeAttr(meepleDiv, "style");
+          }
+        },0);
+      }
       else {
+        var b1 = camp.getBoundingClientRect();
+        var b2 = destination.getBoundingClientRect();
+        var x = b2.x - b1.x;
+        var y = b2.y - b1.y;
+
+        var s = b2.width / destination.offsetWidth;
+        x += (1-s) * (x) * (1/s);
+        y += (1-s) * (y) * (1/s);
+
         var workerPos = this.workerPosition(a.siteTo, a.slotTo);
-        var p = {x : workerPos.x + "px",  y: workerPos.y + "px"};
-        var destination = board;
+        meepleDiv.style.left = x + workerPos.x + "px";
+        meepleDiv.style.top = y + workerPos.y + "px";
+        meepleDiv.style.transform = "scale(0.2)";
+
+        setTimeout(() => {
+          dojo.place(meepleDiv, destination);
+          meepleDiv.style.left = workerPos.x + "px";
+          meepleDiv.style.top = workerPos.y + "px";
+          meepleDiv.style.transform = null;
+        }, 1000);
       }
-      //*****
-      //if (!dojo.hasClass(cardDiv.parentNode, "player-camp")) {
-      newMeepleDiv = toMove.cloneNode(true);
-      var b1 = toMove.getBoundingClientRect();
-      var b2 = destination.getBoundingClientRect();
-      var x = b1.x - b2.x;
-      var y = b1.y - b2.y;
 
-      var s = b2.width / destination.offsetWidth;
-      x += (1-s) * (x) * (1/s);
-      y += (1-s) * (y) * (1/s);
-
-      newMeepleDiv.style.left = x + "px";
-      newMeepleDiv.style.top = y + "px";
-
-      dojo.destroy(toMove);
-      //}
-      newMeepleDiv.style["z-index"] = "";
-      dojo.place(newMeepleDiv, destination);
-
-      setTimeout(function(newDiv, p) {
-        newDiv.style.left = p.x;
-        newDiv.style.top = p.y;
-      }, 0, newMeepleDiv, p);
-      //*****
-
-      //this.attachToNewParent(toMove, destination);
-      newMeepleDiv = dojo.query(".new-meeple")[0];
-      newMeepleDiv.dataset.position = a.siteTo ? a.siteTo : '';
-      newMeepleDiv.dataset.slot = a.siteTo ? a.slotTo : '';
-      dojo.removeClass(newMeepleDiv, "new-meeple");
-      dojo.removeClass(newMeepleDiv, "onboard")
       if (a.siteTo) {
-        dojo.addClass(newMeepleDiv, "onboard");
+        meepleDiv.dataset.position = a.siteTo;
+        meepleDiv.dataset.slot = a.slotTo;
       }
-
+      else {
+        delete meepleDiv.dataset.position;
+        delete meepleDiv.dataset.slot;
+      }
+      dojo.toggleClass(meepleDiv, "onboard", a.siteTo)
 
       this.siteSelected = undefined;
       this.travelSelected = [];
-      //this.slideToObjectPos(toMove, destination, p.x, p.y).play();
     },
     notif_guardMove: function(notif) {
       var num = notif.args.guardNum;
