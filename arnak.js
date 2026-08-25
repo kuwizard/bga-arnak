@@ -393,14 +393,12 @@ function (dojo, declare) {
         var currSlotBonuses = gamedatas.research_bonus.filter(a => a.track_pos == id);
         for (var bonus of currSlotBonuses) {
           var bonusDiv = dojo.create("div");
-          bonusDiv.dataset.id = bonus.idresearch_bonus;
+          bonusDiv.dataset.id = bonus.id;
           bonusDiv.dataset.type = bonus.bonus_type;
           dojo.addClass(bonusDiv, "research-bonus reward-" + bonus.bonus_type);
           dojo.place(bonusDiv, box);
         }
         this.addTooltipHtml(box.id, this.tooltips.research(id, currSlotBonuses), this.tooltipDelay);
-
-        //dojo.place(box, board);
       }
       var y = 850;
       for (var step = 1; step <= 7; ++step) {
@@ -1090,7 +1088,7 @@ function (dojo, declare) {
     revealTokens: function(tokens) {
       var x = 186;
       for (var token of Object.values(tokens)) {
-        var targetToken = dojo.query(`.research-bonus[data-id=${token.idresearch_bonus}]`)[0];
+        var targetToken = dojo.query(`.research-bonus[data-id=${token.id}]`)[0];
         targetToken.dataset.type = token.bonus_type;
         dojo.removeClass(targetToken, "reward-hidden");
         dojo.addClass(targetToken, "reward-" + targetToken.dataset.type);
