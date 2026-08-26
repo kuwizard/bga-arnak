@@ -584,9 +584,21 @@ div#start-player {
     pointer-events: all;
 }
 
+.arnak-board.front .research-box[data-research_id="3"] .research-bonus {
+    left: 11px;
+    top: 7px;
+}
+.arnak-board.front .research-box[data-research_id="4"] .research-bonus {
+    left: 13px;
+    top: 8px;
+}
 .arnak-board.front .research-box[data-research_id="5"] .research-bonus {
     left: 80px;
     top: 13px;
+}
+.arnak-board.front .research-box[data-research_id="8"] .research-bonus {
+    left: 13px;
+    top: 8px;
 }
 .arnak-board.front .research-box[data-research_id="9"] .research-bonus {
     left: 54px;
@@ -594,11 +606,33 @@ div#start-player {
 .arnak-board.front .research-box[data-research_id="11"] .research-bonus {
     left: 6px;
 }
-.research-box[data-research_id="14"] .research-bonus {
-    left: 191px;
-    top: 0px;
+.arnak-board.front .research-box[data-research_id="12"] .research-bonus {
+    top: 6px;
+}
+.arnak-board.front .research-box[data-research_id="13"] .research-bonus {
+    left: 14px;
+    top: 6px;
+}
+.arnak-board.front .research-box[data-research_id="14"] .research-bonus {
+    left: 187px;
+    top: 4px;
 }
 
+.arnak-board.back .research-box[data-research_id="3"] .research-bonus {
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="4"] .research-bonus {
+    left: 14px;
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="5"] .research-bonus {
+    left: 9px;
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="6"] .research-bonus {
+    left: 13px;
+    top: 6px;
+}
 .arnak-board.back .research-box[data-research_id="7"] .research-bonus {
     left: 43px;
     top: 6px;
@@ -609,14 +643,17 @@ div#start-player {
 }
 .arnak-board.back .research-box[data-research_id="12"] .research-bonus {
     left: 45px;
-    top: 7px;
+    top: 9px;
 }
-
 .arnak-board.back .research-box[data-research_id="13"] .research-bonus:nth-child(3) {
     left: 79px;
 }
 .arnak-board.back .research-box[data-research_id="13"] .research-bonus:nth-child(2) {
     left: 144px;
+}
+.arnak-board.back .research-box[data-research_id="14"] .research-bonus {
+    left: 191px;
+    top: 0px;
 }
 
 .research-bonus.reward-card {
