@@ -143,6 +143,7 @@ function (dojo, declare) {
       this.material = gamedatas.material;
       this.tooltips = new Tooltips(gamedatas.material, this.siteBoxes, this.researchBoxes, gamedatas.bird_temple);
       this.tooltipDelay = 700;
+      this.templeTilePicker = this.createTempleTilesPicker();
       this.round = this.gamedatas.round;
 
       this.itemSupply = CardPlace(Object.values(gamedatas.itemSupply));
@@ -246,11 +247,10 @@ function (dojo, declare) {
         dojo.place(templeWrap, playerBoard);
         for (var color of ["gold", "silver", "bronze"]) {
           for (var i = 0; i < player["temple_" + color]; ++i) {
-            var tileN = Math.floor(Math.random() * {"gold": 4, "silver": 6, "bronze": 8}[color] + 1);
-            dojo.place(dojo.create("div", {class: "temple-tile tile-num-" + tileN + " " + color}), templeWrap);
+            var tileNum = this.templeTilePicker.pick(color);
+            dojo.place(this.makeTempleTile(color, tileNum), templeWrap);
           }
         }
-
 
         dojo.place(meepleWrap, resWrap);
         this.addTooltipHtml("counter-" + player_id + "-meeple", this.tooltips.resource("meeple"), this.tooltipDelay);
@@ -424,18 +424,11 @@ function (dojo, declare) {
         if (templeTile.amt == "0") {
           continue;
         }
-        var color = "bronze";
-        var id = templeTile.id;
-        if (id > 3) {
-          color = "silver";
-        }
-        if (id == 6) {
-          color = "gold";
-        }
-        var picAmt = {"gold": 4, "silver": 8, "bronze": 8}[color];
-        var templeWrap = dojo.create("div", {class: "temple-tile-wrap tile-pos-" + templeTile.id, "data-num": id});
+        var color = this.material.research.tiles[templeTile.id].color;
+        var templeWrap = dojo.create("div", {class: "temple-tile-wrap tile-pos-" + templeTile.id});
         templeWrap.id = "temple-tile-wrap-" + templeTile.id;
-        var templeDiv = dojo.create("div", {class: "temple-tile " + color + " tile-num-" + Math.ceil(Math.random() * picAmt), "data-num": id});
+        var tileNum = this.templeTilePicker.pick(color);
+        var templeDiv = this.makeTempleTile(color, tileNum, templeTile.id);
         dojo.place(templeDiv, templeWrap);
         dojo.place(templeWrap, board);
         dojo.connect(templeWrap, "click", this, "templeClick");
@@ -463,6 +456,37 @@ function (dojo, declare) {
     highlightIdol: function() {
       dojo.query(".idol-bonus").addClass("idol-highlight");
       setTimeout(function() {dojo.query(".idol-highlight").removeClass("idol-highlight");}, 500);
+    },
+    createTempleTilesPicker: function() {
+      function randomize(n) {
+        var arr = Array.from(Array(n).keys());
+        arr[0] = n;
+        for (var size = n; size >= 2; size--) {
+          var x = Math.floor(Math.random() * size);
+          var y = arr[size - 1];
+          arr[size - 1] = arr[x];
+          arr[x] = y;
+        }
+        return arr;
+      }
+      var picIdsShuffled = {"bronze": randomize(12), "silver": randomize(8), "gold" : randomize(4)};
+      var picIdsIdxs = {"bronze": 0, "silver": 0, "gold" : 0};
+      return {
+        pick : function(color) {
+          var idx = picIdsIdxs[color];
+          picIdsIdxs[color] = (picIdsIdxs[color] + 1) % picIdsShuffled[color].length;
+          return picIdsShuffled[color][idx];
+        }
+      }
+    },
+    makeTempleTile: function(color, tileNum, id) {
+      var templeDiv = dojo.create("div");
+      dojo.addClass(templeDiv, "temple-tile " + color + " tile-num-" + tileNum);
+      if (id) {
+        templeDiv.dataset.num = tileNum;
+        templeDiv.dataset.tileId = id;
+      }
+      return templeDiv;
     },
     makeMeeple: function(siteMeeples) {
       var playerMeeples = {};
@@ -1782,7 +1806,7 @@ function (dojo, declare) {
     },
     templeClick: function(evt) {
       if (this.gamedatas.gamestate.name == "selectResearch") {
-        var args = {temple: evt.target.dataset.num};
+        var args = {temple: evt.target.dataset.tileId};
         if (this.researchDiscount) {
           args.discount = this.researchDiscount;
         }
@@ -1794,7 +1818,7 @@ function (dojo, declare) {
       }
       else {
         this.ajaxcall("/arnak/arnak/getTempleTile.html", {
-          tileNum: evt.target.dataset.num,
+          tileNum: evt.target.dataset.tileId,
           lock: true
         }, this, function(result) {});
       }
@@ -3103,13 +3127,19 @@ function (dojo, declare) {
       var a = notif.args;
       this.gamedatas.temple_tile[a.id].amt -= 1;
       var tileDiv = dojo.query(".tile-pos-" + a.id)[0];
+      var templeTileDiv = dojo.query(".temple-tile", tileDiv)[0];
+      var numPickTile = templeTileDiv.dataset.num;
+      var color = this.material.research.tiles[a.id].color;
       if (this.gamedatas.temple_tile[a.id].amt <= 0) {
         this.fadeOutAndDestroy(tileDiv);
       }
-      var color = this.material.research.tiles[a.id].color;
-      var tileN = Math.floor(Math.random() * {"gold": 4, "silver": 6, "bronze": 8}[color] + 1);
+      else {
+        dojo.destroy(templeTileDiv);
+        var tileNum = this.templeTilePicker.pick(color);
+        dojo.place(this.makeTempleTile(color, tileNum, a.id), tileDiv);
+      }
       dojo.place(
-      dojo.create("div", {class: "temple-tile tile-num-" + tileN + " " + color}),
+      this.makeTempleTile(color, numPickTile),
       dojo.query("#player_board_" + a.player_id + " .temple-wrap")[0]
       );
       this.updateTempleTooltips();

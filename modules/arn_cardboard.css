@@ -468,42 +468,62 @@ div#start-player {
 
 .temple-tile.bronze.tile-num-1 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -266px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -10px -3161px;
 }
 
 .temple-tile.bronze.tile-num-2 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -522px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -266px -3161px;
 }
 
 .temple-tile.bronze.tile-num-3 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -778px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -522px -3161px;
 }
 
 .temple-tile.bronze.tile-num-4 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1034px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -3161px;
 }
 
 .temple-tile.bronze.tile-num-5 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1290px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1034px -3161px;
 }
 
 .temple-tile.bronze.tile-num-6 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1546px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1290px -3161px;
 }
 
 .temple-tile.bronze.tile-num-7 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1802px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1546px -3161px;
 }
 
 .temple-tile.bronze.tile-num-8 {
     width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -1802px -3161px;
+}
+
+.temple-tile.bronze.tile-num-9 {
+    width: 236px; height: 107px;
     background: url('../img/cardboard_css_sprite.jpg') -2058px -3161px;
+}
+
+.temple-tile.bronze.tile-num-10 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2314px -3161px;
+}
+
+.temple-tile.bronze.tile-num-11 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2570px -3161px;
+}
+
+.temple-tile.bronze.tile-num-12 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2826px -3161px;
 }
 
 .temple-tile.gold.tile-num-1 {
@@ -511,61 +531,60 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -3055px -958px;
 }
 
-.temple-tile.gold.tile-num-4 {
+.temple-tile.gold.tile-num-2 {
     width: 236px; height: 154px;
     background: url('../img/cardboard_css_sprite.jpg') -3055px -1132px;
 }
 
-.temple-tile.gold.tile-num-2 {
+.temple-tile.gold.tile-num-3 {
+    width: 236px; height: 154px;
+    background: url('../img/cardboard_css_sprite.jpg') -3055px -1306px;
+}
+
+.temple-tile.gold.tile-num-4 {
     width: 236px; height: 154px;
     background: url('../img/cardboard_css_sprite.jpg') -3055px -1480px;
 }
 
-.temple-tile.gold.tile-num-3 {
-    width: 236px; height: 154px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -1654px;
-}
-
-.temple-tile.silver.tile-num-2 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2350px;
-}
-
-.temple-tile.silver.tile-num-3 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2500px;
-}
-
-.temple-tile.silver.tile-num-4 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2650px;
-}
-
-.temple-tile.silver.tile-num-5 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2800px;
-}
-
-.temple-tile.silver.tile-num-6 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -2680px -2093px;
-}
-
-.temple-tile.silver.tile-num-7 {
+.temple-tile.silver.tile-num-1 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -10px -3011px;
 }
 
-.temple-tile.silver.tile-num-8 {
+.temple-tile.silver.tile-num-2 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -266px -3011px;
 }
 
-.temple-tile.silver.tile-num-1 {
+.temple-tile.silver.tile-num-3 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -522px -3011px;
 }
 
+.temple-tile.silver.tile-num-4 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -3011px;
+}
+
+.temple-tile.silver.tile-num-5 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1034px -3011px;
+}
+
+.temple-tile.silver.tile-num-6 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1290px -3011px;
+}
+
+.temple-tile.silver.tile-num-7 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1546px -3011px;
+}
+
+.temple-tile.silver.tile-num-8 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1802px -3011px;
+}
 
 .research-bonus {
     transform: scale(0.25);
