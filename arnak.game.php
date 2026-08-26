@@ -305,15 +305,9 @@ class arnak extends Table
 
       }
     }
-    foreach($positionIds as $spaceId) {
-      $bonus = array_pop($researchBonus);
-      $this->DbQuery("INSERT INTO research_bonus (track_pos, bonus_type) VALUES ($spaceId, '$bonus')");
-    }
+    $this->sqlWrapper->createResearchTokens($positionIds, $researchBonus);
 
-    $amt = count($players);
-    for ($tileId = 1; $tileId <= 6; ++$tileId) {
-      $this->DbQuery("INSERT INTO temple_tile (idtemple_tile, amt) VALUES ($tileId, $amt)");
-    }
+    $this->sqlWrapper->createTempleTiles(count($players));
 
     $bigLocationIds = range(1, 6);
     shuffle($bigLocationIds);

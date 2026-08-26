@@ -584,6 +584,13 @@ class SqlWrapper {
     $this->game->notifyAllPlayers("removeResearchToken", "", array("tokenId" => $id));
   }
 
+  public function createResearchTokens($positions, $bonuses) {
+    foreach ($positions as $idx => $position) {
+      $bonus = $bonuses[$idx];
+      $this->game->DbQuery("INSERT INTO research_bonus (track_pos, bonus_type) VALUES ($position, '$bonus')");
+    }
+  }
+
   public function getAllTempleTiles () {
     $tiles = $this->game->getCollectionFromDb("SELECT idtemple_tile id, amt amt FROM temple_tile");
     foreach ($tiles as $idx => $tile) {
@@ -608,6 +615,12 @@ class SqlWrapper {
         "i18n" => ["colorText"]
       )
     );
+  }
+
+  public function createTempleTiles($amt) {
+    for ($tileId = 1; $tileId <= 6; ++$tileId) {
+      $this->game->DbQuery("INSERT INTO temple_tile (idtemple_tile, amt) VALUES ($tileId, $amt)");
+    }
   }
 }
 ?>
