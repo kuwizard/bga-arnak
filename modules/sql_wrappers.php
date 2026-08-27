@@ -626,5 +626,60 @@ class SqlWrapper {
       $this->game->DbQuery("INSERT INTO temple_tile (idtemple_tile, amt) VALUES ($tileId, $amt)");
     }
   }
+
+  public function getAllPlayers() {
+    $args = ["player_id", "player_score", "passed",
+             "coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol",
+             "research_glass", "research_book", "temple_bronze", "temple_silver", "temple_gold", "temple_rank"];
+    $argsStr = join(", ", $args);
+    $players = $this->game->getObjectListFromDb("SELECT $argsStr FROM player");
+    $result = [];
+    foreach ($players as $player) {
+      $playerId = $player["player_id"];
+      $result[$playerId] = $player;
+      $result[$playerId]["score"] = $result[$playerId]["player_score"];
+      unset($result[$playerId]["player_id"]);
+      unset($result[$playerId]["player_score"]);
+      foreach ($result[$playerId] as $val => $amt) {
+        $result[$playerId][$val] = intval($amt);
+      }
+      $result[$playerId]["passed"] = ($result[$playerId]["passed"] != 0);
+    }
+    return $result;
+  }
+
+  private function getPlayerSubset($playerId, $subset) {
+    $player = $this->game->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId");
+    $result = [];
+    foreach ($subset as $value) {
+      $result[$value] = intval($player[$value]);
+    }
+    return $result;
+  }
+
+  public function getPlayerOrder($playerId) {
+    $player = $this->getPlayerSubset($playerId, ["player_no"]);
+    return $player["player_no"];
+  }
+
+  public function getPlayerResearch($playerId) {
+    return $this->getPlayerSubset($playerId, ["research_glass", "research_book", "temple_bronze", "temple_silver", "temple_gold", "temple_rank"]);
+  }
+
+  public function getPlayerResources($playerId) {
+    return $this->getPlayerSubset($playerId, ["coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol"]);
+  }
+
+  public function getPlayersPassedStatus() {
+    $players = $this->game->getObjectListFromDb("SELECT player_id, passed FROM player");
+    $passedStatus = ["passed" => 0, "active" => 0];
+    foreach ($players as $player) {
+      $playerId = $player["player_id"];
+      $active = $player["passed"] == 0;
+      $passedStatus[$playerId] = $active;
+      $passedStatus[$active ? "active" : "passed"] += 1;
+    }
+    return $passedStatus;
+  }
 }
 ?>

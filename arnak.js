@@ -205,7 +205,7 @@ function (dojo, declare) {
           var handAmtDiv = dojo.create("div", {class: "hand-amt"});
           handAmtDiv.innerHTML = this.fsr(_("${player_name} has ${n} cards in hand"), {
             'player_name' : "<span class='player-name'>" + player.name + " </span>",
-            'n' : "<span class='hand-amt-num' id='hand-amt-" + player.id + "'>0</span>",
+            'n' : "<span class='hand-amt-num' id='hand-amt-" + player_id + "'>0</span>",
           });
           dojo.place(handAmtDiv, handDiv)
         }
@@ -293,10 +293,7 @@ function (dojo, declare) {
         }
 
         this.updatePlayerGuards(player_id);
-
-        if (player.passed === "1") {
-          this.playerPass(player_id);
-        }
+        this.playerPass(player_id, player.passed);
       }
       this.addTooltipHtml("arn-staff", "<h3>" + this.tooltips.staff.header + "</h3><div>" + this.tooltips.staff.text + "</div>", this.tooltipDelay);
       this.addTooltipHtml("start-player", "<h3>" + this.tooltips.startPlayer.header + "</h3><div>" + this.tooltips.startPlayer.text + "</div>", this.tooltipDelay);
@@ -689,12 +686,13 @@ function (dojo, declare) {
       for (var row of ["name", "research", "temple", "idols", "guardians", "cards", "fear", "total"]) {
         var tr = dojo.create("tr", {id: "score-" + row});
         dojo.place(tr, scoreTable);
-        for (var p of Object.values(this.gamedatas.players)) {
-          var tdId = "score-" + row + "-" + p.id;
+        for (var playerId in this.gamedatas.players) {
+          var p = this.gamedatas.players[playerId];
+          var tdId = "score-" + row + "-" + playerId;
           var td = dojo.create("td", {id: tdId});
           dojo.place(td, tr);
           if (row == "name") {
-            this.counters[p.id] = {};
+            this.counters[playerId] = {};
             td.innerHTML = p.name;
             td.style.color = "#" + p.color;
           }
@@ -702,7 +700,7 @@ function (dojo, declare) {
             var c = new ebg.counter();
             c.create(tdId);
             c.setValue(0);
-            this.counters[p.id][row] = c;
+            this.counters[playerId][row] = c;
           }
         }
       }
@@ -1056,12 +1054,13 @@ function (dojo, declare) {
       for (var i = 0; i <= 14; ++i) {
         var box = this.researchBoxes[this.gamedatas.bird_temple ? 0 : 1][i];
         var spaceObjects = [];
-        for (var p of Object.values(this.gamedatas.players)) {
+        for (var playerId in this.gamedatas.players) {
+          var p = this.gamedatas.players[playerId];
           if (p.research_glass == i) {
-            spaceObjects.push({type: "glass", player: p.id, rank: p.temple_rank});
+            spaceObjects.push({type: "glass", player: playerId, rank: p.temple_rank});
           }
           if (p.research_book == i) {
-            spaceObjects.push({type: "book", player: p.id});
+            spaceObjects.push({type: "book", player: playerId});
           }
         }
         if (i == 14) {
@@ -1096,12 +1095,13 @@ function (dojo, declare) {
     },
     updateScore() {
 
-      for (var player of Object.values(this.gamedatas.players)) {
+      for (var playerId in this.gamedatas.players) {
+        var player = this.gamedatas.players[playerId];
         if (player.scoreBreakdown) {
           for (var category of ["research", "temple", "idols", "guardians", "cards", "fear"]) {
-            this.counters[player.id][category].setValue(player.scoreBreakdown[category]);
+            this.counters[playerId][category].setValue(player.scoreBreakdown[category]);
           }
-          this.counters[player.id].total.setValue(player.score);
+          this.counters[playerId].total.setValue(player.score);
         }
       }
     },
@@ -1213,18 +1213,10 @@ function (dojo, declare) {
       y = y * bh / 100;
       return {x: x, y: y};
     },
-    playerPass(playerId, unpass = false) {
+    playerPass(playerId, pass = true) {
       var playerBoard = dojo.byId("overall_player_board_" + playerId);
-      if (!playerBoard) {
-        console.log("player board of", playerId, "not found");
-      }
-      if (unpass) {
-        dojo.removeClass(playerBoard, "passed");
-      }
-      else {
-        dojo.addClass(playerBoard, "passed");
-      }
-      this.gamedatas.players[playerId].passed = unpass ? "0" : "1";
+      dojo.toggleClass(playerBoard, "passed", pass);
+      this.gamedatas.players[playerId].passed = pass;
     },
     handClick: function(evt, force = false) {
       var cardDiv = evt.target;
@@ -2380,7 +2372,7 @@ function (dojo, declare) {
           dojo.query(".blueSelection").removeClass("blueSelection");
 
           if (this.prefs[102].value == 1 && this.isCurrentPlayerActive() &&
-          Object.values(this.gamedatas.players).filter(a => a.passed !== "1").length > 1 &&
+          Object.values(this.gamedatas.players).filter(a => !a.passed).length > 1 &&
           !this.turnEnded
           ) {
             this.endTurn();
@@ -2840,7 +2832,7 @@ function (dojo, declare) {
       }
     },
     notif_pass: function(notif) {
-      this.playerPass(notif.args.player_id);
+      this.playerPass(notif.args.player_id, true);
     },
     notif_moveWorker: function(notif) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
@@ -3014,7 +3006,7 @@ function (dojo, declare) {
           this.decks[p].add(card, true);
         });
         this.plays[p].clear();
-        this.playerPass(p, true);
+        this.playerPass(p, false);
         this.updatePlayerCards(p);
       }
     },

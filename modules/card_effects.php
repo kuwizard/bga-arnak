@@ -251,7 +251,7 @@ class CardEffects {
         $this->gainCardResource("coins", 2);
         break;
       case Artefact::Stone_Key:
-        if ($game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $this->playerId")["idol_slot"] >= 4) {
+        if ($game->sqlWrapper->getPlayerResources($this->playerId)["idol_slot"] >= 4) {
           $game->notifyAllPlayers("cantIdol", "No idols in slots", array());
         }
         else {
@@ -541,8 +541,8 @@ class CardEffects {
         $game->siteEffect("basic", $site["location_num"]);
         break;
       case Item::Brush:
-        $player =  $game->getNonEmptyObjectFromDb("SELECT * FROM player WHERE player_id = $this->playerId");
-        $idols = $player["idol"] + 4 - $player["idol_slot"];
+        $playerResources = $game->sqlWrapper->getPlayerResources($this->playerId);
+        $idols = $playerResources["idol"] + 4 - $playerResources["idol_slot"];
         $this->gainCardResource("compass", min($idols, 3));
         break;
       case Item::Axe:

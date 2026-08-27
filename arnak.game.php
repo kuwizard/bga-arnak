@@ -239,7 +239,7 @@ class arnak extends Table
       shuffle($startDeck);
       $this->sqlWrapper->createCards($startDeck, $playerId, 'deck');
 
-      $playerOrder = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["player_no"];
+      $playerOrder = $this->sqlWrapper->getPlayerOrder($playerId);
       if ($playerOrder == 1) {
         $this->setGameStateValue("start-player", $playerId);
       }
@@ -393,9 +393,7 @@ class arnak extends Table
 
     $current_player_id = $this->getCurrentPlayerId();
 
-
-    $sql = "SELECT player_id id, player_score score, coins coins, compass compass, tablet tablet, arrowhead arrowhead, jewel jewel, idol_slot idol_slot, idol idol, research_glass research_glass, research_book research_book, temple_bronze, temple_silver, temple_gold, passed passed, temple_rank temple_rank FROM player ";
-    $result['players'] = $this->getCollectionFromDb( $sql );
+    $result['players'] = $this->sqlWrapper->getAllPlayers();
     foreach ($this->loadPlayersBasicInfos() as $idPlayer => $infos) {
       if ($idPlayer == $current_player_id) {
         $result['players'][$idPlayer]["hand"] = $this->sqlWrapper->getPublicCards($idPlayer, 'hand');
@@ -751,7 +749,8 @@ class arnak extends Table
       }
     }
     if ($this->getGameStateValue("research-token-done") == 0) {
-      $space = $this->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
+      $playerResearch = $this->sqlWrapper->getPlayerResearch($playerId);
+      $space = $playerResearch["research_".$this->researchType()];
       $result["token"] = $space;
       if( $space == 14 ) {
         $result["_private"]["active"]["tokens_left"] = $this->sqlWrapper->getResearchBonus($space);
@@ -807,7 +806,7 @@ class arnak extends Table
     $notif = [["msg" => clienttranslate('New ${cardTypeText} ${cardName} is revealed'), "cardTypeText" => $this->cardTypeText($newCard["info"]->type())]];
     $this->sqlWrapper->moveCard($newCard, null, 'supply', $notif);
 
-    if (count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1")) > 0) {
+    if ($this->sqlWrapper->getPlayersPassedStatus()["active"] > 0) {
       $this->undoSavePoint();
     }
     return true;
@@ -1654,15 +1653,15 @@ class arnak extends Table
   }
   function research($researchId, $free = false, $forceType = null) {
     $playerId = $this->getActivePlayerId();
-    $playerResearch = $this->getNonEmptyObjectFromDB("SELECT research_glass glass, research_book book FROM player WHERE player_id = $playerId");
-    $glassOptions = $this->gameData->researchPossibilities($playerResearch["glass"]);
-    $bookOptions = $this->gameData->researchPossibilities($playerResearch["book"]);
+    $playerResearch = $this->sqlWrapper->getPlayerResearch($playerId);
+    $glassOptions = $this->gameData->researchPossibilities($playerResearch["research_glass"]);
+    $bookOptions = $this->gameData->researchPossibilities($playerResearch["research_book"]);
 
     if (in_array($researchId, $glassOptions)) {
       $researchType = "glass";
     }
     else if (in_array($researchId, $bookOptions)) {
-      if ($this->gameData->researchStep($researchId) > $this->gameData->researchStep($playerResearch["glass"])) {
+      if ($this->gameData->researchStep($researchId) > $this->gameData->researchStep($playerResearch["research_glass"])) {
         throw new BgaUserException(clienttranslate("Book can never be higher than glass"));
       }
       $researchType = "book";
@@ -1694,7 +1693,13 @@ class arnak extends Table
     $researchBonus = $this->sqlWrapper->getResearchBonus($researchId);
     if ($step == 8) {
       $this->undoSavePoint();
-      $rank = count($this->getCollectionFromDb("SELECT * FROM player WHERE research_glass = 14"));
+      $rank = 0;
+      foreach ($this->loadPlayersBasicInfos() as $playId => $player) {
+        $research = $this->sqlWrapper->getPlayerResearch($playId);
+        if ($research["research_glass"] == 14) {
+          $rank += 1;
+        }
+      }
       $this->dbQuery("UPDATE player SET temple_rank = $rank WHERE player_id = $playerId");
     }
     else {
@@ -1795,7 +1800,7 @@ class arnak extends Table
   function getTempleTile($num) {
     $cost = $this->gameData->templeTileCost($num);
     $playerId = $this->getActivePlayerId();
-    $glassResearch = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_glass"];
+    $glassResearch = $this->sqlWrapper->getPlayerResearch($playerId)["research_glass"];
     if ($glassResearch < 14) {
       throw new BgaUserException(clienttranslate("You must reach the top of research track with your magnifying glass before getting temple tiles"));
     }
@@ -1823,7 +1828,7 @@ class arnak extends Table
       $this->checkAction("useResearchToken");
     }
     $playerId = $this->getActivePlayerId();
-    $trackPos = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId")["research_".$this->researchType()];
+    $trackPos = $this->sqlWrapper->getPlayerResearch($playerId)["research_".$this->researchType()];
     $bonus = $this->sqlWrapper->getResearchBonusFromId($id);
 
     switch($bonus["bonus_type"]) {
@@ -1855,10 +1860,8 @@ class arnak extends Table
       return "";
     }
     $playerId = $this->getActivePlayerId();
-    $step = $this->gameData->researchStep($this->getNonEmptyObjectFromDB(
-        "SELECT * FROM player WHERE player_id = $playerId"
-      )["research_".$this->researchType()]
-    );
+    $space = $this->sqlWrapper->getPlayerResearch($playerId)["research_".$this->researchType()];
+    $step = $this->gameData->researchStep($space);
 
     if ($step == 8) {
       return "";
@@ -2117,7 +2120,7 @@ class arnak extends Table
       }
     }
     foreach ($this->loadPlayersBasicInfos() as $playerId => $player) {
-      $player = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId");
+      $playerResearch = $this->sqlWrapper->getPlayerResearch($playerId);
       $auxScore = $this->score("research", $playerId);
       $this->setStat($this->score("art", $playerId), "score-art", $playerId);
       $this->setStat($this->score("item", $playerId), "score-item", $playerId);
@@ -2133,11 +2136,11 @@ class arnak extends Table
         }
       $this->setStat($cost, "cost-art", $playerId);
 
-      $this->setStat($this->gameData->researchStep($player["research_book"]), "book-step", $playerId);
-      $this->setStat($this->gameData->researchStep($player["research_glass"]), "glass-step", $playerId);
+      $this->setStat($this->gameData->researchStep($playerResearch["research_book"]), "book-step", $playerId);
+      $this->setStat($this->gameData->researchStep($playerResearch["research_glass"]), "glass-step", $playerId);
 
-      if ($this->gameData->researchStep($player["research_glass"]) == 8) {
-        $auxScore += 100 * (5 - $player["temple_rank"]);
+      if ($this->gameData->researchStep($playerResearch["research_glass"]) == 8) {
+        $auxScore += 100 * (5 - $playerResearch["temple_rank"]);
       }
       $this->DbQuery("UPDATE player SET player_score_aux = $auxScore WHERE player_id = $playerId");
     }
@@ -2146,18 +2149,20 @@ class arnak extends Table
 
   function score($category, $playerId) {
     $score = 0;
-    $player = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $playerId");
     switch($category) {
       case "research":
+        $playerResearch = $this->sqlWrapper->getPlayerResearch($playerId);
         $score =
-          $this->gameData->stepPoints(true, $this->gameData->researchStep($player["research_book"])) +
-          $this->gameData->stepPoints(false, $this->gameData->researchStep($player["research_glass"]), $player["temple_rank"]);
+          $this->gameData->stepPoints(true, $this->gameData->researchStep($playerResearch["research_book"])) +
+          $this->gameData->stepPoints(false, $this->gameData->researchStep($playerResearch["research_glass"]), $playerResearch["temple_rank"]);
         break;
       case "temple":
-        $score = $player["temple_bronze"] * 2 + $player["temple_silver"] * 6 + $player["temple_gold"] * 11;
+        $playerResearch = $this->sqlWrapper->getPlayerResearch($playerId);
+        $score = $playerResearch["temple_bronze"] * 2 + $playerResearch["temple_silver"] * 6 + $playerResearch["temple_gold"] * 11;
         break;
       case "idols":
-        $score = [12, 13, 13, 12, 10][$player["idol_slot"]] + 3 * $player["idol"];
+        $playerResources = $this->sqlWrapper->getPlayerResources($playerId);
+        $score = [12, 13, 13, 12, 10][$playerResources["idol_slot"]] + 3 * $playerResources["idol"];
         break;
       case "guardians":
         $score = (count($this->sqlWrapper->getBoons($playerId, true)) + count($this->sqlWrapper->getBoons($playerId, false))) * 5;
@@ -2194,7 +2199,7 @@ class arnak extends Table
       $this->gamestate->nextState("researchRemains");
       return;
     }
-    $passedNum = count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1"));
+    $passedNum = $this->sqlWrapper->getPlayersPassedStatus()["active"];
     if ($passedNum == 1) {
       $this->notifyAllPlayers("endTurn", "");
       $this->gamestate->nextState("turn_end");
@@ -2208,8 +2213,7 @@ class arnak extends Table
     $this->giveExtraTime($this->getActivePlayerId());
     $this->setGameStateValue("special-research-done", 1);
     $this->setGameStateValue("research-token-done", 1);
-    $ingameNum = count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1"));
-    //throw new BgaUserException($passedNum);
+    $ingameNum = $this->sqlWrapper->getPlayersPassedStatus()["active"];
     if ($ingameNum == 0) {
       $this->gamestate->nextState('allPassed');
 
@@ -2219,7 +2223,7 @@ class arnak extends Table
     do {
       $this->activeNextPlayer();
 
-    } while ($this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = ".$this->getActivePlayerId())["passed"] == 1);
+    } while (!$this->sqlWrapper->getPlayersPassedStatus()[$this->getActivePlayerId()]);
     if ($ingameNum > 1) {
 
       $this->undoSavePoint();
@@ -2256,7 +2260,7 @@ class arnak extends Table
     );
     $this->gamestate->nextState("turn_end");
     //throw new BgaUserException("here");
-    if ($this->gamestate->state()["name"] == "selectAction" && count($this->getCollectionFromDb("SELECT * FROM player WHERE passed != 1")) > 0) {
+    if ($this->gamestate->state()["name"] == "selectAction" && $this->sqlWrapper->getPlayersPassedStatus()["active"] > 0) {
       $this->undoSavePoint();
     }
 
@@ -2347,7 +2351,7 @@ class arnak extends Table
       }
     }
 
-    $current = $this->getNonEmptyObjectFromDB("SELECT * FROM player WHERE player_id = $player")[$resName];
+    $current = $this->sqlWrapper->getPlayerResources($player)[$resName];
     if ($current + $amt < 0) {
       throw new BgaUserException(clienttranslate("Not enough ").$this->resText($resName));
     }
