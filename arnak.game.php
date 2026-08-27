@@ -143,16 +143,18 @@ class arnak extends Table
 
     // Create players
     // Note: if you added some extra field on "player" table in the database (dbmodel.sql), you can initialize it there.
-    $sql = "INSERT INTO player (player_id, player_color, player_canal, player_name, player_avatar) VALUES ";
-    $values = array();
-    foreach( $players as $player_id => $player )
-    {
-      $color = array_shift( $default_colors );
-      $values[] = "('".$player_id."','$color','".$player['player_canal']."','".addslashes( $player['player_name'] )."','".addslashes( $player['player_avatar'] )."')";
+    $values = [];
+    foreach ($players as $player_id => $player) {
+      array_push($values, [
+        "player_id" => $player_id,
+        "player_color" => "'".array_shift($default_colors)."'",
+        "player_canal" => "'".$player['player_canal']."'",
+        "player_name" => "'".addslashes($player['player_name'])."'",
+        "player_avatar" => "'".addslashes($player['player_avatar'])."'"
+      ]);
     }
-    $sql .= implode( ',', $values );
-    $this->DbQuery( $sql );
-    $this->reattributeColorsBasedOnPreferences( $players, $gameinfos['player_colors'] );
+    $this->sqlWrapper->createPlayers($values);
+    $this->reattributeColorsBasedOnPreferences($players, $gameinfos['player_colors']);
     $this->reloadPlayersBasicInfos();
 
     /************ Start the game initialization *****/

@@ -767,5 +767,19 @@ class SqlWrapper {
   public function setPlayerScoreAux($playerId, $auxScore) {
     $this->game->DbQuery("UPDATE player SET player_score_aux = $auxScore WHERE player_id = $playerId");
   }
+
+  public function createPlayers($playerProperties) {
+    foreach ($playerProperties as $player) {
+      $keys = [];
+      $properties = [];
+      foreach ($player as $key => $property) {
+        array_push($keys, $key);
+        array_push($properties, $property);
+      }
+      $keysStr = join(", ", $keys);
+      $propsStr = join(", ", $properties);
+      $this->game->DbQuery("INSERT INTO player ($keysStr) VALUES ($propsStr)");
+    }
+  }
 }
 ?>
