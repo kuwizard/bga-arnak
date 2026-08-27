@@ -243,12 +243,23 @@ class arnak extends Table
       if ($playerOrder == 1) {
         $this->setGameStateValue("start-player", $playerId);
       }
-      $this->DbQuery("UPDATE player SET compass = ".$compassGain[$playerOrder].", coins = ".$coinGain[$playerOrder].", idol_slot = 4 WHERE player_id = $playerId");
 
       if ($this->debugMode()) {
-        $this->DbQuery("UPDATE player SET tablet = 50, arrowhead = 50, jewel = 50, coins = 50, compass = 50, idol = 4, research_glass = 12, research_book = 0 WHERE player_id = $playerId");
+        $this->sqlWrapper->increasePlayerResource($playerId, "coins", 50);
+        $this->sqlWrapper->increasePlayerResource($playerId, "compass", 50);
+        $this->sqlWrapper->increasePlayerResource($playerId, "tablet", 50);
+        $this->sqlWrapper->increasePlayerResource($playerId, "arrowhead", 50);
+        $this->sqlWrapper->increasePlayerResource($playerId, "jewel", 50);
+        $this->sqlWrapper->increasePlayerResource($playerId, "idol", 4);
+        $this->sqlWrapper->increasePlayerResource($playerId, "idol_slot", 4);
+        $this->sqlWrapper->increasePlayerResource($playerId, "research_glass", 12);
+        $this->sqlWrapper->increasePlayerResource($playerId, "research_book", 0);
       }
-
+      else {
+        $this->sqlWrapper->increasePlayerResource($playerId, "coins", $coinGain[$playerOrder]);
+        $this->sqlWrapper->increasePlayerResource($playerId, "compass", $compassGain[$playerOrder]);
+        $this->sqlWrapper->increasePlayerResource($playerId, "idol_slot", 4);
+      }
     }
 
     $idolBonus = [
@@ -1684,7 +1695,6 @@ class arnak extends Table
       }
     }
 
-    $this->dbQuery("UPDATE player SET research_$researchType = $researchId WHERE player_id = $playerId");
     $researchDone = true;
 
     $step = $this->gameData->researchStep($researchId);
@@ -1693,25 +1703,19 @@ class arnak extends Table
     $researchBonus = $this->sqlWrapper->getResearchBonus($researchId);
     if ($step == 8) {
       $this->undoSavePoint();
-      $rank = 0;
+      $rank = 1;
       foreach ($this->loadPlayersBasicInfos() as $playId => $player) {
         $research = $this->sqlWrapper->getPlayerResearch($playId);
         if ($research["research_glass"] == 14) {
           $rank += 1;
         }
       }
-      $this->dbQuery("UPDATE player SET temple_rank = $rank WHERE player_id = $playerId");
     }
     else {
       $stepBonus = $this->gameData->researchBonus($step, $researchType === "book");
     }
-    $this->notifyAllPlayers('research', clienttranslate('${player_name} researches with his ${type}'), array("player_name" => $this->getActivePlayerName(),
-      "player_id" => $this->getActivePlayerId(),
-      "researchId" => $researchId,
-      "type" => $researchType,
-      "rank" => $rank,
-      "i18n" => ['type'],
-    ));
+    $notif = ["msg" => clienttranslate('${player_name} researches with his ${type}')];
+    $this->sqlWrapper->setPlayerResearch($playerId, $researchType, $researchId, $rank, $notif);
 
     $this->setGameStateValue("special-research-done", 1);
     switch($stepBonus) {
@@ -1808,7 +1812,6 @@ class arnak extends Table
       $this->gainResource($resName, $playerId, -$amt, array("component" => "temple", "num" => $num));
     }
     $color = $this->gameData->templeTileColor($num);
-    $this->dbQuery("UPDATE player SET temple_$color = temple_$color + 1 WHERE player_id = $playerId");
     $tileAmt = $this->sqlWrapper->getTempleTileAmt($num);
     if ($tileAmt <= 0) {
       throw new BgaUserException(clienttranslate("There is no more temple tiles in this stack"));
@@ -1819,7 +1822,7 @@ class arnak extends Table
       "gold" => clienttranslate("gold")
     ];
     $notif = ["msg" => clienttranslate('${player_name} gets a ${colorText} temple tile'), "colorText" => $colorTexts[$color]];
-    $this->sqlWrapper->decreaseTempleTileAmt($num, $notif);
+    $this->sqlWrapper->setTempleTileToPlayer($playerId, $num, $color, $notif);
     $this->incStat(1, "temple", $playerId);
     $this->incStat(1, "temple-".$color, $playerId);
   }
@@ -2083,7 +2086,7 @@ class arnak extends Table
     foreach($this->loadPlayersBasicInfos() as $playerId => $player) {
       $cardAmt = 5 - count($this->sqlWrapper->getCards($playerId, 'hand'));
       $this->gainResource("card", $playerId, $cardAmt);
-      $this->DbQuery("UPDATE player SET passed = 0");
+      $this->sqlWrapper->setPlayerPass($playerId, false, ["msg" => ""]);
     }
 
     $this->gamestate->nextState('nextPlayer');
@@ -2103,18 +2106,9 @@ class arnak extends Table
     foreach(["research", "temple", "idols", "guardians", "cards", "fear"] as $category) {
       foreach ($this->loadPlayersBasicInfos() as $playerId => $player) {
         $score = $this->score($category, $playerId);
-        $this->DbQuery("UPDATE player SET player_score=player_score + $score WHERE player_id=$playerId");
         if ($score != 0) {
-          $this->notifyAllPlayers("score", clienttranslate('${player_name} scores ${score} for ${categoryText}'),
-          array(
-            "i18n" => ["categoryText"],
-            "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"],
-            "player_id" => $playerId,
-            "score" => $score,
-            "category" => $category,
-            "categoryText" => $this->categoryText($category)
-          )
-          );
+          $notif = ["msg" => clienttranslate('${player_name} scores ${score} for ${categoryText}'), "categoryText" => $this->categoryText($category)];
+          $this->sqlWrapper->setPlayerScore($playerId, $score, $category, $notif);
         }
         $this->setStat($score, "score-".$category, $playerId);
       }
@@ -2142,7 +2136,7 @@ class arnak extends Table
       if ($this->gameData->researchStep($playerResearch["research_glass"]) == 8) {
         $auxScore += 100 * (5 - $playerResearch["temple_rank"]);
       }
-      $this->DbQuery("UPDATE player SET player_score_aux = $auxScore WHERE player_id = $playerId");
+      $this->sqlWrapper->setPlayerScoreAux($playerId, $auxScore);
     }
 
   }
@@ -2253,11 +2247,9 @@ class arnak extends Table
       $this->checkAction("pass");
     }
     $playerId = $this->getActivePlayerId();
-    $this->dbQuery("UPDATE player SET passed = 1 WHERE player_id = $playerId");
+    $notif = ["msg" => clienttranslate('${player_name} passes'), "player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"]];
+    $this->sqlWrapper->setPlayerPass($playerId, true, $notif);
 
-    $this->notifyAllPlayers("pass", clienttranslate('${player_name} passes'),
-    array("player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"], "player_id" => $playerId)
-    );
     $this->gamestate->nextState("turn_end");
     //throw new BgaUserException("here");
     if ($this->gamestate->state()["name"] == "selectAction" && $this->sqlWrapper->getPlayersPassedStatus()["active"] > 0) {
@@ -2355,23 +2347,17 @@ class arnak extends Table
     if ($current + $amt < 0) {
       throw new BgaUserException(clienttranslate("Not enough ").$this->resText($resName));
     }
-    $this->dbQuery("UPDATE player SET $resName = $resName + $amt WHERE player_id = $player");
-    if ($amt > 0 && $resName != "idol_slot") {
-      $this->incStat($amt, "gained-".$resName, $player);
-    }
     if ($amt != 0) {
-      $this->notifyAllPlayers("gainRes", '${player_name} ${verb} ${amtText} ${resText}',
-      array("amt" => $amt,
-      "i18n" => ["resText", "verb"],
-      "amtText" => abs($amt),
-      "player_id" => $player,
-      "player_name" => $this->loadPlayersBasicInfos()[$player]["player_name"],
-      "resName" => $resName,
-      "resText" => $this->resText($resName),
-      "verb" => $amt < 0 ? clienttranslate("pays") : clienttranslate("gains"),
-      "source" => JSON_ENCODE($source)
-      )
-      );
+      $notif = [
+        "msg" => '${player_name} ${verb} ${amtText} ${resText}',
+        "resText" => $this->resText($resName),
+        "verb" => $amt < 0 ? clienttranslate("pays") : clienttranslate("gains"),
+        "amtText" => abs($amt)
+      ];
+      $this->sqlWrapper->increasePlayerResource($player, $resName, $amt, $source, $notif);
+      if ($amt > 0 && $resName != "idol_slot") {
+        $this->incStat($amt, "gained-".$resName, $player);
+      }
     }
   }
 

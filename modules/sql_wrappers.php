@@ -608,8 +608,10 @@ class SqlWrapper {
     return is_null($tile) ? NULL : intval($tile["amt"]);
   }
 
-  public function decreaseTempleTileAmt($id, $notif) {
+  public function setTempleTileToPlayer($playerId, $id, $color, $notif) {
     $this->game->DbQuery("UPDATE temple_tile SET amt = amt - 1 WHERE idtemple_tile = $id");
+    $this->game->DbQuery("UPDATE player SET temple_$color = temple_$color + 1 WHERE player_id = $playerId");
+
     $this->game->notifyAllPlayers("getTempleTile", $notif["msg"],
       array(
         "player_name" => $this->game->getActivePlayerName(),
@@ -680,6 +682,90 @@ class SqlWrapper {
       $passedStatus[$active ? "active" : "passed"] += 1;
     }
     return $passedStatus;
+  }
+
+  public function setPlayerResearch($playerId, $researchType, $researchId, $rank, $notif) {
+    $this->game->DbQuery("UPDATE player SET research_$researchType = $researchId WHERE player_id = $playerId");
+    if (!is_null($rank)) {
+      $this->game->DbQuery("UPDATE player SET temple_rank = $rank WHERE player_id = $playerId");
+    }
+
+    $notif_research = array(
+      "player_name" => $this->game->getActivePlayerName(),
+      "player_id" => $playerId,
+      "researchId" => $researchId,
+      "type" => $researchType,
+      "rank" => $rank,
+      "i18n" => ['type'],
+    );
+    foreach ($notif as $key => $value) {
+      if ($value != "msg") {
+        $notif_research[$key] = $value;
+        $notif_research["i18n"] = $key;
+      }
+    }
+    $this->game->notifyAllPlayers('research', $notif["msg"], $notif_research);
+  }
+
+  public function setPlayerPass($playerId, $pass, $notif) {
+    $passArg = $pass ? 1 : 0;
+    $this->game->DbQuery("UPDATE player SET passed = $passArg WHERE player_id = $playerId");
+
+    $notif_pass = array(
+      "player_id" => $playerId,
+      "pass" => $pass
+    );
+    if ($notif["msg"] != "") {
+      foreach ($notif as $key => $value) {
+        $notif_pass[$key] = $value;
+      }
+    }
+    $this->game->notifyAllPlayers("pass", $notif["msg"], $notif_pass);
+  }
+
+  public function increasePlayerResource($playerId, $resource, $amt, $source = NULL, $notif = NULL) {
+    $this->game->DbQuery("UPDATE player SET $resource = $resource + $amt WHERE player_id = $playerId");
+
+    if (!is_null($notif)) {
+      $notif_gainRes = array(
+        "i8n" => [],
+        "player_id" => $playerId,
+        "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
+        "amt" => $amt,
+        "resName" => $resource,
+        "source" => JSON_ENCODE($source)
+      );
+      foreach ($notif as $key => $value) {
+        if ($key != "msg") {
+          $notif_gainRes[$key] = $value;
+          $notif_gainRes["i8n"] = $key;
+        }
+      }
+      $this->game->notifyAllPlayers("gainRes", $notif["msg"], $notif_gainRes);
+    }
+  }
+
+  public function setPlayerScore($playerId, $score, $category, $notif) {
+    $this->game->DbQuery("UPDATE player SET player_score=player_score + $score WHERE player_id=$playerId");
+
+    $notif_score = array(
+      "i8n" => [],
+      "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
+      "player_id" => $playerId,
+      "score" => $score,
+      "category" => $category
+    );
+    foreach ($notif as $key => $value) {
+      if ($key != "msg") {
+        $notif_score[$key] = $value;
+        $notif_score["i8n"] = $key;
+      }
+    }
+    $this->game->notifyAllPlayers("score", $notif["msg"], $notif_score);
+  }
+
+  public function setPlayerScoreAux($playerId, $auxScore) {
+    $this->game->DbQuery("UPDATE player SET player_score_aux = $auxScore WHERE player_id = $playerId");
   }
 }
 ?>

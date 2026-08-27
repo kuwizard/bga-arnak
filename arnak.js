@@ -2832,7 +2832,7 @@ function (dojo, declare) {
       }
     },
     notif_pass: function(notif) {
-      this.playerPass(notif.args.player_id, true);
+      this.playerPass(notif.args.player_id, notif.args.pass);
     },
     notif_moveWorker: function(notif) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
@@ -3006,7 +3006,6 @@ function (dojo, declare) {
           this.decks[p].add(card, true);
         });
         this.plays[p].clear();
-        this.playerPass(p, false);
         this.updatePlayerCards(p);
       }
     },
