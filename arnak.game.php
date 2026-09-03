@@ -1118,6 +1118,16 @@ class arnak extends Table
     $this->incStat(1, "guardians-".$this->getGameStateValue("round"), $playerId);
   }
 
+  function filterFearCards($cards) {
+    $onlyfears = [];
+    foreach ($cards as $card) {
+      if ($card["info"]->type() == "basic" && $card["info"]->value == "fear") {
+        array_push($onlyfears, $card);
+      }
+    }
+    return $onlyfears;
+  }
+
   function getFirstSlotIdx($site, $player) {
     foreach ($site["slots"] as $idx => $occupied) {
       if ($player === $occupied) {
@@ -1995,11 +2005,9 @@ class arnak extends Table
     else {
       $playersToActivate = [];
       foreach ($this->loadPlayersBasicInfos() as $playerId => $player) {
-        foreach ($this->sqlWrapper->getCards($playerId, 'hand') as $card) {
-          if ($card["info"]->type() != "basic" || $card["info"]->value != "fear") {
-            array_push($playersToActivate, $playerId);
-            break;
-          }
+        $handCards = $this->sqlWrapper->getCards($playerId, 'hand');
+        if (count($handCards) > count($this->filterFearCards($handCards))) {
+          array_push($playersToActivate, $playerId);
         }
       }
       $this->gamestate->nextState("decideKeep");
@@ -2178,7 +2186,7 @@ class arnak extends Table
         }
         break;
       case "fear":
-        foreach ($this->sqlWrapper->getCards($playerId, NULL, 'fear') as $card) {
+        foreach ($this->filterFearCards($this->sqlWrapper->getCards($playerId, NULL)) as $card) {
           $score += $this->gameData->cardPoints($card["info"]);
         }
         break;
