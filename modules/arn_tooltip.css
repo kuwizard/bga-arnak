@@ -169,3 +169,19 @@
 .dijitTooltip {
     pointer-events: none;
 }
+
+.token-tooltip-position{
+  position: relative;
+  top: -38px;
+  left: -38px;
+}
+
+.token-tooltip-inline{
+  transform: scale(0.25);
+  width: 0px;
+  height: 0px;
+  margin-left: 0.8em;
+  margin-right: 0.8em;
+  display: inline-block;
+  vertical-align: middle;
+}

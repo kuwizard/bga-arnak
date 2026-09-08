@@ -1,504 +1,227 @@
 <?php
-function cardName($type, $no) {
-  $basicNames = array(
-    "fundship" => clienttranslate("Funding"),
-    "fundcar" => clienttranslate("Funding"), 
-    "exploreship" => clienttranslate("Exploration"), 
-    "explorecar" => clienttranslate("Exploration"),
-    "fear" => clienttranslate("Fear")
-  );
-  if (array_key_exists($type, $basicNames)) {
-    return $basicNames[$type];
-  }
 
-  if ($type == "art") {
-    return ["",
-    clienttranslate("Pathfinder's Sandals"),
-    clienttranslate("Pathfinder's Staff"),
-    clienttranslate("War Mask"),
-    clienttranslate("Treasure Chest"),
-    clienttranslate("Ritual Dagger"),
+enum Artefact: int {
+  case Pathfinders_Sandals = 1;
+  case Pathfinders_Staff = 2;
+  case War_Mask = 3;
+  case Treasure_Chest = 4;
+  case Ritual_Dagger = 5;
 
-    clienttranslate("Crystal Earring"),
-    clienttranslate("Mortar"),
-    clienttranslate("Serpent's Gold"),
-    clienttranslate("Serpent Idol"),
-    clienttranslate("Monkey Medallion"),
+  case Crystal_Earring = 6;
+  case Mortar = 7;
+  case Serpents_Gold = 8;
+  case Serpent_Idol = 9;
+  case Monkey_Medallion = 10;
 
-    clienttranslate("Idol of Ara-Anu"),
-    clienttranslate("Inscribed Blade"),
-    clienttranslate("Guardian's Ocarina"),
-    clienttranslate("Tigerclaw Hairpin"),
-    clienttranslate("War Club"),
+  case Idol_of_AraAnu = 11;
+  case Inscribed_Blade = 12;
+  case Guardians_Ocarina = 13;
+  case Tigerclaw_Hairpin = 14;
+  case War_Club = 15;
 
-    clienttranslate("Sundial"),
-    clienttranslate("Traders' Scales"),
-    clienttranslate("Hunting Arrows"),
-    clienttranslate("Coconut Flask"),
-    clienttranslate("Cleansing Cauldron"),
+  case Sundial = 16;
+  case Traders_Scales = 17;
+  case Hunting_Arrows = 18;
+  case Coconut_Flask = 19;
+  case Cleansing_Cauldron = 20;
 
-    clienttranslate("Ancient Wine"),
-    clienttranslate("Decorated Horn"),
-    clienttranslate("Ornate Hammer"),
-    clienttranslate("Star Charts"),
-    clienttranslate("Stone Jar"),
+  case Ancient_Wine = 21;
+  case Decorated_Horn = 22;
+  case Ornate_Hammer = 23;
+  case Star_Charts = 24;
+  case Stone_Jar = 25;
 
-    clienttranslate("Passage Shell"),
-    clienttranslate("Ceremonial Rattle"),
-    clienttranslate("Sacred Drum"),
-    clienttranslate("Trader's Coins"),
-    clienttranslate("Stone Key"),
+  case Passage_Shell = 26;
+  case Ceremonial_Rattle = 27;
+  case Sacred_Drum = 28;
+  case Traders_Coins = 29;
+  case Stone_Key = 30;
 
-    clienttranslate("Obsidian Earring"),
-    clienttranslate("Guiding Stone"),
-    clienttranslate("Guiding Skull"),
-    clienttranslate("Runes of the Dead"),
-    clienttranslate("Guardian's Crown")
+  case Obsidian_Earring = 31;
+  case Guiding_Stone = 32;
+  case Guiding_Skull = 33;
+  case Runes_of_the_Dead = 34;
+  case Guardians_Crown = 35;
 
-    ][$no];
-  }
-  if ($type == "item") {
-    return ["",
-    clienttranslate("Sea Turtle"),
-    clienttranslate("Ostrich"),
-    clienttranslate("Pack Donkey"),
-    clienttranslate("Horse"),
-    clienttranslate("Steam Boat"),
-
-    clienttranslate("Automobile"),
-    clienttranslate("Sturdy Boots"),
-    clienttranslate("Gold Pan"),
-    clienttranslate("Trowel"),
-    clienttranslate("Pickaxe"),
-
-    clienttranslate("Hot Air Balloon"),
-    clienttranslate("Aeroplane"),
-    clienttranslate("Journal"),
-    clienttranslate("Parrot"),
-    clienttranslate("Watch"),
-
-    clienttranslate("Army Knife"),
-    clienttranslate("Binoculars"),
-    clienttranslate("Tent"),
-    clienttranslate("Fishing Rod"),
-    clienttranslate("Precision Compass"),
-
-    clienttranslate("Bow and Arrows"),
-    clienttranslate("Carrier Pigeon"),
-    clienttranslate("Whip"),
-    clienttranslate("Rough Map"),
-    clienttranslate("Airdrop"),
-
-    clienttranslate("Flask"),
-    clienttranslate("Machete"),
-    clienttranslate("Torch"),
-    clienttranslate("Large Backpack"),
-    clienttranslate("Rope"),
-
-    clienttranslate("Revolver"),
-    clienttranslate("Hat"),
-    clienttranslate("Bear Trap"),
-    clienttranslate("Grappling Hook"),
-    clienttranslate("Lantern"),
-
-    clienttranslate("Dog"),
-    clienttranslate("Brush"),
-    clienttranslate("Axe"),
-    clienttranslate("Chronometer"),
-    clienttranslate("Theodolite")
-    ][$no];
-  }
-  return "Card name not defined";
-}
-
-function cardCost($type, $no) {
-  if ($type == 'item') {
-    return [
-    0,  
-    3, 3, 4, 4, 3,  
-    3, 1, 1, 1, 1, 
-    2, 4, 3, 2, 1,  
-    3, 4, 4, 2, 4,  
-    2, 2, 2, 1, 2,  
-    2, 4, 2, 3, 2,  
-    4, 1, 2, 2, 3,  
-    3, 3, 2, 3, 3][$no];
-  }
-  if ($type == 'art') {
-    return [0,  
-    3, 4, 3, 4, 4,  
-    4, 3, 3, 2, 4,  
-    3, 2, 4, 4, 4,  
-    2, 4, 4, 3, 3,  
-    3, 2, 4, 4, 2,  
-    3, 3, 4, 3, 3,  
-    4, 3, 4, 4, 4][$no];
-  }
-  throw new BgaUserException("$type card doesn't have a cost");
-  return 0;
-}
-
-function cardTravel($type, $no) {
-  switch ($type) {
-    case "fear":
-      return [BOOT];
-    case "fundship": case "exploreship":
-      return [SHIP];
-    case "fundcar": case "explorecar":
-      return [CAR];
-    case "art":
-      if ($no == 13) {
-        return [PLANE, PLANE];
-      }
-      return [PLANE];
-    case "item":
-      return [[],
-        [SHIP, SHIP], [CAR, CAR], [CAR, CAR], [CAR, CAR], [SHIP, SHIP],
-        [CAR, CAR], [CAR, CAR], [SHIP, SHIP], [CAR], [CAR],
-        [PLANE], [PLANE, PLANE], [CAR, SHIP], [SHIP], [SHIP],
-        [CAR, SHIP], [SHIP], [CAR], [SHIP], [SHIP],
-        [CAR], [SHIP], [CAR], [SHIP], [PLANE],
-        [SHIP], [CAR], [SHIP], [CAR], [SHIP],
-        [SHIP, SHIP], [SHIP], [CAR], [CAR], [CAR],
-        [CAR], [CAR], [SHIP], [SHIP, SHIP], [SHIP]
-      ][$no];
-  }
-  return [];
-}
-
-function siteTravelCost($no, $slot, $birdSide) {
-  if ($birdSide) {
-    $costs = [
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-
-      [[CAR => 1]],
-      [[CAR => 1]],
-      [[SHIP => 1]],
-      [[SHIP => 1]],
-      [[CAR => 1]],
-      [[CAR => 1]],
-      [[SHIP => 1]],
-      [[SHIP => 1]],
-
-      [[CAR => 2]],
-      [[CAR => 2]],
-      [[SHIP => 2]],
-      [[SHIP => 2]]
-    ];
-  }
-  else {
-    $costs = [
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-      [[BOOT => 1], [BOOT => 2]],
-
-      [[CAR => 1]],
-      [[CAR => 1]],
-      [[SHIP => 1]],
-      [[SHIP => 1]],
-      [[CAR => 1]],
-      [[BOOT => 2]],
-      [[PLANE => 1]],
-      [[SHIP => 1]],
-
-      [[CAR => 2]],
-      [[BOOT => 1, PLANE => 1]],
-      [[SHIP => 1, CAR => 1]],
-      [[SHIP => 2]]
-    ];
-  }
-  return $costs[$no][$slot];
-}
-
-function guardianCost($num) {
-  return [[],
-    array("compass" => 1, "coins" => 1, "arrowhead" => 1),
-    array("discard" => 1, "coins" => 1, "arrowhead" => 1),
-    array("travel" => [BOOT => 1], "coins" => 1, "arrowhead" => 1),
-    array("coins" => 2, "arrowhead" => 1),
-    array("travel" => [BOOT => 1], "tablet" => 1, "arrowhead" => 1),
-
-    array("travel" => [PLANE => 1], "arrowhead" => 1),
-    array("compass" => 1, "discard" => 1, "arrowhead" => 1),
-    array("coins" => 4),
-    array("travel" => [SHIP => 1], "arrowhead" => 1),
-    array("travel" => [CAR => 1], "arrowhead" => 1),
-
-    array("travel" => [BOOT => 2], "compass" => 1),
-    array("travel" => [BOOT => 1], "jewel" => 1),
-    array("tablet" => 3),
-    array("travel" => [PLANE => 1], "arrowhead" => 1),
-    array("compass" => 2, "arrowhead" => 1)
-  ][$num];
-}
-
-function siteEffects($size, $num) {
-  if ($size === "basic" && $num == 4) {
-    // discard
-  }
-  if ($size === "small" && $num == 1) {
-    // plane
-  }
-  switch($size) {
-    case "basic":
-      return [
-      ["coins" => 2], 
-      ["compass" => 2], 
-      ["tablet" => 2], 
-      ["arrowhead" => 1], 
-      ["jewel" => 1]
-    ][$num];
-    case "small":
-      return [[],
-        [],
-        ["coins" => 1, "arrowhead" => 1],
-        ["card" => 1, "coins" => 1, "tablet" => 1],
-        ["compass" => 1, "arrowhead" => 1],
-        ["coins" => 1, "tablet" => 2],
-        ["arrowhead" => 1, "tablet" => 1],
-        ["arrowhead" => 1, "card" => 1],
-        ["fear" => 1, "tablet" => 1, "jewel" => 1],
-        ["fear" => 1, "compass" => 1, "jewel" => 1],
-        ["jewel" => 1, "discard" => 1]
-      ][$num];
-    case "big": 
-      return [[],
-        ["compass" => 2, "jewel" => 1],
-        ["coins" => 1, "compass" => 1, "tablet" => 1, "arrowhead" => 1],
-        ["arrowhead" => 1, "jewel" => 1],
-        ["card" => 1, "tablet" => 1, "jewel" => 1],
-        ["tablet" => 2, "jewel" => 1],
-        ["fear" => 1, "tablet" => 2, "arrowhead" => 2],
-
-      ][$num];
-  }
-  return [];
-}
-
-function cardPoints($type, $no) {
-  if ($type == "fear") {
-    return -1;
-  }
-  if ($type == "item") {
-    return [0, 
-    1, 1, 1, 1, 3,  
-    3, 1, 1, 1, 1,  
-    1, 3, 1, 2, 1,  
-    1, 1, 2, 2, 1,  
-    2, 1, 1, 1, 1,  
-    1, 1, 2, 1, 1,  
-    1, 1, 1, 2, 2,  
-    1, 3, 2, 2, 1][$no];
-  }
-  if ($type == "art") {
-    return [0, 
-    1, 1, 1, 3, 2,
-    2, 1, 2, 1, 2,  
-    1, 1, 2, 2, 1,  
-    1, 2, 1, 2, 1,  
-    1, 1, 2, 2, 1,  
-    1, 2, 1, 1, 2,  
-    2, 1, 1, 1, 2,  
-    ][$no];
-  }
-  return 0;
-}
-
-function researchCost($birdSide, $to) {
-  if ($birdSide) {
-    return [
-    array(),
-
-    array("compass"  => 1, "arrowhead" => 1),
-    array("jewel" => 1),
-
-    array("jewel"=> 1),
-    array("tablet"=> 1, "arrowhead"=> 1),
-
-    array("tablet"=> 2, "arrowhead"=> 1),
-
-    array("tablet"=> 1, "arrowhead"=> 1, "coins"=> 1),
-    array("tablet"=> 1, "jewel"=> 1),
-    array("arrowhead"=> 2),
-
-    array("coins"=> 1, "jewel"=> 1),
-
-    array("compass"=> 1, "jewel"=> 1),
-    array("tablet"=> 2, "arrowhead"=> 1),
-
-    array("tablet"=> 1, "arrowhead"=> 1, "coins"=> 1),
-    array("tablet"=> 1, "jewel"=> 1),
-    array("coins"=> 1, "compass"=> 1, "jewel"=> 1),
-    ][$to];
-  }
-  else {
-    return [
-    array(),
-
-    array("compass" => 1, "tablet" => 2),
-    array("jewel" => 1),
-
-    array("coins" => 1, "compass" => 1, "arrowhead" => 1),
-    array("tablet" => 1, "jewel" => 1),
-    array("arrowhead" => 2),
-
-    array("tablet" => 2, "arrowhead" => 1),
-    array("coins" => 1, "jewel" => 1),
-
-    array("idol" => 1),
-
-    array("arrowhead" => 2),
-    array("tablet" => 1, "jewel" => 1),
-
-    array("tablet" => 1, "jewel" => 1),
-    array("compass" => 1, "tablet" => 3),
-
-    array("coins" => 1, "tablet" => 1, "arrowhead" => 1),
-
-    array("compass" => 1, "arrowhead" => 1, "jewel" => 1),
-
-    ][$to];
+  public function type() {
+    return "art";
   }
 }
 
-function researchPossibilities($birdSide, $from) {
-  if ($birdSide) {
-    return [
-      [1, 2],
-      [3, 4],
-      [4],
-      [5],
-      [5],
+enum Item: int {
+  case Sea_Turtle = 1;
+  case Ostrich = 2;
+  case Pack_Donkey = 3;
+  case Horse = 4;
+  case Steam_Boat = 5;
 
-      [6, 7, 8],
-      [9],
-      [9],
-      [9],
-      [10, 11],
+  case Automobile = 6;
+  case Sturdy_Boots = 7;
+  case Gold_Pan = 8;
+  case Trowel = 9;
+  case Pickaxe = 10;
 
-      [12],
-      [12, 13],
-      [14],
-      [14],
-      []
-    ][$from];
-  }
-  else {
-    return [
-      [1, 2],
-      [3, 4],
-      [4, 5],
-      [6],
-      [6, 7],
+  case Hot_Air_Balloon = 11;
+  case Aeroplane = 12;
+  case Journal = 13;
+  case Parrot = 14;
+  case Watch = 15;
 
-      [7],
-      [8],
-      [8],
-      [9, 10],
-      [11, 12],
+  case Army_Knife = 16;
+  case Binoculars = 17;
+  case Tent = 18;
+  case Fishing_Rod = 19;
+  case Precision_Compass = 20;
 
-      [12],
-      [13],
-      [13],
-      [14],
-      []
-    ][$from];
+  case Bow_and_Arrows = 21;
+  case Carrier_Pigeon = 22;
+  case Whip = 23;
+  case Rough_Map = 24;
+  case Airdrop = 25;
+
+  case Flask = 26;
+  case Machete = 27;
+  case Torch = 28;
+  case Large_Backpack = 29;
+  case Rope = 30;
+
+  case Revolver = 31;
+  case Hat = 32;
+  case Bear_Trap = 33;
+  case Grappling_Hook = 34;
+  case Lantern = 35;
+
+  case Dog = 36;
+  case Brush = 37;
+  case Axe = 38;
+  case Chronometer = 39;
+  case Theodolite = 40;
+
+  public function type() {
+    return "item";
   }
 }
 
-function researchStep($birdSide, $spaceId) {
-  if ($birdSide) {
-    return [0, 1, 1, 2, 2, 3, 4, 4, 4, 5, 6, 6, 7, 7, 8][$spaceId];
-  }
-  else {
-    return [0, 1, 1, 2, 2, 2, 3, 3, 4, 5, 5, 6, 6, 7, 8][$spaceId];
+enum Basic: string {
+  case Funding_Car = "fundcar";
+  case Funding_Ship = "fundship";
+  case Explore_Car = "explorecar";
+  case Explore_Ship = "exploreship";
+  case Fear = "fear";
+
+  public function type() {
+    return "basic";
   }
 }
 
-function stepPoints($birdSide, $book, $step, $rank = 0) {
-  if ($step == 8) {
-    return [0, 23, 21, 20, 19][$rank];
+class GameData {
+  public function __construct($game) {
+    $this->game = $game;
   }
-  if ($birdSide) {
-    if ($book) {
-      return [0, 0, 1, 2, 4, 6, 8, 10][$step];
+
+  public function cardName($card) {
+    return $this->game->material["cards"][$card->type()][$card->value]["name"];
+  }
+
+  public function cardCost($card) {
+    return $this->game->material["cards"][$card->type()][$card->value]["cost"];
+  }
+
+  public function cardTravel($card) {
+    return $this->game->material["cards"][$card->type()][$card->value]["travel"];
+  }
+
+  public function cardPoints($card) {
+    return $this->game->material["cards"][$card->type()][$card->value]["points"];
+  }
+
+  public function cardExileItself($card) {
+    if ($card->type() == "item") {
+      return $this->game->material["cards"][$card->type()][$card->value]["exileItself"];
     }
     else {
-      return [0, 1, 2, 4, 6, 9, 12, 16][$step];
+      return false;
     }
   }
-  else {
-    if ($book) {
-      return [0, 0, 3, 4, 5, 8, 12, 15][$step];
+
+  public function cardAction($card) {
+    if ($card->type() == "item" || $card->type() == "basic") {
+      return $this->game->material["cards"][$card->type()][$card->value]["action"];
     }
     else {
-      return [0, 1, 2, 3, 4, 5, 10, 15][$step];
+      return "complex";
     }
   }
-}
 
-function researchBonus($birdSide, $step, $book) {
-  if ($birdSide) {
-
-    return [[],
-      ["coins", "assistant-silver"],
-      ["compass", "assistant-silver"],
-      ["compass", "assistant-gold"],
-      ["compass", "assistant-gold"],
-      ["compass", "3compass"],
-      ["card", "free-art"],
-      ["compass", "guard"],
-      ["", ""],
-    ][$step][$book ? 1 : 0];
+  public function cardVarname($card) {
+    return $this->game->material["cards"][$card->type()][$card->value]["varname"];
   }
-  else {
-    return [
-      [],
-      ["coins", "assistant-silver"],
-      ["2coins", "exile"],
-      ["card", "assistant-gold"],
-      ["assistant-special", "free-art"],
-      ["assistant-gold", "assistant-refresh"],
-      ["fear", "card"],
-      ["fear", "jewel"],
-      ["", ""],
-    ][$step][$book ? 1 : 0];
-  }
-}
 
-function templeTileCost($id, $birdSide) {
-  $cost = array();
-  if ($id == 1 || $id == 4 || $id == 6) {
-    if ($birdSide) {
-      $cost["coins"] = 1;
+  public function assistantPower($num, $gold) {
+    return $this->game->material["assistants"][$num][$gold?"gold":"silver"];
+  }
+
+  public function siteTravelCost($no, $slot) {
+    $travelCosts = $this->game->birdTemple() ? $this->game->material["birdTravelCost"] : $this->game->material["snakeTravelCost"];
+    return $travelCosts[$no][$slot];
+  }
+
+  public function guardianCost($num) {
+    return $this->game->material["guardians"][$num]["cost"];
+  }
+
+  public function guardianBoon($num) {
+    return $this->game->material["guardians"][$num]["boon"];
+  }
+
+  public function siteEffects($size, $num) {
+    return $this->game->material["sites"][$size][$num];
+  }
+
+  public function researchCost($to) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["squares"][$to]["cost"];
+  }
+
+  public function researchPossibilities($from) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["squares"][$from]["possibilities"];
+  }
+
+  public function researchStep($spaceId) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["squares"][$spaceId]["step"];
+  }
+
+  public function stepPoints($book, $step, $rank = NULL) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    if ($step < 8) {
+      return $research["steps"][$step][$book?"book":"glass"]["points"];
     }
     else {
-      $cost["compass"] = 1;
+      return $research["lastSteps"][$rank];
     }
-    $cost["tablet"] = 2;
   }
-  if ($id == 2 || $id == 4 || $id == 5 || $id == 6) {
-    $cost["jewel"] = 1;
+
+  public function researchBonus($step, $book) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["steps"][$step][$book?"book":"glass"]["bonus"];
   }
-  if ($id == 3 || $id == 5 || $id == 6) {
-    if ($birdSide) {
-      $cost["compass"] = 1;
-    }
-    else {
-      $cost["coins"] = 1;
-    }
-    $cost["arrowhead"] = 1;
+
+  public function templeTileCost($id) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["tiles"][$id]["cost"];
   }
-  return $cost;
-}
-function templeColor($id) {
-  return ["", "bronze", "bronze", "bronze", "silver", "silver", "gold"][$id];
+
+  public function templeTileColor($id) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["tiles"][$id]["color"];
+  }
+
+  public function templeTilePoints($id) {
+    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
+    return $research["tiles"][$id]["points"];
+  }
 }
 
 ?>

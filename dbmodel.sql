@@ -69,7 +69,7 @@ CREATE TABLE IF NOT EXISTS `location` (
   `idlocation` INT NOT NULL AUTO_INCREMENT,
   `size` ENUM('basic', 'small', 'big'),
   `num` INT NULL,
-  `is_open` TINYINT NULL,
+  `is_open` TINYINT NULL, /* Deprecated */
   `is_at_position` INT NULL,
   `deck_order` INT NULL,
   PRIMARY KEY (`idlocation`))

@@ -162,16 +162,17 @@
 }
 .player-camp .assistant {
     transform: scale(0.43);
-    top: 16px;
-    left: 583px;
     cursor: pointer;
 }
-.player-camp .assistant ~ .assistant {
-    transform: scale(0.43);
+.player-camp .assistant.position-camp0 {
+    top: 16px;
+    left: 583px;
+}
+.player-camp .assistant.position-camp1 {
     top: 152px;
     left: 583px;
 }
-/*.player-camp */.assistant-inner.exhausted {
+.assistant-inner.exhausted {
     transform: rotate(90deg);
     cursor: default;
 }
@@ -179,32 +180,32 @@
     cursor: pointer;
     pointer-events: all;
 }
-.assistant.position-1 {
+.assistant.position-stack1 {
     left: 488px;
     top: 934px;
 }
-.assistant.position-2 {
+.assistant.position-stack2 {
     left: 568px;
     top: 934px;
 }
 
-.assistant.position-3 {
+.assistant.position-stack3 {
     left: 648px;
     top: 934px;
 }
-.assistant.position-4 {
+.assistant.position-special1 {
     top: 58%;
     left: 76%;
 }
-.assistant.position-5 {
+.assistant.position-special2 {
     left: 86%;
     top: 58%;
 }
-.assistant.position-6 {
+.assistant.position-special3 {
     left: 78%;
     top: 50.5%;
 }
-.assistant.position-7 {
+.assistant.position-special4 {
     left: 76%;
     top: 65.5%;
 }
@@ -257,17 +258,19 @@
     width: 236px; height: 296px;
     background: url('../img/cardboard_css_sprite.jpg') -10px -2695px;
 }
-.assistant-inner.gold.assistant-9::after {
-    position: absolute;
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -326px;
-    animation: 3s fadeIn;
-}
-
 .assistant-inner.assistant-10 {
     width: 236px; height: 296px;
     background: url('../img/cardboard_css_sprite.jpg') -266px -2695px;
 }
+.assistant-inner.assistant-11 {
+    width: 236px; height: 296px;
+    background: url('../img/cardboard_css_sprite.jpg') -522px -2695px;
+}
+.assistant-inner.assistant-12 {
+    width: 236px; height: 296px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -2695px;
+}
+
 .assistant-inner.gold.assistant-1::after {
     background: url('../img/cardboard_css_sprite.jpg') -1034px -2695px;
 }
@@ -304,21 +307,14 @@
 .assistant-inner.gold.assistant-12::after {
     background: url('../img/cardboard_css_sprite.jpg') -570px -2379px;
 }
-.assistant-inner.gold::after {
+.assistant-inner.gold::after{
     position: absolute;
     content: "";
     width: 236px; height: 296px;
-    animation: 3s fadeIn;
     border-radius: 29px;
 }
-.assistant-inner.assistant-11 {
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -522px -2695px;
-}
-
-.assistant-inner.assistant-12 {
-    width: 236px; height: 296px;
-    background: url('../img/cardboard_css_sprite.jpg') -778px -2695px;
+.assistant-inner.gold-animate::after{
+    animation: 3s fadeIn;
 }
 
 div#start-player {
@@ -473,42 +469,62 @@ div#start-player {
 
 .temple-tile.bronze.tile-num-1 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -266px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -10px -3161px;
 }
 
 .temple-tile.bronze.tile-num-2 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -522px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -266px -3161px;
 }
 
 .temple-tile.bronze.tile-num-3 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -778px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -522px -3161px;
 }
 
 .temple-tile.bronze.tile-num-4 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1034px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -3161px;
 }
 
 .temple-tile.bronze.tile-num-5 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1290px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1034px -3161px;
 }
 
 .temple-tile.bronze.tile-num-6 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1546px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1290px -3161px;
 }
 
 .temple-tile.bronze.tile-num-7 {
     width: 236px; height: 107px;
-    background: url('../img/cardboard_css_sprite.jpg') -1802px -3161px;
+    background: url('../img/cardboard_css_sprite.jpg') -1546px -3161px;
 }
 
 .temple-tile.bronze.tile-num-8 {
     width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -1802px -3161px;
+}
+
+.temple-tile.bronze.tile-num-9 {
+    width: 236px; height: 107px;
     background: url('../img/cardboard_css_sprite.jpg') -2058px -3161px;
+}
+
+.temple-tile.bronze.tile-num-10 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2314px -3161px;
+}
+
+.temple-tile.bronze.tile-num-11 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2570px -3161px;
+}
+
+.temple-tile.bronze.tile-num-12 {
+    width: 236px; height: 107px;
+    background: url('../img/cardboard_css_sprite.jpg') -2826px -3161px;
 }
 
 .temple-tile.gold.tile-num-1 {
@@ -516,61 +532,60 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -3055px -958px;
 }
 
-.temple-tile.gold.tile-num-4 {
+.temple-tile.gold.tile-num-2 {
     width: 236px; height: 154px;
     background: url('../img/cardboard_css_sprite.jpg') -3055px -1132px;
 }
 
-.temple-tile.gold.tile-num-2 {
+.temple-tile.gold.tile-num-3 {
+    width: 236px; height: 154px;
+    background: url('../img/cardboard_css_sprite.jpg') -3055px -1306px;
+}
+
+.temple-tile.gold.tile-num-4 {
     width: 236px; height: 154px;
     background: url('../img/cardboard_css_sprite.jpg') -3055px -1480px;
 }
 
-.temple-tile.gold.tile-num-3 {
-    width: 236px; height: 154px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -1654px;
-}
-
-.temple-tile.silver.tile-num-2 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2350px;
-}
-
-.temple-tile.silver.tile-num-3 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2500px;
-}
-
-.temple-tile.silver.tile-num-4 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2650px;
-}
-
-.temple-tile.silver.tile-num-5 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -3055px -2800px;
-}
-
-.temple-tile.silver.tile-num-6 {
-    width: 236px; height: 130px;
-    background: url('../img/cardboard_css_sprite.jpg') -2680px -2093px;
-}
-
-.temple-tile.silver.tile-num-7 {
+.temple-tile.silver.tile-num-1 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -10px -3011px;
 }
 
-.temple-tile.silver.tile-num-8 {
+.temple-tile.silver.tile-num-2 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -266px -3011px;
 }
 
-.temple-tile.silver.tile-num-1 {
+.temple-tile.silver.tile-num-3 {
     width: 236px; height: 130px;
     background: url('../img/cardboard_css_sprite.jpg') -522px -3011px;
 }
 
+.temple-tile.silver.tile-num-4 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -778px -3011px;
+}
+
+.temple-tile.silver.tile-num-5 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1034px -3011px;
+}
+
+.temple-tile.silver.tile-num-6 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1290px -3011px;
+}
+
+.temple-tile.silver.tile-num-7 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1546px -3011px;
+}
+
+.temple-tile.silver.tile-num-8 {
+    width: 236px; height: 130px;
+    background: url('../img/cardboard_css_sprite.jpg') -1802px -3011px;
+}
 
 .research-bonus {
     transform: scale(0.25);
@@ -589,9 +604,21 @@ div#start-player {
     pointer-events: all;
 }
 
+.arnak-board.front .research-box[data-research_id="3"] .research-bonus {
+    left: 11px;
+    top: 7px;
+}
+.arnak-board.front .research-box[data-research_id="4"] .research-bonus {
+    left: 13px;
+    top: 8px;
+}
 .arnak-board.front .research-box[data-research_id="5"] .research-bonus {
     left: 80px;
     top: 13px;
+}
+.arnak-board.front .research-box[data-research_id="8"] .research-bonus {
+    left: 13px;
+    top: 8px;
 }
 .arnak-board.front .research-box[data-research_id="9"] .research-bonus {
     left: 54px;
@@ -599,11 +626,33 @@ div#start-player {
 .arnak-board.front .research-box[data-research_id="11"] .research-bonus {
     left: 6px;
 }
-.research-box[data-research_id="14"] .research-bonus {
-    left: 191px;
-    top: 0px;
+.arnak-board.front .research-box[data-research_id="12"] .research-bonus {
+    top: 6px;
+}
+.arnak-board.front .research-box[data-research_id="13"] .research-bonus {
+    left: 14px;
+    top: 6px;
+}
+.arnak-board.front .research-box[data-research_id="14"] .research-bonus {
+    left: 187px;
+    top: 4px;
 }
 
+.arnak-board.back .research-box[data-research_id="3"] .research-bonus {
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="4"] .research-bonus {
+    left: 14px;
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="5"] .research-bonus {
+    left: 9px;
+    top: 6px;
+}
+.arnak-board.back .research-box[data-research_id="6"] .research-bonus {
+    left: 13px;
+    top: 6px;
+}
 .arnak-board.back .research-box[data-research_id="7"] .research-bonus {
     left: 43px;
     top: 6px;
@@ -614,14 +663,17 @@ div#start-player {
 }
 .arnak-board.back .research-box[data-research_id="12"] .research-bonus {
     left: 45px;
-    top: 7px;
+    top: 9px;
 }
-
 .arnak-board.back .research-box[data-research_id="13"] .research-bonus:nth-child(3) {
     left: 79px;
 }
 .arnak-board.back .research-box[data-research_id="13"] .research-bonus:nth-child(2) {
     left: 144px;
+}
+.arnak-board.back .research-box[data-research_id="14"] .research-bonus {
+    left: 191px;
+    top: 0px;
 }
 
 .research-bonus.reward-card {
