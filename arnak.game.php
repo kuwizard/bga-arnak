@@ -425,7 +425,7 @@ class arnak extends Table
       $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
       $availableBoons = $this->sqlWrapper->getBoons($idPlayer, true);
       $result['players'][$idPlayer]["guardians"] = $availableBoons;
-      $result['players'][$idPlayer]["guardian"] = count($availableBoons + $this->sqlWrapper->getBoons($idPlayer, false));
+      $result['players'][$idPlayer]["guardian"] = count($availableBoons) + count($this->sqlWrapper->getBoons($idPlayer, false));
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
@@ -661,7 +661,7 @@ class arnak extends Table
 
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
-      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player))) {
+      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player)) == 0) {
         $clientArgs = false;
       }
 
@@ -1352,7 +1352,9 @@ class arnak extends Table
     foreach($gains as $type => $amt) {
       if ($type == "discardforjewel") {
         $mustDiscard = true;
-        $this->gainResource("jewel", $playerId, 1, array("component" => "site", "size" => $size, "num" => $num));
+        for ($i = 0; $i < $iters; $i++) {
+          $this->gainResource("jewel", $playerId, 1, array("component" => "site", "size" => $size, "num" => $num));
+        }
       }
       else if ($type == "buyfreeitem") {
         $buyFreeItem = true;

@@ -1273,7 +1273,7 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa(cardId),
-            assNum: this.selectedAssistant,
+            assNum: this.stateAssistantNum,
             lock: true
           }, this, function(result) {});
           break;
@@ -1606,7 +1606,7 @@ function (dojo, declare) {
           break;
         case "assTravel":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.selectedAssistant,
+            assNum: this.assTravelAssistant,
             assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
             lock: true
           }, this, function(result) {});
@@ -1660,7 +1660,7 @@ function (dojo, declare) {
           break;
         case "selectSupply":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.selectedAssistant,
+            assNum: this.stateAssistantNum,
             assArg: btoa(cardDiv.dataset.cardid),
             lock: true
           }, this, function(result) {});
@@ -1813,7 +1813,6 @@ function (dojo, declare) {
     },
     assistantClick: function(evt) {
       var num = +evt.target.dataset.num;
-      this.selectedAssistant = num;
       var gold = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "gold");
       if (this.gamedatas.gamestate.name == "artActivateAss" &&
       this.gamedatas.gamestate &&
@@ -1864,19 +1863,24 @@ function (dojo, declare) {
           this.paidTravel();
         }
         else if ("payboot" in assistantEffect) {
+          this.assTravelAssistant = num;
           this.setClientState("assTravel", {descriptionmyturn: _("Pay travel:") + " <div class='travel-costs'><div class='travel-icon icon boot'>"});
         }
         else if ("ressourcesChoice" in assistantEffect) {
+          this.stateAssistantNum = num;
           this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource")});
         }
         else if ("exile" in assistantEffect) {
+          this.stateAssistantNum = num;
           this.setClientState("assExile", {descriptionmyturn: _("Select card to exile")});
         }
         else if ("discount" in assistantEffect && (playAtBoard || state == "selectAction")) {
+          this.stateAssistantNum = num;
           this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
           dojo.query(".card.supply").addClass("highlight-turn");
         }
         else if ("upgrade" in assistantEffect) {
+          this.stateAssistantNum = num;
           this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade")});
         }
         else {
@@ -1963,7 +1967,7 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa("cancel"),
-            assNum: this.selectedAssistant,
+            assNum: this.stateAssistantNum,
             lock: true
           }, this, function(result) {});
           break;
@@ -2000,7 +2004,7 @@ function (dojo, declare) {
       switch(this.gamedatas.gamestate.name) {
         case "assUpgrade":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.selectedAssistant,
+            assNum: this.stateAssistantNum,
             assArg: btoa(type),
             lock: true
           }, this, function(result) {});
@@ -2141,7 +2145,7 @@ function (dojo, declare) {
     },
     useJewelArrowheadAssistant: function(type) {
       this.ajaxcall("/arnak/arnak/useAssistant.html", {
-        assNum: this.selectedAssistant,
+        assNum: this.stateAssistantNum,
         assArg: btoa(type),
         lock: true
       }, this, function(result) {});
@@ -2984,6 +2988,7 @@ function (dojo, declare) {
         }
       }
       this.fadeOutAndDestroy(dojo.query(".guardian-hand.guardian-" + a.guardNum)[0].parentNode);
+      this.updatePlayerGuards(a.player_id);
       this.restoreServerGameState();
     },
     notif_idolGain: function(notif) {

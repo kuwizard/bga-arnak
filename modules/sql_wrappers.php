@@ -399,11 +399,14 @@ class SqlWrapper {
   }
 
   private function locationRequest($siteId = NULL) {
-    $sql =  "SELECT slot1, slot2, idol_bonus, loc.num location_num, idlocation location_id, loc.size size, g.num guardian_num, g.idguardian guardian_id FROM board_position board ";
+    $sql =  "SELECT idboard_position, slot1, slot2, idol_bonus, loc.num location_num, idlocation location_id, loc.size size, g.num guardian_num, g.idguardian guardian_id FROM board_position board ";
     $sql .= "LEFT JOIN location loc ON board.idboard_position = loc.is_at_position ";
     $sql .= "LEFT JOIN guardian g ON board.idboard_position = g.at_location ";
     if (!is_null($siteId)) {
       $sql .= "WHERE board.idboard_position = $siteId";
+    }
+    else {
+      $sql .= "ORDER BY idboard_position";
     }
     return $sql;
   }
@@ -415,8 +418,9 @@ class SqlWrapper {
   public function getAllSites() {
     $positions = $this->game->getObjectListFromDb($this->locationRequest());
     $sites = [];
-    foreach ($positions as $idx => $position) {
-      $sites[$idx] = $this->formatSite($position);
+    foreach ($positions as $position) {
+      $id_position = intval($position["idboard_position"]);
+      $sites[$id_position] = $this->formatSite($position);
     }
     return $sites; 
   }
@@ -424,15 +428,6 @@ class SqlWrapper {
   public function getBoons($playerId, $available) {
     $readyStr = $available ? 1 : 0;
     $guardianNums = $this->game->getObjectListFromDb("SELECT num FROM guardian WHERE in_hand = $playerId AND ready = $readyStr ORDER BY deckorder");
-    $boons = [];
-    foreach ($guardianNums as $guardian) {
-      array_push($boons, intval($guardian["num"]));
-    }
-    return $boons;
-  }
-
-  public function getAvailableBoons($playerId) {
-    $guardianNums = $this->game->getObjectListFromDb("SELECT num FROM guardian WHERE in_hand = $playerId AND ready = 1 ORDER BY deckorder");
     $boons = [];
     foreach ($guardianNums as $guardian) {
       array_push($boons, intval($guardian["num"]));
