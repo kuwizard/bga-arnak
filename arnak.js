@@ -2987,6 +2987,7 @@ function (dojo, declare) {
         }
       }
       this.fadeOutAndDestroy(dojo.query(".guardian-hand.guardian-" + a.guardNum)[0].parentNode);
+      this.updatePlayerGuards(a.player_id);
       this.restoreServerGameState();
     },
     notif_idolGain: function(notif) {
