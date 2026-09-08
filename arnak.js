@@ -1867,6 +1867,7 @@ function (dojo, declare) {
           this.setClientState("assTravel", {descriptionmyturn: _("Pay travel:") + " <div class='travel-costs'><div class='travel-icon icon boot'>"});
         }
         else if ("ressourcesChoice" in assistantEffect) {
+          this.stateAssistantNum = num;
           this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource")});
         }
         else if ("exile" in assistantEffect) {
