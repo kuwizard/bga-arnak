@@ -1352,7 +1352,9 @@ class arnak extends Table
     foreach($gains as $type => $amt) {
       if ($type == "discardforjewel") {
         $mustDiscard = true;
-        $this->gainResource("jewel", $playerId, 1, array("component" => "site", "size" => $size, "num" => $num));
+        for ($i = 0; $i < $iters; $i++) {
+          $this->gainResource("jewel", $playerId, 1, array("component" => "site", "size" => $size, "num" => $num));
+        }
       }
       else if ($type == "buyfreeitem") {
         $buyFreeItem = true;
