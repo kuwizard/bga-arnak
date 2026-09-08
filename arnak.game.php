@@ -661,7 +661,7 @@ class arnak extends Table
 
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
-      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player))) {
+      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player)) == 0) {
         $clientArgs = false;
       }
 
