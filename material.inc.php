@@ -263,7 +263,7 @@ $sites = [
     7  => ["arrowhead" => 1, "card" => 1],
     8  => ["fear" => 1, "tablet" => 1, "jewel" => 1],
     9  => ["fear" => 1, "compass" => 1, "jewel" => 1],
-    10 => ["jewel" => 1, "discard" => 1]
+    10 => ["jewel" => 1]
   ],
   "big" => [ 
     1 => ["compass" => 2, "jewel" => 1],
