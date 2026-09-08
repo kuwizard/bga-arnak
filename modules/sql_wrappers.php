@@ -435,15 +435,6 @@ class SqlWrapper {
     return $boons;
   }
 
-  public function getAvailableBoons($playerId) {
-    $guardianNums = $this->game->getObjectListFromDb("SELECT num FROM guardian WHERE in_hand = $playerId AND ready = 1 ORDER BY deckorder");
-    $boons = [];
-    foreach ($guardianNums as $guardian) {
-      array_push($boons, intval($guardian["num"]));
-    }
-    return $boons;
-  }
-
   public function getTopSiteDeck($small) {
     $sizeStr = $small ? "small" : "big";
     $site = $this->game->getObjectFromDB("SELECT idlocation location_id, num location_num FROM location WHERE is_at_position IS NULL AND size = '$sizeStr' ORDER BY deck_order LIMIT 1");

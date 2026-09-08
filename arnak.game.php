@@ -425,7 +425,7 @@ class arnak extends Table
       $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
       $availableBoons = $this->sqlWrapper->getBoons($idPlayer, true);
       $result['players'][$idPlayer]["guardians"] = $availableBoons;
-      $result['players'][$idPlayer]["guardian"] = count($availableBoons + $this->sqlWrapper->getBoons($idPlayer, false));
+      $result['players'][$idPlayer]["guardian"] = count($availableBoons) + count($this->sqlWrapper->getBoons($idPlayer, false));
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
