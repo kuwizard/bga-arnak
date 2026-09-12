@@ -1445,13 +1445,14 @@ class arnak extends Table
     else {
       $card = $this->sqlWrapper->getCardFromId($cardId);
       if ($fromSupply) {
-        if (!$card || $card['position'] != 'supply') {
+        if ($card['position'] != 'supply') {
           throw new BgaUserException("Invalid attempt to exile card");
         }
       }
       else {
-        if (!$card || ($card['position'] != 'hand' && $card['position'] != 'play')) {
-          throw new BgaUserException("Invalid attempt to exile card");
+        $playerId = $this->getActivePlayerId();
+        if ($card['playerId'] != $playerId || ($card['position'] != 'hand' && $card['position'] != 'play')) {
+          throw new BgaUserException(clienttranslate("You cannot exile that card"));
         }
       }
 
