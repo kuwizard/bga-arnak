@@ -1838,6 +1838,9 @@ class arnak extends Table
     $playerId = $this->getActivePlayerId();
     $trackPos = $this->sqlWrapper->getPlayerResearch($playerId)["research_".$this->researchType()];
     $bonus = $this->sqlWrapper->getResearchBonusFromId($id);
+    if ($bonus["track_pos"] != $trackPos) {
+      throw new BgaUserException(clienttranslate("You cannot use this bonus"));
+    }
 
     switch($bonus["bonus_type"]) {
       case "upgrade":
