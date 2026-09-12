@@ -1653,7 +1653,7 @@ class arnak extends Table
   function upgradeAssistant($assNum) {
     $playerId = $this->getActivePlayerId();
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
-    if (!$assistant["in_hand"] || $assistant["gold"] == 1) {
+    if (is_null($assistant["in_hand"]) || $assistant["in_hand"] != $playerId || $assistant["gold"] == 1) {
       throw new BgaUserException(clienttranslate("Cannot upgrade this assistant"));
     }
     $this->sqlWrapper->changeAssistantUpgarded($assNum, true, clienttranslate('${player_name} upgrades his assistant to gold'));
