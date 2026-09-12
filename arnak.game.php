@@ -1445,13 +1445,14 @@ class arnak extends Table
     else {
       $card = $this->sqlWrapper->getCardFromId($cardId);
       if ($fromSupply) {
-        if (!$card || $card['position'] != 'supply') {
+        if ($card['position'] != 'supply') {
           throw new BgaUserException("Invalid attempt to exile card");
         }
       }
       else {
-        if (!$card || ($card['position'] != 'hand' && $card['position'] != 'play')) {
-          throw new BgaUserException("Invalid attempt to exile card");
+        $playerId = $this->getActivePlayerId();
+        if ($card['playerId'] != $playerId || ($card['position'] != 'hand' && $card['position'] != 'play')) {
+          throw new BgaUserException(clienttranslate("You cannot exile that card"));
         }
       }
 
@@ -1652,7 +1653,7 @@ class arnak extends Table
   function upgradeAssistant($assNum) {
     $playerId = $this->getActivePlayerId();
     $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
-    if (!$assistant["in_hand"] || $assistant["gold"] == 1) {
+    if (is_null($assistant["in_hand"]) || $assistant["in_hand"] != $playerId || $assistant["gold"] == 1) {
       throw new BgaUserException(clienttranslate("Cannot upgrade this assistant"));
     }
     $this->sqlWrapper->changeAssistantUpgarded($assNum, true, clienttranslate('${player_name} upgrades his assistant to gold'));
@@ -1837,6 +1838,9 @@ class arnak extends Table
     $playerId = $this->getActivePlayerId();
     $trackPos = $this->sqlWrapper->getPlayerResearch($playerId)["research_".$this->researchType()];
     $bonus = $this->sqlWrapper->getResearchBonusFromId($id);
+    if ($bonus["track_pos"] != $trackPos) {
+      throw new BgaUserException(clienttranslate("You cannot use this bonus"));
+    }
 
     switch($bonus["bonus_type"]) {
       case "upgrade":
