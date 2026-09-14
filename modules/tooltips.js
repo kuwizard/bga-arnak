@@ -50,24 +50,9 @@ class Tooltips {
     return texts.join(", ");
   }
   travelIcons(travel) {
-    const BOOT = 1;
-    const SHIP = 2;
-    const CAR = 3;
-    const PLANE = 4;
-
     var tokenText = "";
-    for (var token of travel) {
-      var travelStr = ""
-      if (token == BOOT)
-        travelStr = "boot";
-      else if (token == SHIP)
-        travelStr = "ship";
-      else if (token == CAR)
-        travelStr = "car";
-      else if (token = PLANE)
-        travelStr = "plane";
-      tokenText += "<div class='token-tooltip-inline'><div class='token-tooltip-position'><div class='icon " + travelStr + "'></div></div></div>";
-    }
+    for (var token of travel)
+      tokenText += "<div class='token-tooltip-inline'><div class='token-tooltip-position'><div class='icon " + token + "'></div></div></div>";
     return tokenText;
   }
   cardName(type, num) {

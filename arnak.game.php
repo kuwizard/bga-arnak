@@ -463,8 +463,36 @@ class arnak extends Table
       "sites" => $this->material["sites"],
       "guardians" => $this->material["guardians"]
     ];
+    $this->translateMaterialTravelSymbols($result['material']);
 
     return $result;
+  }
+
+  function translateMaterialTravelSymbols(&$material) {
+    foreach (["art", "item", "basic"] as $type) {
+      foreach ($material["cards"][$type] as $idx => $card) {
+        $material["cards"][$type][$idx]["travel"] = $this->travelArrayTranslate($card["travel"]);
+      }
+    }
+    foreach ($material["assistants"] as $num => $assistant) {
+      foreach (["silver", "gold"] as $type) {
+        if (isset($assistant[$type]["travel"])) {
+          $material["assistants"][$num][$type]["travel"] = $this->travelArrayTranslate($assistant[$type]["travel"]);
+        }
+      }
+    }
+    foreach ($material["travelCost"] as $site => $travelsCost) {
+      foreach ($travelsCost as $slot => $travelCost) {
+        $material["travelCost"][$site][$slot] = $this->travelArrayTranslate($travelCost);
+      }
+    }
+    foreach ($material["guardians"] as $num => $guardian) {
+      foreach (["cost", "boon"] as $type) {
+        if (isset($guardian[$type]["travel"])) {
+          $material["guardians"][$num][$type]["travel"] = $this->travelArrayTranslate($guardian[$type]["travel"]);
+        }
+      }
+    }
   }
 
   function travelArrayTranslate($tokens) {
