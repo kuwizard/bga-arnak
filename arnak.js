@@ -113,9 +113,8 @@ function (dojo, declare) {
     ],
     restoreGlobals: function() {
       this.chartsSelected = undefined;
-      this.travelMode = undefined;
       this.siteSelected = undefined;
-      this.travelSelected = [];
+      this.travelSelected.clear();
       this.knifeBonuses = {};
       this.keepSelection = [];
       this.turnEnded = false;
@@ -133,7 +132,6 @@ function (dojo, declare) {
 
       dojo.place(aidButton, dojo.query("#maintitlebar_content > div")[0], "first");
 
-      this.restoreGlobals();
       this.hands = {};
       this.plays = {};
       this.decks = {};
@@ -144,6 +142,8 @@ function (dojo, declare) {
       this.tooltipDelay = 700;
       this.templeTilePicker = this.createTempleTilesPicker();
       this.round = this.gamedatas.round;
+      this.travelSelected = this.createTravelSelector();
+      this.restoreGlobals();
 
       this.itemSupply = CardPlace(Object.values(gamedatas.itemSupply));
       this.artSupply = CardPlace(Object.values(gamedatas.artSupply));
@@ -476,6 +476,31 @@ function (dojo, declare) {
           return picIdsShuffled[color][idx];
         }
       }
+    },
+    createTravelSelector: function() {
+      var travelEntries = [];
+      var travelParams = undefined;
+      return {
+        push: (entry) => {
+          for (var travel of travelEntries) {
+            if (travel.type == entry.type) {
+              switch(travel.type){
+                case "card" : if (travel.id == entry.id) return; break;
+                case "assistant" : if (travel.num == entry.num) return; break;
+                case "guardian" : if (travel.num == entry.num) return; break;
+              }
+            }
+          }
+          travelEntries.push(entry);
+        },
+        get: () => {return travelEntries;},
+        setParams : (params) => {travelParams = params;},
+        getParams : () => {return travelParams;},
+        clear: () => {
+          travelParams = undefined;
+          travelEntries = [];
+        }
+      };
     },
     makeTempleTile: function(color, tileNum, id) {
       var templeDiv = dojo.create("div");
@@ -1602,19 +1627,20 @@ function (dojo, declare) {
       }
     },
     paidTravel: function() {
-      if (this.travelMode) {
-        switch(this.travelMode.mode) {
+      var params = this.travelSelected.getParams();
+      if (params) {
+        switch(params.mode) {
           case "site":
             this.ajaxcall("/arnak/arnak/moveToSite.html", {
-              siteId: this.travelMode.id,
-              movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
+              siteId: params.id,
+              movePayment: btoa(JSON.stringify(this.travelSelected.get())),
               lock: true
             }, this, function(result) {});
             break;
           case "assistant":
             this.ajaxcall("/arnak/arnak/useAssistant.html", {
-              assNum: this.travelMode.id,
-              assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
+              assNum: params.id,
+              assArg: btoa(JSON.stringify(this.travelSelected.get())),
               lock: true
             }, this, function(result) {});
             break;
@@ -1694,7 +1720,7 @@ function (dojo, declare) {
         return;
       }
 
-      this.travelMode = {mode: "site", id: siteDiv.dataset.id};
+      this.travelSelected.setParams({mode: "site", id: siteDiv.dataset.id});
       this.siteSelected = siteDiv.dataset.id;
       switch(this.gamedatas.gamestate.name) {
         case "selectCardSite":
@@ -1755,7 +1781,7 @@ function (dojo, declare) {
           }
           this.ajaxcall("/arnak/arnak/moveToSite.html", {
             siteId: this.siteSelected,
-            movePayment: btoa(JSON.stringify(this.travelSelected)),
+            movePayment: btoa(JSON.stringify(this.travelSelected.get())),
             lock: true
           }, this, function(result) {});
       }
@@ -1870,7 +1896,7 @@ function (dojo, declare) {
           this.paidTravel();
         }
         else if ("payboot" in assistantEffect) {
-          this.travelMode = {mode: "assistant", id: num};
+          this.travelSelected.setParams({mode: "assistant", id: num});
           this.paidTravel();
         }
         else if ("resourcesChoice" in assistantEffect) {
@@ -1946,11 +1972,6 @@ function (dojo, declare) {
     },
     buyPlane: function(evt) {
       this.travelSelected.push({type: "buyplane"});
-      /*this.ajaxcall("/arnak/arnak/moveToSite.html", {
-        siteId: this.siteSelected,
-        movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
-        lock: true
-      }, this, function(result) {});*/
       this.paidTravel();
     },
     cancelExile: function(evt) {
@@ -2324,11 +2345,12 @@ function (dojo, declare) {
             else if (state == "travel")  {
               this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
               var travelCostsDiv = dojo.query(".travel-costs")[0];
-              for (var token in parsed[state]) {
-                for (var i = 0; i < parsed[state][token]; ++i) {
-                  dojo.place(dojo.create("div", {class: "travel-icon icon " + token}), travelCostsDiv);
-                }
-              }
+              for (var i = 0; i < parsed.travel.current.length; ++i)
+                dojo.place(dojo.create("div", {class: "travel-icon icon " + parsed.travel.current[i]}), travelCostsDiv);
+              if (parsed.travel.current.length > 0)
+                dojo.place("<div class='arrow'>➞</div>", travelCostsDiv);
+              for (var i = 0; i < parsed.travel.requiered.length; ++i)
+                dojo.place(dojo.create("div", {class: "travel-icon icon " + parsed.travel.requiered[i]}), travelCostsDiv);
             }
             else {
               this.__proto__.__proto__.showMessage.call(this, msg, type);
@@ -2955,8 +2977,7 @@ function (dojo, declare) {
       dojo.toggleClass(meepleDiv, "onboard", a.siteTo !== null)
 
       this.siteSelected = undefined;
-      this.travelMode = {};
-      this.travelSelected = [];
+      this.travelSelected.clear();
     },
     notif_guardMove: function(notif) {
       var num = notif.args.guardNum;

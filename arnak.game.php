@@ -467,6 +467,23 @@ class arnak extends Table
     return $result;
   }
 
+  function travelArrayTranslate($tokens) {
+    $ret = [];
+    foreach ($tokens as $token) {
+      array_push($ret, $this->travelTokenTranslate($token));
+    }
+    return $ret;
+  }
+
+  function travelTokenTranslate($token) {
+    switch($token){
+      case BOOT: return "boot";
+      case SHIP: return "ship";
+      case CAR: return "car";
+      case PLANE: return "plane";
+    }
+  }
+
   function birdTemple() {
     return $this->gamestate->table_globals[100] == 1;
   }
@@ -890,155 +907,226 @@ class arnak extends Table
     return 2 - $meeples;
   }
 
-  function travelUseful($travelReqs, $icon) {
-    if ($this->ocarinaActive()) {
-      $icon = PLANE;
+  function fullTravelArray($tokens = []) {
+    $fullArray = [BOOT => 0, SHIP => 0, CAR => 0, PLANE =>0];
+    foreach ($tokens as $token) {
+      $fullArray[$token]++;
     }
-    if ($icon == PLANE) {
-      return $travelReqs[PLANE] > 0 || $travelReqs[CAR] > 0 || $travelReqs[SHIP] > 0 || $travelReqs[BOOT] > 0;
+    return $fullArray;
+  }
+
+  function initChoices($iconReqs) {
+    return [["req" => $this->fullTravelArray($iconReqs), "used" => $this->fullTravelArray(), "remaining" => $this->fullTravelArray()]];
+  }
+
+  function usefulTokensPossibilities(&$requierements, &$available, $ocarina, $minConvertIdx = 0) {
+    $possibilities = [["used" => $this->fullTravelArray(), "req" => $requierements, "remaining" => $available]];
+
+    $numReqs = $this->numTokens($requierements);
+    $numAvails = $this->numTokens($available);
+
+    if ($numReqs > 0 && $numAvails > 0) {
+      foreach ($requierements as $tokenReq => $amt) {
+        if ($amt > 0) {
+          foreach ($available as $tokenAvail => $amt) {
+            if ($amt > 0) {
+              if ($ocarina || $tokenAvail == PLANE || $tokenReq == BOOT || $tokenAvail == $tokenReq) {
+                $subReq = $requierements;
+                $subAvail = $available;
+                $subReq[$tokenReq]--;
+                $subAvail[$tokenAvail]--;
+                $subPossibilities = $this->usefulTokensPossibilities($subReq, $subAvail, $ocarina, 0);
+                foreach ($subPossibilities as $possibility) {
+                  $used = $possibility["used"];
+                  $used[$tokenAvail]++;
+                  array_push($possibilities, [
+                  "used" => $used,
+                  "req" => $possibility["req"],
+                  "remaining" => $possibility["remaining"]]);
+                }
+              }
+            }
+          }
+        }
+      }
     }
-    if ($icon == BOOT) {
-      return $travelReqs[BOOT] > 0;
+    return $possibilities;
+  }
+
+  function travelArrayAdd($travels) {
+    $sum = $this->fullTravelArray();
+    foreach ($sum as $token => $val) {
+      foreach ($travels as $travel) {
+        $sum[$token] += $travel[$token];
+      }
     }
-    if ($icon == CAR) {
-      return $travelReqs[CAR] > 0 || $travelReqs[BOOT] > 0;
+    return $sum;
+  }
+
+  function numTokens($tokens) {
+    $num = 0;
+    foreach ($tokens as $amt) {$num += $amt;}
+    return $num;
+  }
+
+  function usefulTravels($choices, $tokens, $ocarina, $discount = false) {
+    $available = $this->fullTravelArray($tokens);
+    $allOptions = [];
+    foreach ($choices as $choice) {
+      $options = $this->usefulTokensPossibilities($choice["req"], $available, $ocarina);
+      foreach ($options as $option) {
+        $cumulatedOption = [
+          "used" => $this->travelArrayAdd([$option["used"], $choice["used"]]),
+          "req" => $option["req"],
+          "remaining" => $this->travelArrayAdd([$option["remaining"], $choice["remaining"]])
+        ];
+        array_push($allOptions, $cumulatedOption);
+      }
     }
-    if ($icon == SHIP) {
-      return $travelReqs[SHIP] > 0 || $travelReqs[BOOT] > 0;
+
+    $bestUseful = 0;
+    $bestOptions = [];
+    foreach ($allOptions as $option) {
+      $bestUseful = max($bestUseful, $this->numTokens($option["used"]));
+      $remaining = $discount ? $this->fullTravelArray() : $option["remaining"];
+      array_push($bestOptions, ["used" => $option["used"], "req" => $option["req"], "remaining" => $remaining]);
+    }
+    return ["useful" => $bestUseful, "options" => $bestOptions];
+  }
+
+  function alreadyPaid($pay, $payments) {
+    foreach ($payments as $payment) {
+      if($pay["type"] == $payment["pay"]["type"]) {
+        switch ($pay["type"]) {
+          case "card":
+            if ($pay["id"] == $payment["pay"]["id"]) {
+              return true;
+            }
+            break;
+          case "assistant":
+          case "guardian":
+            if ($pay["num"] == $payment["pay"]["num"]) {
+              return true;
+            }
+            break;
+        }
+      }
+    }
+    return false;
+  }
+
+  function validPayment($playerId, $pay) {
+    $payment = NULL;
+    switch($pay["type"]) {
+      case "card":
+        $id = $pay["id"];
+        $cardTravel = $this->sqlWrapper->getCardFromId($id, $playerId);
+        if ($cardTravel && $cardTravel['position'] == 'hand') {
+          $cardInfo = $cardTravel["info"];
+          $payment = ["payment" => $this->gameData->cardTravel($cardInfo), "object" => $cardTravel];
+        }
+        break;
+      case "buyplane":
+        $payment = ["payment" => [PLANE], "object" =>  NULL];
+        break;
+      case "assistant":
+        $assNum = $pay["num"];
+        $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
+        if ($assistant["ready"] == 1 && $assistant["in_hand"] == $playerId) {
+          $effect = $this->gameData->assistantPower($assNum, $assistant["gold"]);
+          if (!$effect["travel"]) {
+            throw new BgaUserException("Cannot pay with that assistant");
+          }
+          $payment = ["payment" => $effect["travel"], "object" => $assNum];
+        }
+        break;
+      case "guardian":
+        $num = $pay["num"];
+        $boons = $this->sqlWrapper->getBoons($playerId, true);
+        if (!in_array($num, $boons)) {
+          throw new BgaUserException(clienttranslate("That is not your guardian boon"));
+        }
+        $boon = $this->gameData->guardianBoon($num);
+        if(!isset($boon["travel"])) {
+          throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
+        }
+        $payment = ["payment" => $boon["travel"], "object" => $num];
+        break;
+    }
+    return $payment;
+  }
+
+  function spendPayment ($playerId, $pay) {
+    switch($pay["pay"]["type"]) {
+      case "card":
+        $notif = [["msg" => clienttranslate('${playerName} discards ${cardName} for travel symbols')]];
+        $this->sqlWrapper->moveCard($pay["object"], $playerId, 'play', $notif);
+        break;
+      case "buyplane":
+        $this->gainResource("coins", $playerId, -2);
+        break;
+      case "assistant":
+        $this->sqlWrapper->changeAssistantUsed($pay["object"], true, clienttranslate('${player_name} uses his assistant for travel icons'));
+        break;
+      case "guardian":
+        $this->sqlWrapper->setGuardianBoonUsed($pay["object"], ["msg" => clienttranslate('${player_name} uses his guardian for travel symbol')]);
+        break;
     }
   }
 
   function payTravel($iconReqs, $payment) {
-    $paymentAvailable = [
-    BOOT => max(0, $this->getGameStateValue("discount-boot")),
-    CAR => max(0, $this->getGameStateValue("discount-car")),
-    SHIP => max(0, $this->getGameStateValue("discount-ship")),
-    PLANE => max(0, $this->getGameStateValue("discount-plane"))
-    ];
-
-    $travelReqs = [
-      BOOT => 0,
-      SHIP => 0,
-      CAR => 0,
-      PLANE => 0
-    ];
-
-    foreach ($iconReqs as $icon) {
-      $travelReqs[$icon]++;
-    }
-
     $playerId = $this->getActivePlayerId();
-    //throw new BgaUserException(JSON_ENCODE($paymentAvailable));
+    $ocarina = $this->ocarinaActive();
+
+    $discountPayment = [];
+    foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
+      $discount = $this->getGameStateValue("discount-".$this->travelTokenTranslate($token));
+      for ($i = 0; $i < $discount; $i++) {
+        array_push($discountPayment, $token);
+      }
+    }
+    $currentChoices = $this->usefulTravels($this->initChoices($iconReqs), $discountPayment, $ocarina, true);
+
+    $paymentUsed = ($currentChoices["useful"] > 0) ? $discountPayment : [];
+    $validPayments = [];
     if (!is_null($payment)) {
       foreach($payment as $i => $pay) {
-        switch($pay["type"]) {
-        case "card":
-          $id = $pay["id"];
-          $cardTravel = $this->sqlWrapper->getCardFromId($id, $playerId);
-          if ($cardTravel && $cardTravel['position'] == 'hand') {
-            $cardInfo = $cardTravel["info"];
-            $useful = false;
-            foreach($this->gameData->cardTravel($cardInfo) as $i => $travelType) {
-              $paymentAvailable[$travelType] += 1;
-              if ($this->travelUseful($travelReqs, $travelType)) {
-                $useful = true;
-              }
-            }
-            if (!$useful) {
-              break;
-            }
-            $notif = [["msg" => clienttranslate('${playerName} discards ${cardName} for travel symbols')]];
-            $this->sqlWrapper->moveCard($cardTravel, $playerId, 'play', $notif);
+        if ($this->alreadyPaid($pay, $validPayments)) {
+          continue;
+        }
+
+        $res = $this->validPayment($playerId, $pay);
+        if (!is_null($res)) {
+          $choices = $this->usefulTravels($currentChoices["options"], $res["payment"], $ocarina);
+
+          if ($choices["useful"] > $currentChoices["useful"]) {
+            $currentChoices = $choices;
+            $paymentUsed = array_merge($paymentUsed, $res["payment"]);
+            array_push($validPayments, ["pay" => $pay, "object" => $res["object"]]);
           }
-          break;
-        case "buyplane":
-          if (!$this->travelUseful($travelReqs, PLANE)) {
-            break;
-          }
-          $paymentAvailable[PLANE] += 1;
-          $this->notifyAllPlayers("buyPlane", clienttranslate('${player_name} buys a plane symbol for 2 coins'),
-          array(
-            "player_name" => $this->getActivePlayerName(),
-            "player_id" => $this->getActivePlayerId()
-          ));
-          $this->gainResource("coins", $this->getActivePlayerId(), -2);
-          break;
-        case "assistant":
-          $assNum = $pay["num"];
-          $assistant = $this->sqlWrapper->getAssistantFromNum($assNum);
-          if ($assistant["ready"] == 1 && $assistant["in_hand"] == $playerId) {
-            $effect = $this->gameData->assistantPower($assNum, $assistant["gold"]);
-            if (!$effect["travel"]) {
-              throw new BgaUserException("Cannot pay with that assistant");
-            }
-            $travelUseful = false;
-            foreach ($effect["travel"] as $icon) {
-              $travelUseful |= $this->travelUseful($travelReqs, $icon);
-              $paymentAvailable[$icon]++;
-            }
-            if (!$travelUseful) {
-              break;
-            }
-            $this->sqlWrapper->changeAssistantUsed($assNum, true, clienttranslate('${player_name} uses his assistant for travel icons'));
-          }
-          break;
-        case "guardian":
-          $num = $pay["num"];
-          $playerId = $this->getCurrentPlayerId();
-          $boons = $this->sqlWrapper->getBoons($playerId, true);
-          if (!in_array($num, $boons)) {
-            throw new BgaUserException(clienttranslate("That is not your guardian boon"));
-          }
-          $boon = $this->gameData->guardianBoon($num);
-          if(!isset($boon["travel"])) {
-            throw new BgaUserException(clienttranslate("Cannot pay travel with guardian $num"));
-          }
-          $useful = false;
-          foreach ($boon["travel"] as $travelType) {
-            if ($this->travelUseful($travelReqs, $travelType)) {
-              $useful = true;
-            }
-            $paymentAvailable[$travelType]++;
-          }
-          if (!$useful) {
-            break;
-          }
-          $this->sqlWrapper->setGuardianBoonUsed($num, ["msg" => clienttranslate('${player_name} uses his guardian for travel symbol')]);
-          break;
         }
       }
     }
 
-    if ($this->ocarinaActive()) {
+    if ($currentChoices["useful"] < count($iconReqs)) {
+      $travelInfos = [
+        "requiered" => $this->travelArrayTranslate($iconReqs),
+        "current" => $this->travelArrayTranslate($paymentUsed)
+      ];
+      throw new BgaUserException(JSON_ENCODE(["travel" => $travelInfos]));
+    }
+
+    if ($ocarina) {
       $this->notifyAllPlayers("freePlanes", clienttranslate("All travel symbols count as planes (Guardian's Ocarina)"), array());
-      $paymentAvailable = [PLANE => $paymentAvailable[PLANE] + $paymentAvailable[SHIP] + $paymentAvailable[CAR] + $paymentAvailable[BOOT], SHIP => 0, CAR => 0, BOOT => 0];
     }
 
-    $paymentAvailable[PLANE] -= $travelReqs[PLANE];
-    $travelReqs[PLANE] = 0;
-
-    $planeModif = max($paymentAvailable[PLANE], 0);
-    $travelReqs[BOOT] -= $paymentAvailable[BOOT];
-    $shipsNeeded = $travelReqs[SHIP] - $paymentAvailable[SHIP] - $planeModif;
-    $carsNeeded = $travelReqs[CAR] - $paymentAvailable[CAR] - $planeModif;
-    $bootsNeeded = $travelReqs[BOOT] - ($paymentAvailable[SHIP] + $paymentAvailable[CAR] + $planeModif);
-
-    $enough = (($travelReqs[CAR] + $travelReqs[SHIP] <= $paymentAvailable[CAR] + $paymentAvailable[SHIP] + $paymentAvailable[PLANE]) &&
-      ($carsNeeded <= 0) &&
-      ($shipsNeeded <= 0) &&
-      ($travelReqs[BOOT] + $travelReqs[CAR] + $travelReqs[SHIP] - ($paymentAvailable[SHIP] + $paymentAvailable[CAR] + $paymentAvailable[PLANE]) <= 0 &&
-      $paymentAvailable[PLANE] >= 0)
-    );
-
-    if (!$enough) {
-      $travel = array("car" => $carsNeeded, "ship" => $shipsNeeded, "plane" => -$paymentAvailable[PLANE], "boot" => $bootsNeeded);
-      throw new BgaUserException(JSON_ENCODE(["travel" => $travel]));
+    foreach ($validPayments as $pay) {
+      $this->spendPayment($playerId, $pay);
     }
 
-    $this->setGameStateValue("discount-boot", -max($bootsNeeded, $paymentAvailable[BOOT]));
-    $this->setGameStateValue("discount-car", -max($carsNeeded, $paymentAvailable[CAR]));
-    $this->setGameStateValue("discount-ship", -max($shipsNeeded, $paymentAvailable[SHIP]));
-    //$this->setGameStateValue("discount-plane", max(0, $paymentAvailable[PLANE] - $);
+    foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
+      $this->setGameStateValue("discount-".$this->travelTokenTranslate($token), 0);
+    }
   }
   function ocarinaActive() {
     $playerId = $this->getActivePlayerId();
