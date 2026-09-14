@@ -1613,13 +1613,13 @@ class arnak extends Table
     $this->incStat(1, "assistant-activated-".($gold ? "gold" : "silver"), $playerId);
     $resArg = array("component" => "assistant", "num" => $assNum);
     $effect = $this->gameData->assistantPower($assNum, $gold);
-    $ressources = [];
-    if (isset($effect["ressourcesChoice"])) {
+    $resources = [];
+    if (isset($effect["resourcesChoice"])) {
       $choice = ($assArg == "jewel") ? 1 : 0;
-      $ressources = $effect["ressourcesChoice"][$choice];
+      $resources = $effect["resourcesChoice"][$choice];
     }
-    else if (isset($effect["ressources"])) {
-      $ressources = $effect["ressources"];
+    else if (isset($effect["resources"])) {
+      $resources = $effect["resources"];
     }
     if (isset($effect["payboot"])) {
       $this->payTravel([BOOT], json_decode($assArg, true));
@@ -1646,8 +1646,8 @@ class arnak extends Table
       // not main action if on board
     }
 
-    foreach ($ressources as $ressource => $amt) {
-      $this->gainResource($ressource, $playerId, $amt, $resArg);
+    foreach ($resources as $resource => $amt) {
+      $this->gainResource($resource, $playerId, $amt, $resArg);
     }
   }
   function upgradeAssistant($assNum) {

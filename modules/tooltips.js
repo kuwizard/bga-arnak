@@ -12,7 +12,7 @@ class Tooltips {
       handsize: {header: _("Cards in hand"), text: _("Cards left in the hand of the player. Cards can be used either for their effect or as travel symbols.")},
       meeple: {header: _("Archaeologists"), text: _("Archaeologists can be used to dig at sites to get their effect, or discover undiscovered locations. Each player has total of 2 archaeologists, and can never have more or less than that.")},
     };
-    this.ressourceCostSingle = {
+    this.resourceCostSingle = {
       "coins": _("coin"),
       "compass": _("compass"),
       "tablet": _("tablet"),
@@ -22,7 +22,7 @@ class Tooltips {
       "discard": _("card discard"),
       "fear": _("fear card")
     };
-    this.ressourceCostSeveral = {
+    this.resourceCostSeveral = {
       "coins": _("coins"),
       "compass": _("compasses"),
       "tablet": _("tablets"),
@@ -44,7 +44,7 @@ class Tooltips {
       }
       else {
         var amount = resources[resource];
-        texts.push(amount + " " + ((amount < 2) ? this.ressourceCostSingle[resource] : this.ressourceCostSeveral[resource]));
+        texts.push(amount + " " + ((amount < 2) ? this.resourceCostSingle[resource] : this.resourceCostSeveral[resource]));
       }
     }
     return texts.join(", ");
