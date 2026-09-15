@@ -214,9 +214,6 @@ function (dojo, declare) {
         }
         this.updateDeck(player_id);
 
-        this.idols[player_id] = [];
-        this.slotted[player_id] = [];
-        this.updateIdols(player_id);
         var playerBoard = dojo.query("#player_board_" + player_id)[0];
         if (gamedatas.turn_based) {
           dojo.place(dojo.create("button", {class: "display-deck", id: "display-deck-" + player_id, "data-id": player_id, innerHTML: _("Display player's deck")}), playerBoard);
@@ -228,7 +225,8 @@ function (dojo, declare) {
         var meepleWrap = dojo.create("div", {class: "counter-wrap meeple", id: "counter-" + player_id + "-meeple"});
         dojo.place(resWrap, playerBoard);
         dojo.addClass(resWrap, "res-wrap");
-        for (var resName of ["coins", "compass", "tablet", "arrowhead", "jewel", "idol", "idol_slot", "guardian", "handsize"]) {
+
+        for (var resName of this.counterResources().concat(["handsize", "guardian"])) {
           var counterWrap = dojo.create("div");
           var id = "counter-" + player_id + "-" + resName;
           counterWrap.id = id;
@@ -236,14 +234,23 @@ function (dojo, declare) {
           var counterImage = dojo.create("div");
           dojo.addClass(counterImage, "counter icon " + resName + " " + color);
           var counterNumber = dojo.create("span");
-          counterNumber.innerHTML = player[resName] || 0;
           dojo.addClass(counterNumber, "counter-number-" + resName);
           dojo.place(counterNumber, counterWrap);
           dojo.place(counterImage, counterWrap);
           dojo.place(counterWrap, resWrap);
 
           this.addTooltipHtml(id, this.tooltips.resource(resName), this.tooltipDelay);
+          this.updateResource(player_id, resName);
         }
+
+        this.idols[player_id] = [];
+        this.slotted[player_id] = [];
+        this.updateIdols(player_id);
+
+        var travelIconsWrap = dojo.create("div", {class: "travel-icons-wrap"});
+        dojo.place(travelIconsWrap, playerBoard);
+        this.updateTravelIcons(player_id);
+
         var templeWrap = dojo.create("div", {class: "temple-wrap"});
         dojo.place(templeWrap, playerBoard);
         for (var color of ["gold", "silver", "bronze"]) {
@@ -450,6 +457,12 @@ function (dojo, declare) {
 
       // Setup game notifications to handle (see "setupNotifications" method below)
       this.setupNotifications();
+    },
+    counterResources: function() {
+      return ["coins", "compass", "tablet", "arrowhead", "jewel", "idol", "idol_slot"];
+    },
+    travelResources: function() {
+      return ["boot", "ship", "car", "plane"];
     },
     highlightIdol: function() {
       dojo.query(".idol-bonus").addClass("idol-highlight");
@@ -857,7 +870,7 @@ function (dojo, declare) {
     },
     updateIdols: function(playerId) {
       var campDiv = dojo.query(".camp-" + playerId)[0];
-      var player = this.gamedatas.players[playerId];
+      var playerResources = this.gamedatas.players[playerId].resources;
 
       function setIdolAmount(idolArray, size) {
         while (idolArray.length > Math.max(0, size))
@@ -869,8 +882,8 @@ function (dojo, declare) {
           dojo.place(idolDiv, campDiv);
         }
       }
-      setIdolAmount(this.slotted[playerId], 4 - player.idol_slot);
-      setIdolAmount(this.idols[playerId], player.idol);
+      setIdolAmount(this.slotted[playerId], 4 - playerResources.idol_slot);
+      setIdolAmount(this.idols[playerId], playerResources.idol);
 
       function setIdolPosition(idolDiv, x, y) {
         idolDiv.style.left = 312 + (x * 60.5) + "px";
@@ -888,8 +901,31 @@ function (dojo, declare) {
       }
     },
     updateResource: function(playerId, resName) {
-      var resNumber = dojo.query("#player_board_" + playerId + " .counter-number-" + resName)[0];
-      resNumber.innerHTML = this.gamedatas.players[playerId][resName];
+      if (this.travelResources().includes(resName)) {
+        this.updateTravelIcons(playerId);
+      }
+      else {
+        var resNumber = dojo.query("#player_board_" + playerId + " .counter-number-" + resName)[0];
+        resNumber.innerHTML = this.gamedatas.players[playerId].resources[resName];
+      }
+    },
+    updateTravelIcons: function(playerId) {
+      var playerResources = this.gamedatas.players[playerId].resources;
+      var playerBoard = dojo.query("#player_board_" + playerId)[0];
+
+      var placeIcon = 0;
+      var travelWrap = dojo.query(".travel-icons-wrap", playerBoard)[0];
+      for (var resName of this.travelResources()) {
+        var divIcons = dojo.query("." + resName, travelWrap);
+        var amt = playerResources[resName];
+        for (var i = amt; i < divIcons.length; i++)
+          this.fadeOutAndDestroy(divIcons[i]);
+        for (var i = divIcons.length; i < amt; i++) {
+          var iconDiv = dojo.create("div", {class: "icon " + resName});
+          dojo.place(iconDiv, travelWrap, placeIcon + divIcons.length);
+        }
+        placeIcon+= amt;
+      }
     },
     updatePlay: function(playerId) {
       var handDiv = dojo.query(".camp-" + playerId)[0];
@@ -1079,11 +1115,11 @@ function (dojo, declare) {
         var box = this.researchBoxes[this.gamedatas.bird_temple ? 0 : 1][i];
         var spaceObjects = [];
         for (var playerId in this.gamedatas.players) {
-          var p = this.gamedatas.players[playerId];
-          if (p.research_glass == i) {
-            spaceObjects.push({type: "glass", player: playerId, rank: p.temple_rank});
+          var playerResearch = this.gamedatas.players[playerId].research;
+          if (playerResearch.research_glass == i) {
+            spaceObjects.push({type: "glass", player: playerId, rank: playerResearch.temple_rank});
           }
-          if (p.research_book == i) {
+          if (playerResearch.research_book == i) {
             spaceObjects.push({type: "book", player: playerId});
           }
         }
@@ -1974,6 +2010,12 @@ function (dojo, declare) {
       this.travelSelected.push({type: "buyplane"});
       this.paidTravel();
     },
+    playerTravelIconFn: function(travelType) {
+      return (evt) => {
+        this.travelSelected.push({type: "playedTokens", token: travelType});
+        this.paidTravel();
+      };
+    },
     cancelExile: function(evt) {
       switch(this.gamedatas.gamestate.name) {
 
@@ -2343,7 +2385,7 @@ function (dojo, declare) {
               dojo.query(".hand.card").addClass("discardable");
             }
             else if (state == "travel")  {
-              this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
+              this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>", args: {resources: parsed.travel.resources}});
               var travelCostsDiv = dojo.query(".travel-costs")[0];
               for (var i = 0; i < parsed.travel.current.length; ++i)
                 dojo.place(dojo.create("div", {class: "travel-icon icon " + parsed.travel.current[i]}), travelCostsDiv);
@@ -2504,7 +2546,15 @@ function (dojo, declare) {
             this.addActionButton( 'button_endturn', _('End turn'), 'endTurn', null, true);
             break;
           case 'payTravel':
-            this.addActionButton("button_buy_plane", coinIcon + coinIcon + arrow + planeIcon, 'buyPlane');
+            for (var travelType of this.travelResources()) {
+              if (this.gamedatas.players[this.player_id].resources[travelType] > 0) {
+                var enabled = args.resources[travelType] > 0;
+                var callback = enabled ? this.playerTravelIconFn(travelType) : () => {};
+                this.addActionButton("button_" + travelType + "_" + i, "<div class='icon " + travelType + "'></div>", callback, null, false, enabled ? "blue" : "gray");
+              }
+            }
+            var enabledPlane = args.resources["coins"] >= 2;
+            this.addActionButton("button_buy_plane", coinIcon + coinIcon + arrow + planeIcon, (evt) => {if(enabledPlane) this.buyPlane(evt);}, null, false, enabledPlane ? "blue" : "gray");
             break;
           case 'mayTravel':
           case 'mustTravel':
@@ -2820,7 +2870,7 @@ function (dojo, declare) {
     },
     notif_gainRes: function(notif) {
       var args = notif.args;
-      this.gamedatas.players[args.player_id][args.resName] += args.amt;
+      this.gamedatas.players[args.player_id].resources[args.resName] += args.amt;
       this.updateResource(args.player_id, args.resName);
 
       var resIdol = args.resName == "idol" || args.resName == "idol_slot";
@@ -2878,7 +2928,7 @@ function (dojo, declare) {
       var args = notif.args;
       var playerId = args.player_id;
       for(var resName of ["idol", "idol_slot"]) {
-        this.gamedatas.players[playerId][resName] += args.amt;
+        this.gamedatas.players[playerId].resources[resName] += args.amt;
         this.updateResource(playerId, resName);
       }
       if (args.amt >= 0) {
@@ -3011,9 +3061,8 @@ function (dojo, declare) {
       var a = notif.args;
       var targetBoard = dojo.query(".camp-" + a.playerId)[0];
       var toDestroy = dojo.query(".guardian-wrap.guardian-" + a.guardNum)[0];
-      var resNumber = dojo.query("#player_board_" + a.playerId +
-      " .counter-number-guardian")[0];
-      resNumber.innerHTML = +resNumber.innerHTML + 1;
+      this.gamedatas.players[a.playerId].resources.guardian += 1;
+      this.updateResource(a.playerId, "guardian");
       this.gamedatas.players[a.playerId].guardians.push(a.guardNum);
       var newDiv = this.handGuard(a.guardNum);
       var targetB = dojo.position(targetBoard);
@@ -3158,10 +3207,10 @@ function (dojo, declare) {
     },
     notif_research: function(notif) {
       var a = notif.args;
-      var player = this.gamedatas.players[a.player_id];
-      player["research_" + a.type] = a.researchId;
+      var playerResearch = this.gamedatas.players[a.player_id].research;
+      playerResearch["research_" + a.type] = a.researchId;
       if (a.rank != null) {
-        player.temple_rank = a.rank;
+        playerResearch.temple_rank = a.rank;
       }
       this.updateResearchTrack();
     },

@@ -255,7 +255,7 @@
     margin: -33px;
 }
 
-.action-button .icon.plane {
+.action-button .icon:is(.boot,.ship,.car,.plane) {
     transform: scale(0.7);
     margin: -11px;
 }

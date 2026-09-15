@@ -452,6 +452,15 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -2250px -915px;
 }
 
+.travel-icons-wrap {
+    display: flex;
+    flex-wrap: wrap;
+}
+.travel-icons-wrap .icon {
+    transform: scale(0.4);
+    margin: -20px -20px;
+}
+
 .temple-wrap {
     display: flex;
     flex-wrap: wrap;

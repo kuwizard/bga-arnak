@@ -408,6 +408,11 @@ class arnak extends Table
 
     $result['players'] = $this->sqlWrapper->getAllPlayers();
     foreach ($this->loadPlayersBasicInfos() as $idPlayer => $infos) {
+      $resources = &$result['players'][$idPlayer]["resources"];
+      foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
+        $resources[$this->travelTokenTranslate($token)] = $resources[$token];
+        unset($resources[$token]);
+      }
       if ($idPlayer == $current_player_id) {
         $result['players'][$idPlayer]["hand"] = $this->sqlWrapper->getPublicCards($idPlayer, 'hand');
         $result['players'][$idPlayer]["earring"] = $this->sqlWrapper->getPublicCards($idPlayer, 'earring');
@@ -425,7 +430,7 @@ class arnak extends Table
       $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
       $availableBoons = $this->sqlWrapper->getBoons($idPlayer, true);
       $result['players'][$idPlayer]["guardians"] = $availableBoons;
-      $result['players'][$idPlayer]["guardian"] = count($availableBoons) + count($this->sqlWrapper->getBoons($idPlayer, false));
+      $result['players'][$idPlayer]["resources"]["guardian"] = count($availableBoons) + count($this->sqlWrapper->getBoons($idPlayer, false));
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
@@ -509,6 +514,15 @@ class arnak extends Table
       case SHIP: return "ship";
       case CAR: return "car";
       case PLANE: return "plane";
+    }
+  }
+
+  function tokenTravelTranslate($token) {
+    switch($token){
+      case "boot": return BOOT;
+      case "ship": return SHIP;
+      case "car": return CAR;
+      case "plane": return PLANE;
     }
   }
 
@@ -1043,7 +1057,7 @@ class arnak extends Table
     return false;
   }
 
-  function validPayment($playerId, $pay) {
+  function validPayment($playerId, $pay, &$resources) {
     $payment = NULL;
     switch($pay["type"]) {
       case "card":
@@ -1055,7 +1069,12 @@ class arnak extends Table
         }
         break;
       case "buyplane":
+        if ($resources["coins"] < 2) {
+          throw new BgaUserException(clienttranslate("Not enough ").$this->resText("coins"));
+        }
+
         $payment = ["payment" => [PLANE], "object" =>  NULL];
+        $resources["coins"] -= 2;
         break;
       case "assistant":
         $assNum = $pay["num"];
@@ -1080,6 +1099,14 @@ class arnak extends Table
         }
         $payment = ["payment" => $boon["travel"], "object" => $num];
         break;
+      case "playedTokens":
+        $travelType = $this->tokenTravelTranslate($pay["token"]);
+        if ($resources[$travelType] < 1) {
+          throw new BgaUserException(clienttranslate("Not enough ").$this->resText($travelType));
+        }
+        $payment = ["payment" => [$travelType], "object" => $travelType];
+        $resources[$travelType] -=1;
+        break;
     }
     return $payment;
   }
@@ -1099,6 +1126,9 @@ class arnak extends Table
       case "guardian":
         $this->sqlWrapper->setGuardianBoonUsed($pay["object"], ["msg" => clienttranslate('${player_name} uses his guardian for travel symbol')]);
         break;
+      case "playedTokens":
+        $this->gainResource($pay["object"], $playerId, -1);
+        break;
     }
   }
 
@@ -1113,6 +1143,7 @@ class arnak extends Table
         array_push($discountPayment, $token);
       }
     }
+    $currentPlayerResources = $this->sqlWrapper->getPlayerResources($playerId);
     $currentChoices = $this->usefulTravels($this->initChoices($iconReqs), $discountPayment, $ocarina, true);
 
     $paymentUsed = ($currentChoices["useful"] > 0) ? $discountPayment : [];
@@ -1123,12 +1154,14 @@ class arnak extends Table
           continue;
         }
 
-        $res = $this->validPayment($playerId, $pay);
+        $resources = $currentPlayerResources;
+        $res = $this->validPayment($playerId, $pay, $resources);
         if (!is_null($res)) {
           $choices = $this->usefulTravels($currentChoices["options"], $res["payment"], $ocarina);
 
           if ($choices["useful"] > $currentChoices["useful"]) {
             $currentChoices = $choices;
+            $currentPlayerResources = $resources;
             $paymentUsed = array_merge($paymentUsed, $res["payment"]);
             array_push($validPayments, ["pay" => $pay, "object" => $res["object"]]);
           }
@@ -1137,9 +1170,15 @@ class arnak extends Table
     }
 
     if ($currentChoices["useful"] < count($iconReqs)) {
+      $resources = [];
+      foreach ([BOOT, SHIP, CAR, PLANE] as $res) {
+        $resources[$this->travelTokenTranslate($res)] = $currentPlayerResources[$res];
+      }
+      $resources["coins"] = $currentPlayerResources["coins"];
       $travelInfos = [
         "requiered" => $this->travelArrayTranslate($iconReqs),
-        "current" => $this->travelArrayTranslate($paymentUsed)
+        "current" => $this->travelArrayTranslate($paymentUsed),
+        "resources" => $resources
       ];
       throw new BgaUserException(JSON_ENCODE(["travel" => $travelInfos]));
     }
@@ -1150,6 +1189,17 @@ class arnak extends Table
 
     foreach ($validPayments as $pay) {
       $this->spendPayment($playerId, $pay);
+    }
+
+    foreach ($currentChoices["options"] as $choice) {
+      $this->notifyAllPlayers("taupe", "TODO : find best choice", $choice);
+      if ($this->numTokens($choice["used"]) == count($iconReqs)) {
+        foreach ($choice["remaining"] as $token => $amt) {
+          $this->gainResource($token, $playerId, $amt);
+        }
+        //TODO : choose the one to pick
+        break;
+      }
     }
 
     foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
@@ -2336,6 +2386,7 @@ class arnak extends Table
     $this->setGameStateValue("art-active", -1);
     $this->refillCards();
     $this->resetDiscount(true);
+    $this->resetTravelTokens($this->getActivePlayerId());
     $this->giveExtraTime($this->getActivePlayerId());
     $this->setGameStateValue("special-research-done", 1);
     $this->setGameStateValue("research-token-done", 1);
@@ -2424,6 +2475,22 @@ class arnak extends Table
     }
   }
 
+  function resetTravelTokens($playerId) {
+    $resources = $this->sqlWrapper->getPlayerResources($playerId);
+    $total = 0;
+    foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
+      $amt = $resources[$token];
+      if ($amt > 0) {
+        $this->sqlWrapper->increasePlayerResource($playerId, $token, -$amt, NULL, ["msg" => ""]);
+      }
+      $total += $amt;
+    }
+    if ($total > 0) {
+      $this->notifyAllPlayers("travelVanish", clienttranslate('All travel icons of ${player_name} vanish'),
+      array("player_name" => $this->loadPlayersBasicInfos()[$playerId]["player_name"]));
+    }
+  }
+
   function resText($resName) {
     return array(
       "coins" => clienttranslate("coin"),
@@ -2433,6 +2500,10 @@ class arnak extends Table
       "arrowhead" => clienttranslate("arrowhead"),
       "jewel" => clienttranslate("jewel"),
       "idol_slot" => clienttranslate("idol slot"),
+      BOOT => clienttranslate("boot token"),
+      SHIP => clienttranslate("ship token"),
+      CAR => clienttranslate("car token"),
+      PLANE => clienttranslate("plane token")
     )[$resName];
   }
 
@@ -2457,7 +2528,8 @@ class arnak extends Table
       ));
       return;
     }
-    if ($amt < 0) {
+    $travel = in_array($resName, [BOOT, SHIP, CAR, PLANE]);
+    if ($amt < 0 && !$travel) {
       $discount = $this->getGameStateValue("discount-$resName");
       if ($discount) {
         $effectiveDiscount = min(abs($amt), $discount);
@@ -2489,7 +2561,7 @@ class arnak extends Table
         "amtText" => abs($amt)
       ];
       $this->sqlWrapper->increasePlayerResource($player, $resName, $amt, $source, $notif);
-      if ($amt > 0 && $resName != "idol_slot") {
+      if ($amt > 0 && $resName != "idol_slot" && !$travel) {
         $this->incStat($amt, "gained-".$resName, $player);
       }
     }

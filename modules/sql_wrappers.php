@@ -11,6 +11,16 @@ class SqlWrapper {
       "card_position" => "position",
       "player" => "playerId"
     );
+    $this->travelFeildMapping = array(
+      "boots" => BOOT,
+      "ships" => SHIP,
+      "cars" => CAR,
+      "planes" => PLANE
+    );
+    $this->tokenFeildMapping = [];
+    foreach ($this->travelFeildMapping as $travels => $token) {
+      $this->tokenFeildMapping[$token] = $travels;
+    }
   }
 
   public function getPublicCards($player_id = NULL, $position = NULL, $type = NULL) {
@@ -625,31 +635,42 @@ class SqlWrapper {
   }
 
   public function getAllPlayers() {
-    $args = ["player_id", "player_score", "passed",
-             "coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol",
-             "research_glass", "research_book", "temple_bronze", "temple_silver", "temple_gold", "temple_rank"];
-    $argsStr = join(", ", $args);
+    $args = ["player_id", "player_score", "passed"];
+    $resourceArgs = ["coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol", "boots", "ships", "cars", "planes"];
+    $researchArgs = ["research_glass", "research_book", "temple_bronze", "temple_silver", "temple_gold", "temple_rank"];
+    $argsStr = join(", ", array_merge($args, $resourceArgs, $researchArgs));
     $players = $this->game->getObjectListFromDb("SELECT $argsStr FROM player");
     $result = [];
     foreach ($players as $player) {
       $playerId = $player["player_id"];
-      $result[$playerId] = $player;
-      $result[$playerId]["score"] = $result[$playerId]["player_score"];
-      unset($result[$playerId]["player_id"]);
-      unset($result[$playerId]["player_score"]);
-      foreach ($result[$playerId] as $val => $amt) {
-        $result[$playerId][$val] = intval($amt);
+      $playerResult = [];
+      $playerResult["score"] = $player["player_score"];
+      $playerResult["passed"] = ($player["passed"] != 0);
+
+      $resources = [];
+      foreach ($resourceArgs as $res) {
+        $key = (isset($this->travelFeildMapping[$res])) ? $this->travelFeildMapping[$res] : $res;
+        $resources[$key] = intval($player[$res]);
       }
-      $result[$playerId]["passed"] = ($result[$playerId]["passed"] != 0);
+      $playerResult["resources"] = $resources;
+
+      $research = [];
+      foreach ($researchArgs as $res) {
+        $research[$res] = intval($player[$res]);
+      }
+      $playerResult["research"] = $research;
+      $result[$playerId] = $playerResult;
     }
     return $result;
   }
 
   private function getPlayerSubset($playerId, $subset) {
-    $player = $this->game->getObjectFromDB("SELECT * FROM player WHERE player_id = $playerId");
+    $argsStr = join(", ", $subset);
+    $player = $this->game->getObjectFromDB("SELECT $argsStr FROM player WHERE player_id = $playerId");
     $result = [];
     foreach ($subset as $value) {
-      $result[$value] = intval($player[$value]);
+      $key = (isset($this->travelFeildMapping[$value])) ? $this->travelFeildMapping[$value] : $value;
+      $result[$key] = intval($player[$value]);
     }
     return $result;
   }
@@ -664,7 +685,7 @@ class SqlWrapper {
   }
 
   public function getPlayerResources($playerId) {
-    return $this->getPlayerSubset($playerId, ["coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol"]);
+    return $this->getPlayerSubset($playerId, ["coins", "compass", "tablet", "arrowhead", "jewel", "idol_slot", "idol", "boots", "ships", "cars", "planes"]);
   }
 
   public function getPlayersPassedStatus() {
@@ -719,7 +740,11 @@ class SqlWrapper {
   }
 
   public function increasePlayerResource($playerId, $resource, $amt, $source = NULL, $notif = NULL) {
-    $this->game->DbQuery("UPDATE player SET $resource = $resource + $amt WHERE player_id = $playerId");
+    $travel = isset($this->tokenFeildMapping[$resource]);
+    $res = $travel ? $this->tokenFeildMapping[$resource] : $resource;
+    $translatedResName = $travel ? $this->game->travelTokenTranslate($resource) : $resource;
+
+    $this->game->DbQuery("UPDATE player SET $res = $res + $amt WHERE player_id = $playerId");
 
     if (!is_null($notif)) {
       $notif_gainRes = array(
@@ -727,7 +752,7 @@ class SqlWrapper {
         "player_id" => $playerId,
         "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
         "amt" => $amt,
-        "resName" => $resource,
+        "resName" => $translatedResName,
         "source" => JSON_ENCODE($source)
       );
       foreach ($notif as $key => $value) {
