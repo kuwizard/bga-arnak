@@ -113,6 +113,7 @@ function (dojo, declare) {
     ],
     restoreGlobals: function() {
       this.chartsSelected = undefined;
+      this.travelMode = undefined;
       this.siteSelected = undefined;
       this.travelSelected = [];
       this.knifeBonuses = {};
@@ -1238,7 +1239,7 @@ function (dojo, declare) {
       }
 
       switch(this.gamedatas.gamestate.name) {
-        case "payTravel": case "assTravel":
+        case "payTravel":
           //TODO: check if travel is enough
           this.travelSelected.push({type: "card", id: cardDiv.dataset.cardid});
           dojo.addClass(cardDiv, "selected");
@@ -1594,21 +1595,23 @@ function (dojo, declare) {
       }
     },
     paidTravel: function() {
-      switch(this.gamedatas.gamestate.name) {
-        case "payTravel":
-          this.ajaxcall("/arnak/arnak/moveToSite.html", {
-            siteId: this.siteSelected,
-            movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
-            lock: true
-          }, this, function(result) {});
-          break;
-        case "assTravel":
-          this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.assTravelAssistant,
-            assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
-            lock: true
-          }, this, function(result) {});
-          break;
+      if (this.travelMode) {
+        switch(this.travelMode.mode) {
+          case "site":
+            this.ajaxcall("/arnak/arnak/moveToSite.html", {
+              siteId: this.travelMode.id,
+              movePayment: btoa(JSON.stringify(this.travelSelected)),  // TODO
+              lock: true
+            }, this, function(result) {});
+            break;
+          case "assistant":
+            this.ajaxcall("/arnak/arnak/useAssistant.html", {
+              assNum: this.travelMode.id,
+              assArg: btoa(JSON.stringify(this.travelSelected)),  // TODO
+              lock: true
+            }, this, function(result) {});
+            break;
+        }
       }
     },
     displayDeck: function(evt) {
@@ -1684,6 +1687,7 @@ function (dojo, declare) {
         return;
       }
 
+      this.travelMode = {mode: "site", id: siteDiv.dataset.id};
       this.siteSelected = siteDiv.dataset.id;
       switch(this.gamedatas.gamestate.name) {
         case "selectCardSite":
@@ -1855,14 +1859,14 @@ function (dojo, declare) {
       if (this.isCurrentPlayerActive() && (playInHand || playAtBoard)) {
         var assistantEffect = this.material.assistants[num][gold?"gold":"silver"];
         var state = this.gamedatas.gamestate.name;
-        if ("travel" in assistantEffect && (state == "payTravel" || state == "assTravel")) {
+        if ("travel" in assistantEffect && state == "payTravel") {
           this.travelSelected.push({type: "assistant", num: num});
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
         }
         else if ("payboot" in assistantEffect) {
-          this.assTravelAssistant = num;
-          this.setClientState("assTravel", {descriptionmyturn: _("Pay travel:") + " <div class='travel-costs'><div class='travel-icon icon boot'>"});
+          this.travelMode = {mode: "assistant", id: num};
+          this.paidTravel();
         }
         else if ("resourcesChoice" in assistantEffect) {
           this.stateAssistantNum = num;
@@ -2339,7 +2343,7 @@ function (dojo, declare) {
         case "selectAction":
           this.restoreGlobals();
           break;
-        case "mustDiscard": case "mustDiscardFree": case "assDiscard": case "discardForCard": case "mayDiscard":
+        case "mustDiscard": case "mustDiscardFree": case "discardForCard": case "mayDiscard":
           dojo.query(".camp-" + this.getActivePlayerId() + " .hand.card").addClass("discardable");
           break;
         case "idolExile": case "researchExile": case "assExile": case "guardExile": case "exileForCard": case "mayExile": case "hairpinExile": case "selectKnife":
@@ -2421,13 +2425,13 @@ function (dojo, declare) {
     onLeavingState: function( stateName )
     {
       switch(stateName) {
-        case "mustDiscard": case "mustDiscardFree": case "assDiscard": case "discardForCard": case "mayDiscard":
+        case "mustDiscard": case "mustDiscardFree": case "discardForCard": case "mayDiscard":
           dojo.query(".discardable").removeClass("discardable");
           break;
         case "idolExile": case "researchExile": case "assExile": case "guardExile": case "exileForCard": case "mayExile": case "hairpinExile": case "selectKnife":
           dojo.query(".exilable").removeClass("exilable");
           break;
-        case "payTravel": case "assTravel":
+        case "payTravel":
           dojo.query(".discardable").removeClass("discardable");
           //dojo.query(".selected").removeClass("selected");
           break;
@@ -2469,7 +2473,7 @@ function (dojo, declare) {
           case 'afterMain':
             this.addActionButton( 'button_endturn', _('End turn'), 'endTurn', null, true);
             break;
-          case 'payTravel': case "assTravel":
+          case 'payTravel':
             var el = dojo.query(".location.selected")[0];
             if (el && el.nextElementSibling && el.nextElementSibling.dataset.num == 7 && dojo.query(`.meeple.onboard[data-position=${el.parentElement.dataset.position}]`).length > 0) {
               // scorpion
@@ -2948,6 +2952,7 @@ function (dojo, declare) {
       dojo.toggleClass(meepleDiv, "onboard", a.siteTo !== null)
 
       this.siteSelected = undefined;
+      this.travelMode = {};
       this.travelSelected = [];
     },
     notif_guardMove: function(notif) {
