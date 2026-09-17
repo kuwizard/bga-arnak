@@ -1283,6 +1283,13 @@ function (dojo, declare) {
             lock: true
           }, this, function(result) {});
           break;
+        case "guardDiscard":
+          this.ajaxcall("/arnak/arnak/moveToSite.html", {
+            siteId: this.siteSelected,
+            movePayment: btoa(JSON.stringify([{type: "card", id: cardId}])),
+            lock: true
+          }, this, function(result) {});
+          break;
         case "exileForCard": case "discardForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa(cardId),
@@ -1751,9 +1758,7 @@ function (dojo, declare) {
             movePayment: btoa(JSON.stringify(this.travelSelected)),
             lock: true
           }, this, function(result) {});
-          //this.setClientState("payTravel", {descriptionmyturn: "Pay travel: <div class='travel-costs'></div>"});
       }
-      //todo: set cost to pay
     },
     researchClick: function(evt) {
       if (dojo.hasClass(evt.target, "research-bonus")) {
@@ -2310,27 +2315,30 @@ function (dojo, declare) {
       try {
         var parsed = JSON.parse(msg.replace(/&quot;/g, '"'));
         this.travelNeeded = parsed;
-        this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
-        var targetEl = dojo.query(".travel-costs")[0];
-        if (!targetEl){
-          throw 1;
-        }
-        dojo.empty(targetEl);
-        for (var travelName of Object.keys(parsed)) {
-          if (travelName == "card") {
-            this.setClientState("payTravel", {descriptionmyturn: _("Select a card to discard")});
-            dojo.query(".hand.card").addClass("discardable");
-          }
-          else if (["ship", "boot", "car", "plane"].indexOf(travelName) > -1) {
-            for (var i = 0; i < parsed[travelName]; ++i) {
-              dojo.place(dojo.create("div", {class: "travel-icon icon " + travelName}), targetEl);
+        try {
+          for (var state of Object.keys(parsed)) {
+            if (state == "discard") {
+              this.setClientState("guardDiscard", {descriptionmyturn: _("Select a card to discard")});
+              dojo.query(".hand.card").addClass("discardable");
+            }
+            else if (state == "travel")  {
+              this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>"});
+              var travelCostsDiv = dojo.query(".travel-costs")[0];
+              for (var token in parsed[state]) {
+                for (var i = 0; i < parsed[state][token]; ++i) {
+                  dojo.place(dojo.create("div", {class: "travel-icon icon " + token}), travelCostsDiv);
+                }
+              }
+            }
+            else {
+              this.__proto__.__proto__.showMessage.call(this, msg, type);
+              break;
             }
           }
-          else {
-            throw 2;
-          }
         }
-        //this.__proto__.__proto__.showMessage("", "info");
+        catch {
+          //User tried to call forbidden clientState, exemple boot assistant during travel
+        }
       }
       catch {
         this.__proto__.__proto__.showMessage.call(this, msg, type);
@@ -2474,11 +2482,6 @@ function (dojo, declare) {
             this.addActionButton( 'button_endturn', _('End turn'), 'endTurn', null, true);
             break;
           case 'payTravel':
-            var el = dojo.query(".location.selected")[0];
-            if (el && el.nextElementSibling && el.nextElementSibling.dataset.num == 7 && dojo.query(`.meeple.onboard[data-position=${el.parentElement.dataset.position}]`).length > 0) {
-              // scorpion
-              break;
-            }
             this.addActionButton("button_buy_plane", coinIcon + coinIcon + arrow + planeIcon, 'buyPlane');
             break;
           case 'mayTravel':

@@ -1031,7 +1031,8 @@ class arnak extends Table
     );
 
     if (!$enough) {
-      throw new BgaUserException(JSON_ENCODE(array("car" => $carsNeeded, "ship" => $shipsNeeded, "plane" => -$paymentAvailable[PLANE], "boot" => $bootsNeeded)));
+      $travel = array("car" => $carsNeeded, "ship" => $shipsNeeded, "plane" => -$paymentAvailable[PLANE], "boot" => $bootsNeeded);
+      throw new BgaUserException(JSON_ENCODE(["travel" => $travel]));
     }
 
     $this->setGameStateValue("discount-boot", -max($bootsNeeded, $paymentAvailable[BOOT]));
@@ -1104,7 +1105,7 @@ class arnak extends Table
             $this->discardCard($movePayment[0]["id"]);
           }
           else {
-            throw new BgaUserException('{"card": 1}');
+            throw new BgaUserException(JSON_ENCODE(["discard" => 1]));
           }
         }
         else {
