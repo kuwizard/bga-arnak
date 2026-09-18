@@ -429,8 +429,9 @@ class arnak extends Table
       $result['players'][$idPlayer]["hand_amt"] = count($this->sqlWrapper->getPublicCards($idPlayer, 'hand')) + count($this->sqlWrapper->getPublicCards($idPlayer, 'keep'));
       $result['players'][$idPlayer]["assistants"] = $this->sqlWrapper->getPlayerAssistants($idPlayer);
       $availableBoons = $this->sqlWrapper->getBoons($idPlayer, true);
-      $result['players'][$idPlayer]["guardians"] = $availableBoons;
-      $result['players'][$idPlayer]["resources"]["guardian"] = count($availableBoons) + count($this->sqlWrapper->getBoons($idPlayer, false));
+      $usedBoons = $this->sqlWrapper->getBoons($idPlayer, false);
+      $result['players'][$idPlayer]["boons"] = ["available" => $availableBoons, "used" => $usedBoons];
+      $result['players'][$idPlayer]["resources"]["guardian"] = count($availableBoons) + count($usedBoons);
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
@@ -1658,7 +1659,13 @@ class arnak extends Table
     $playerId = $this->getCurrentPlayerId();
     $boons = $this->sqlWrapper->getBoons($playerId, true);
     if (!in_array($guardNum, $boons)) {
-      throw new BgaUserException(clienttranslate("That is not your guardian boon"));
+      $usedBoons = $this->sqlWrapper->getBoons($playerId, false);
+      if (in_array($guardNum, $usedBoons)) {
+        throw new BgaUserException(clienttranslate("You have already used that boon"));
+      }
+      else {
+        throw new BgaUserException(clienttranslate("That is not your guardian boon"));
+      }
     }
     $this->sqlWrapper->setGuardianBoonUsed($guardNum, ["msg" => clienttranslate('${player_name} uses his guardian boon')]);
 

@@ -143,6 +143,7 @@ function (dojo, declare) {
       this.templeTilePicker = this.createTempleTilesPicker();
       this.round = this.gamedatas.round;
       this.travelSelected = this.createTravelSelector();
+      this.boonsBeingShown = {};
       this.restoreGlobals();
 
       this.itemSupply = CardPlace(Object.values(gamedatas.itemSupply));
@@ -303,7 +304,8 @@ function (dojo, declare) {
           div.id = "idol-bonus-" + idolBonus + "-" + player_id;
           this.addTooltipHtml(div.id, this.tooltips.idolBonus(idolBonus), this.tooltipDelay);
         }
-
+        dojo.place(dojo.create("div", {class: "used-boons-area"}), handDiv);
+        this.boonsBeingShown[player_id] = undefined;
         this.updatePlayerGuards(player_id);
         this.playerPass(player_id, player.passed);
       }
@@ -657,18 +659,27 @@ function (dojo, declare) {
         dojo.place(siteWrap, board);
       }
     },
-    boonDiv: function(num, format) {
+    boonDiv: function(num, format, playerId) {
       var result = dojo.create("div");
-      var inner = dojo.create("div");
+      var flipWrap = dojo.create("div");
+      var front = dojo.create("div");
+      var back = dojo.create("div");
       dojo.addClass(result, "boon-wrap boon-" + num);
+      dojo.addClass(flipWrap, "boon-flip-wrap");
 
-      dojo.addClass(inner, "boon");
-      dojo.addClass(inner, format);
-      dojo.addClass(inner, "boon-" + num);
+      dojo.addClass(front, format);
+      dojo.addClass(front, "boon front boon-" + num);
+      dojo.addClass(back, "boon back boon-back");
 
-      dojo.connect(inner, "click", this, "guardEffect");
-      inner.dataset.num = num;
-      dojo.place(inner, result);
+      dojo.connect(front, "click", this, "boonEffect");
+      dojo.connect(back, "click", this, "displayBoons");
+      front.dataset.num = num;
+      front.dataset.playerId = playerId;
+      back.dataset.num = num;
+      back.dataset.playerId = playerId;
+      dojo.place(front, flipWrap);
+      dojo.place(back, flipWrap);
+      dojo.place(flipWrap, result);
       return result;
     },
     newGuard: function(position, num) {
@@ -1023,25 +1034,63 @@ function (dojo, declare) {
 
     },
     updatePlayerGuards(playerId) {
-      var left = 569.5;
       var player = this.gamedatas.players[playerId];
       var handDiv = dojo.query(".player-camp.camp-" + playerId)[0];
 
-       for (var guardNum of player.guardians) {
+      var ratio = 0.5;
+      var smallBoonWidth = 76 * ratio;
+      var normalBoonWidth = 114 * ratio;
+      var backBoonWidth = 134 * ratio;
+      var overlap = 114 * ratio;
+      var margin = 24 * ratio;
+      var rightBorder =  1140 * ratio;
+      
+      var left = rightBorder;
+      var count = 0;
+      var usedBoonsDisplayed = this.boonsBeingShown[playerId] !== undefined;
+      var placeGuard = (guardNum, available) => {
         var boonDiv = dojo.query(".boon-wrap.boon-" + guardNum)[0];
-        
-        var format = (Object.keys(this.material.guardians[guardNum].boon)[0] == "travel")? "small" : "normal";
+
+        var displayed = available || usedBoonsDisplayed;
+        var format = ((Object.keys(this.material.guardians[guardNum].boon)[0] == "travel")? "small" : "normal");
         if (!boonDiv) {
-          boonDiv = this.boonDiv(guardNum, format);
+          boonDiv = this.boonDiv(guardNum, format, playerId);
           dojo.place(boonDiv, handDiv);
         }
-        
-        left -= (format == "small") ? 50 : 69;
+        var flipWrapDiv = dojo.query(".boon-flip-wrap", boonDiv)[0];
+        dojo.toggleClass(flipWrapDiv, "flipped", !displayed);
+        var dx = 0;
+        if (displayed) {
+          if (format == "small")
+            dx = -smallBoonWidth;
+          else if (format == "normal")
+            dx = -normalBoonWidth;
+        }
+        else {
+          dx = -backBoonWidth;
+          if (count > 0)
+            dx += overlap + margin;
+        }
+        dx -= margin;
+
+        left += dx;
         boonDiv.style.left = left + "px";
 
-        boonDiv.style.top = "";
+        var top = displayed ? 236 : 222;
+        boonDiv.style["z-index"] = count++;
+        boonDiv.style.top = top + "px";
         boonDiv.style.transform = "";
       }
+      for (var guardNum of player.boons.used)
+        placeGuard(guardNum, false);
+      var usedBoonleft = left;
+      for (var guardNum of player.boons.available)
+        placeGuard(guardNum, true);
+
+      var usedAreaDiv = dojo.query(".used-boons-area", handDiv)[0];
+      usedAreaDiv.style.width = (usedBoonsDisplayed ? (rightBorder - usedBoonleft) : 0) + "px";
+      usedAreaDiv.style.left = (usedBoonsDisplayed ? (usedBoonleft - margin/2) : (rightBorder - backBoonWidth/2 - margin)) + "px";
+      
     },
     updateSiteTooltips() {
       for (var positionId = 0; positionId < 17; ++positionId) {
@@ -1967,11 +2016,11 @@ function (dojo, declare) {
         }, this, function(result) {});
       }
     },
-    guardEffect: function(evt) {
+    boonEffect: function(evt) {
       var num = +evt.target.dataset.num;
       this.selectedGuard = num;
-      var guardEffect = Object.keys(this.material.guardians[num].boon)[0];
-      switch(guardEffect) {
+      var boonEffect = Object.keys(this.material.guardians[num].boon)[0];
+      switch(boonEffect) {
         case "card":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardNum: num,
@@ -1990,9 +2039,15 @@ function (dojo, declare) {
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
           break;
-        default:
-          console.log("cannot use guard " + num);
       }
+    },
+    displayBoons: function(evt) {
+      var playerId = evt.target.dataset.playerId;
+      this.boonsBeingShown[playerId] = setTimeout(() => {
+        this.boonsBeingShown[playerId] = undefined;
+        this.updatePlayerGuards(playerId);
+      },5000);
+      this.updatePlayerGuards(playerId);
     },
     cancelTravel: function(evt) {
       this.ajaxcall("/arnak/arnak/cancelTravel.html", {
@@ -3063,9 +3118,9 @@ function (dojo, declare) {
       var toDestroy = dojo.query(".guardian-wrap.guardian-" + a.guardNum)[0];
       this.gamedatas.players[a.playerId].resources.guardian += 1;
       this.updateResource(a.playerId, "guardian");
-      this.gamedatas.players[a.playerId].guardians.push(a.guardNum);
+      this.gamedatas.players[a.playerId].boons.available.push(a.guardNum);
       var format = (Object.keys(this.material.guardians[a.guardNum].boon)[0] == "travel")? "small" : "normal";
-      var newDiv = this.boonDiv(a.guardNum, format);
+      var newDiv = this.boonDiv(a.guardNum, format, a.playerId);
       var targetB = dojo.position(targetBoard);
 
       var x = dojo.position(toDestroy).x - targetB.x;
@@ -3098,14 +3153,14 @@ function (dojo, declare) {
     },
     notif_useGuard: function(notif) {
       var a = notif.args;
-      var guards = this.gamedatas.players[a.player_id].guardians;
+      var guards = this.gamedatas.players[a.player_id].boons.available;
       for (var i in guards) {
         if (guards[i] == a.guardNum) {
           guards.splice(i, 1);
           break;
         }
       }
-      this.fadeOutAndDestroy(dojo.query(".boon.boon-" + a.guardNum)[0]);
+      this.gamedatas.players[a.player_id].boons.used.push(a.guardNum);
       this.updatePlayerGuards(a.player_id);
       this.restoreServerGameState();
     },

@@ -533,7 +533,16 @@ class SqlWrapper {
   }
 
   public function setGuardianBoonUsed($guardianNum, $notif) {
-    $this->game->DbQuery("UPDATE guardian SET ready = 0, deckorder = NULL WHERE num = $guardianNum");
+    $boon = $this->game->getObjectFromDB("SELECT deckorder, in_hand FROM guardian WHERE num = $guardianNum");
+    $playerId = $boon["in_hand"];
+    $playerBoons = $this->game->getObjectListFromDb("SELECT deckorder FROM guardian WHERE in_hand = $playerId AND ready = 0 ORDER BY deckorder");
+
+    $order = 0;
+    if (count($playerBoons) > 0) {
+      $order = end($playerBoons)["deckorder"] + 1;
+    }
+
+    $this->game->DbQuery("UPDATE guardian SET ready = 0, deckorder = $order WHERE num = $guardianNum");
     $this->game->notifyAllPlayers("useGuard", $notif["msg"],
       array(
         "player_name" => $this->game->getActivePlayerName(),

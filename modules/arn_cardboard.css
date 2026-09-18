@@ -353,18 +353,52 @@ div#start-player {
     top: -6px;
 }
 
+.used-boons-area {
+  position: absolute;
+  background-color: rgba(192, 192, 192, 0.7);
+  border-radius: 15px;
+  height: 63px;
+  top: 226px;
+  transition: transform 1s, left 1s, width 1s;
+}
+
 .boon-wrap {
     filter: drop-shadow(8px 7px 6px black);
     transform: scale(0.5);
     transition: transform 1s, top 1s, left 1s;
     position: absolute;
-    top: 235.25px;
+    width: 134px;
+}
+
+.boon-wrap .boon-flip-wrap {
+    -webkit-transform-style: preserve-3d;
+    transform-style: preserve-3d;
+    transition: transform 0.5s;
+    transform-origin: center;
+}
+
+.boon-flip-wrap.flipped {
+    transform: rotateY(180deg);
+}
+
+.boon.front,.boon.back {
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.boon.back {
+    transform: rotateY(180deg);
+    transform-origin: center;
 }
 
 .boon {
+    position: absolute;
     cursor: pointer;
     border-radius: 15px;
-    z-index: 50;
+}
+
+.opp-camp .boon.front {
+    pointer-events: none;
 }
 
 /*
@@ -537,7 +571,7 @@ For back boons
 
 .boon.boon-back {
     width: 134px; height: 134px;
-    background: url('../img/cardboard_css_sprite.jpg') 132px 132px;
+    background: url('../img/cardboard_css_sprite.jpg') -1937px -1047px;
 }
 
 .travel-icons-wrap {
