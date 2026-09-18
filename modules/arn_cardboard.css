@@ -332,14 +332,6 @@ div#start-player {
     clip-path: url(#path-start-player);
 }
 
-.guardian-hand-wrap {
-    filter: drop-shadow(8px 7px 6px black);
-    transform: scale(0.5);
-    transition: transform 1s, top 1s, left 1s;
-    position: absolute;
-    top: 225px;
-}
-
 .guardian-wrap {
     position: absolute;
     top: -45px;
@@ -353,14 +345,6 @@ div#start-player {
     margin-left: -16px;
 }
 
-.guardian-hand {
-    cursor: pointer;
-    clip-path: inset(5% 5% 75% 68% round 15px);
-    z-index: 50;
-}
-.small.guardian-hand {
-    clip-path: inset(5% 5% 75% 77% round 15px);
-}
 .guardian-wrap .guardian {
     clip-path: url(#guardian-path);
 }
@@ -369,52 +353,41 @@ div#start-player {
     top: -6px;
 }
 
-.guardian.guardian-9 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -1360px -530px;
+.boon-wrap {
+    filter: drop-shadow(8px 7px 6px black);
+    transform: scale(0.5);
+    transition: transform 1s, top 1s, left 1s;
+    position: absolute;
+    top: 235.25px;
 }
 
-
-
-.guardian.guardian-10 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -25px -1035px;
+.boon {
+    cursor: pointer;
+    border-radius: 15px;
+    z-index: 50;
 }
 
-.guardian.guardian-11 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -470px -1035px;
-}
-
-.guardian.guardian-12 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -915px -1035px;
-}
-
-.guardian.guardian-14 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -1360px -1035px;
-}
-
-
-.guardian.guardian-13 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -1805px -25px;
-}
+/*
+Boon graphics are extracted from the same graphics than guardians
+For wide boons
+- (width, height) = (114, 85)
+- (x_boon, y_boon) = (x_guardian, y_guardian) + (-289, -21);
+For small boons
+- (width, height) = (76, 85)
+- (x_boon, y_boon) = (x_guardian, y_guardian) + (-321.5, -21);
+For back boons
+- (width, height) = (134, 134)
+- (x_boon, y_boon) = (x_guardian, y_guardian) + (-132, -132);
+*/
 
 .guardian.guardian-1 {
     width: 425px; height: 425px;
     background: url('../img/cardboard_css_sprite.jpg') -1805px -470px;
 }
 
-.guardian.guardian-back {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -1805px -915px;
-}
-
-.guardian.guardian-15 {
-    width: 425px; height: 425px;
-    background: url('../img/cardboard_css_sprite.jpg') -25px -1480px;
+.boon.boon-1 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2132px -491px;
 }
 
 .guardian.guardian-2 {
@@ -422,9 +395,19 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -470px -1480px;
 }
 
+.boon.boon-2 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -759px -1501px;
+}
+
 .guardian.guardian-3 {
     width: 425px; height: 425px;
     background: url('../img/cardboard_css_sprite.jpg') -915px -1480px;
+}
+
+.boon.boon-3 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -1242px -1501px;
 }
 
 .guardian.guardian-4 {
@@ -432,9 +415,19 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -1360px -1480px;
 }
 
+.boon.boon-4 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -1687px -1501px;
+}
+
 .guardian.guardian-5 {
     width: 425px; height: 425px;
     background: url('../img/cardboard_css_sprite.jpg') -1805px -1480px;
+}
+
+.boon.boon-5 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2094px -1501px;
 }
 
 .guardian.guardian-6 {
@@ -442,14 +435,109 @@ div#start-player {
     background: url('../img/cardboard_css_sprite.jpg') -2250px -25px;
 }
 
+.boon.boon-6 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2539px -46px;
+}
+
 .guardian.guardian-7 {
     width: 425px; height: 425px;
     background: url('../img/cardboard_css_sprite.jpg') -2250px -470px;
 }
 
+.boon.boon-7 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2539px -491px;
+}
+
 .guardian.guardian-8 {
     width: 425px; height: 425px;
     background: url('../img/cardboard_css_sprite.jpg') -2250px -915px;
+}
+
+.boon.boon-8 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2539px -936px;
+}
+
+.guardian.guardian-9 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -1360px -530px;
+}
+
+.boon.boon-9 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -1687px -551px;
+}
+
+.guardian.guardian-10 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -25px -1035px;
+}
+
+.boon.boon-10 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -352px -1056px;
+}
+
+.guardian.guardian-11 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -470px -1035px;
+}
+
+.boon.boon-11 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -759px -1056px;
+}
+
+.guardian.guardian-12 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -915px -1035px;
+}
+
+.boon.boon-12 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -1242px -1056px;
+}
+
+.guardian.guardian-13 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -1805px -25px;
+}
+
+.boon.boon-13 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -2132px -46px;
+}
+
+.guardian.guardian-14 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -1360px -1035px;
+}
+
+.boon.boon-14 {
+    width: 114px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -1649px -1056px;
+}
+
+.guardian.guardian-15 {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -25px -1480px;
+}
+
+.boon.boon-15 {
+    width: 76px; height: 85px;
+    background: url('../img/cardboard_css_sprite.jpg') -352px -1501px;
+}
+
+.guardian.guardian-back {
+    width: 425px; height: 425px;
+    background: url('../img/cardboard_css_sprite.jpg') -1805px -915px;
+}
+
+.boon.boon-back {
+    width: 134px; height: 134px;
+    background: url('../img/cardboard_css_sprite.jpg') 132px 132px;
 }
 
 .travel-icons-wrap {

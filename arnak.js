@@ -657,14 +657,15 @@ function (dojo, declare) {
         dojo.place(siteWrap, board);
       }
     },
-    handGuard: function(num) {
+    boonDiv: function(num, format) {
       var result = dojo.create("div");
       var inner = dojo.create("div");
-      dojo.addClass(result, "guardian-hand-wrap");
-      if (Object.keys(this.material.guardians[num].boon)[0] == "travel") {
-        dojo.addClass(inner, "small");
-      }
-      dojo.addClass(inner, "guardian-hand guardian guardian-" + num);
+      dojo.addClass(result, "boon-wrap boon-" + num);
+
+      dojo.addClass(inner, "boon");
+      dojo.addClass(inner, format);
+      dojo.addClass(inner, "boon-" + num);
+
       dojo.connect(inner, "click", this, "guardEffect");
       inner.dataset.num = num;
       dojo.place(inner, result);
@@ -1022,25 +1023,24 @@ function (dojo, declare) {
 
     },
     updatePlayerGuards(playerId) {
-      var left = 356;
+      var left = 569.5;
       var player = this.gamedatas.players[playerId];
       var handDiv = dojo.query(".player-camp.camp-" + playerId)[0];
-      for (var guardNum of player.guardians) {
-        var guardChild = dojo.query(".guardian-hand.guardian-" + guardNum)[0];
-        var guardDiv;
-        if (!guardChild) {
-          guardDiv = this.handGuard(guardNum);
-          dojo.place(guardDiv, handDiv);
-        }
-        else {
-          guardDiv = guardChild.parentNode;
-        }
-        guardDiv.style.left = left + "px";
 
-        left -= dojo.query(".small", guardDiv)[0] ? 50 : 66;
+       for (var guardNum of player.guardians) {
+        var boonDiv = dojo.query(".boon-wrap.boon-" + guardNum)[0];
+        
+        var format = (Object.keys(this.material.guardians[guardNum].boon)[0] == "travel")? "small" : "normal";
+        if (!boonDiv) {
+          boonDiv = this.boonDiv(guardNum, format);
+          dojo.place(boonDiv, handDiv);
+        }
+        
+        left -= (format == "small") ? 50 : 69;
+        boonDiv.style.left = left + "px";
 
-        guardDiv.style.top = "";
-        guardDiv.style.transform = "";
+        boonDiv.style.top = "";
+        boonDiv.style.transform = "";
       }
     },
     updateSiteTooltips() {
@@ -3064,25 +3064,34 @@ function (dojo, declare) {
       this.gamedatas.players[a.playerId].resources.guardian += 1;
       this.updateResource(a.playerId, "guardian");
       this.gamedatas.players[a.playerId].guardians.push(a.guardNum);
-      var newDiv = this.handGuard(a.guardNum);
+      var format = (Object.keys(this.material.guardians[a.guardNum].boon)[0] == "travel")? "small" : "normal";
+      var newDiv = this.boonDiv(a.guardNum, format);
       var targetB = dojo.position(targetBoard);
+
       var x = dojo.position(toDestroy).x - targetB.x;
       var y = dojo.position(toDestroy).y - targetB.y;
       var s = targetB.w / targetBoard.offsetWidth;
       x += (1-s) * (x) * (1/s);
       y += (1-s) * (y) * (1/s);
       newDiv.style.transform = "scale(0.26)";
+      if (format == "small") {
+        x += 85;
+        y += 5.5;
+      }
+      else if(format == "normal") {
+        x += 75.5;
+        y += 5.5;
+      }
       newDiv.style.left = x + "px";
       newDiv.style.top = y + "px";
+
       dojo.place(newDiv, targetBoard);
 
-      setTimeout(
-        function(thisArg, playerId) {
-          thisArg.updatePlayerGuards(playerId);
-        }, 1000, this, a.playerId
-      );
+      setTimeout(() => {
+        this.updatePlayerGuards(a.playerId);
+      }, 1000);
       this.fadeOutAndDestroy(toDestroy, 800);
-      setTimeout(function(thisArg) {thisArg.updateSiteTooltips()}, 1000, this);
+      setTimeout(() => {this.updateSiteTooltips()}, 1000);
       this.restoreServerGameState();
 
       dojo.query(".discardable").removeClass("discardable");
@@ -3096,7 +3105,7 @@ function (dojo, declare) {
           break;
         }
       }
-      this.fadeOutAndDestroy(dojo.query(".guardian-hand.guardian-" + a.guardNum)[0].parentNode);
+      this.fadeOutAndDestroy(dojo.query(".boon.boon-" + a.guardNum)[0]);
       this.updatePlayerGuards(a.player_id);
       this.restoreServerGameState();
     },
