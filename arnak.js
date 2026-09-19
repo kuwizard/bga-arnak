@@ -1342,7 +1342,7 @@ function (dojo, declare) {
 
       var cardInfo = this.material.cards[type][num];
 
-      var cantPlay = this.gamedatas.gamestate.name == "afterMain" && cardInfo.action != "free";
+      var cantPlay = this.gamedatas.gamestate.name == "afterMain" && (type == "art" || (cardInfo.action != "free" && cardInfo.action != "freeOrPass" && cardInfo.action != "none"));
       if (cantPlay) {
         this.showMessage(_("You already played a main action this turn"), "error");
         return;
@@ -2740,6 +2740,10 @@ function (dojo, declare) {
       }
       else if (card.type == "back")
         card = {id: notif.args.cardId, type: notif.args.cardType, num: notif.args.cardNum, fromDiv: card.div};
+
+      if (notif.args.source == 'hand' && notif.args.destination == 'play')
+        //Hack so that free items played (watch, chronometer) reset their client state
+        this.restoreServerGameState();
 
       if (notif.args.source == 'supply' && notif.args.destination == 'play') {
         card.fromDiv = card.div;
