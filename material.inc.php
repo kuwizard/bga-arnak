@@ -254,7 +254,7 @@ $sites = [
     4 => ["discardforjewel" => 1]
   ],
   "small" => [
-    1  => ["buyfreeitem" => 1],
+    1  => ["buyfreeitem" => ["compass" => 2]],
     2  => ["coins" => 1, "arrowhead" => 1],
     3  => ["card" => 1, "coins" => 1, "tablet" => 1],
     4  => ["compass" => 1, "arrowhead" => 1],

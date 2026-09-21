@@ -108,6 +108,7 @@ class arnak extends Table
       "artifact-mainaction" => 30,
       "warmask-played" => 31,
       "ocarina-played" => 32,
+      "free-item-site-id" => 33,
 
       //  "my_second_global_variable" => 11,
       //    ...
@@ -812,6 +813,16 @@ class arnak extends Table
     $num = $this->getGameStateValue("art-active");
     return array("num" => $num, "id" => $this->sqlWrapper->getCardId('art',$num));
   }
+  function freeItemFallback () {
+    $siteId = $this->getGameStateValue("free-item-site-id");
+    $gains = $this->gameData->siteEffects("small", $siteId);
+    $resources = [];
+    if (isset($gains["buyfreeitem"])) {
+      $resources = $gains["buyfreeitem"];
+    }
+    return $resources;
+  }
+
   function researchLeft() {
     $result = array();
     $playerId = $this->getActivePlayerId();
@@ -1546,6 +1557,7 @@ class arnak extends Table
     $this->incStat($double ? 2 : 1, "sites-activated-".$size, $playerId);
     if ($buyFreeItem) {
       $this->setGameStateValue("discount-coins", 9999);
+      $this->setGameStateValue("free-item-site-id", $num);
       $this->gamestate->nextState("plane");
     }
     else if ($mustDiscard) {  // is discard jewel
@@ -1570,7 +1582,10 @@ class arnak extends Table
 
   function planeCompass() {
     $this->checkAction("planeCompass");
-    $this->gainResource("compass", $this->getActivePlayerId(), 2);
+    $gains = $this->freeItemFallback();
+    foreach ($gains as $resource => $amt) {
+      $this->gainResource($resource, $this->getActivePlayerId(), $amt);
+    }
     $this->gamestate->nextState("main_action_done");
     $siteId = $this->getGameStateValue("guard-buffer");
     if ($siteId > -1) {
@@ -2679,6 +2694,9 @@ class arnak extends Table
 //
 //
 
-
+    if ($from_version <= 2609130043) {
+      //Set global for small site with 'buyfreeitem' effect
+      $this->setGameStateValue("free-item-site-id", 1);
+    }
   }
 }

@@ -2628,7 +2628,14 @@ function (dojo, declare) {
             this.addActionButton("button_choose_notpass", buttonText, 'chooseNotPass');
             break;
           case 'evalPlane':
-            this.addActionButton("button_plane_compass", _("Get ") +  compassIcon + compassIcon + _(" instead"), 'planeCompass');
+            var icons = "";
+            var resIcons = {coins: coinIcon, compass: compassIcon};
+            for (var res in args) {
+              for (var i = 0; i < args[res]; i++) {
+                icons += resIcons[res];
+              }
+            }
+            this.addActionButton("button_plane_compass", _("Get ") + icons + _(" instead"), 'planeCompass');
             break;
 
           case 'idolUpgrade': case 'researchUpgrade': case "assUpgrade": case "guardUpgrade": case 'cardUpgrade':

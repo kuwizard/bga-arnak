@@ -170,6 +170,7 @@ $machinestates = array(
       "name" => "evalPlane",
       "description" => clienttranslate('${actplayer} may get an item for free'),
       "descriptionmyturn" => clienttranslate('${you} may get an item for free'),
+      "args" => "freeItemFallback",
       "type" => "activeplayer",
       "possibleactions" => array("buyItem", "playCard", "useAssistant", "useIdol", "useGuardPower", "planeCompass", "undo"),
       "transitions" => array("main_action_done" => AFTER_MAIN)
