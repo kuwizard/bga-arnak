@@ -40,7 +40,7 @@ class CardEffects {
         break;
       case Artifact::War_Mask:
         $this->gainCardResource("arrowhead", 1);
-        $game->setGameStateValue("warmask-played", 1);
+        $game->sqlWrapper->setPlayerEffects($this->playerId, Effect::War_Mask);
         break;
       case Artifact::Treasure_Chest:
         $this->gainCardResource("card", 1);
@@ -112,7 +112,7 @@ class CardEffects {
         break;
       case Artifact::Guardians_Ocarina:
         $game->moveToSite("home", "", $arg);
-        $game->setGameStateValue("ocarina-played", 1);
+        $game->sqlWrapper->setPlayerEffects($this->playerId, Effect::Guardians_Ocarina);
         break;
       case Artifact::Tigerclaw_Hairpin:
         $arg = JSON_DECODE($arg);

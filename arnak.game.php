@@ -106,8 +106,6 @@ class arnak extends Table
       "research-curr-type" => 28,
       "art-active" => 29,
       "artifact-mainaction" => 30,
-      "warmask-played" => 31,
-      "ocarina-played" => 32,
       "free-item-site-id" => 33,
 
       //  "my_second_global_variable" => 11,
@@ -264,6 +262,7 @@ class arnak extends Table
         $this->sqlWrapper->increasePlayerResource($playerId, "idol_slot", 4);
       }
     }
+    $this->sqlWrapper->initPlayerEffects();
 
     $idolBonus = [
     "coins", "coins", "coins",
@@ -433,6 +432,8 @@ class arnak extends Table
       $usedBoons = $this->sqlWrapper->getBoons($idPlayer, false);
       $result['players'][$idPlayer]["boons"] = ["available" => $availableBoons, "used" => $usedBoons];
       $result['players'][$idPlayer]["resources"]["guardian"] = count($availableBoons) + count($usedBoons);
+
+      $result['players'][$idPlayer]["effects"] = array_map(function($effect){return $effect->value;}, $this->sqlWrapper->getPlayerEffects($idPlayer));
     }
 
     $result['artSupply'] = $this->sqlWrapper->getPublicCards(null, 'supply', 'art');
@@ -1146,7 +1147,7 @@ class arnak extends Table
 
   function payTravel($iconReqs, $payment) {
     $playerId = $this->getActivePlayerId();
-    $ocarina = $this->ocarinaActive();
+    $ocarina = $this->effectActive($playerId, Effect::Guardians_Ocarina);
 
     $discountPayment = [];
     foreach ([BOOT, SHIP, CAR, PLANE] as $token) {
@@ -1218,18 +1219,12 @@ class arnak extends Table
       $this->setGameStateValue("discount-".$this->travelTokenTranslate($token), 0);
     }
   }
-  function ocarinaActive() {
-    $playerId = $this->getActivePlayerId();
-    if ($this->getGameStateValue("ocarina-played") == "1" ) {
-      $cards = $this->sqlWrapper->getCards($playerId, 'play', 'art');
-      foreach ($cards as $card) {
-        if ($card["info"] == Artifact::Guardians_Ocarina) {
-          return true;
-        }
-      }
-    }
-    return false;
+
+  function effectActive($playerId, $effect) {
+    $effects = $this->sqlWrapper->getPlayerEffects($playerId);
+    return in_array($effect, $effects);
   }
+
   function availableGuardians($targetLocation = -1, $notOccupiedbyAnyOtherPlayer = false)
   {
     $playerId = $this->getActivePlayerId();
@@ -2157,26 +2152,14 @@ class arnak extends Table
     }
 
     foreach($guardedMeeple as $playerMeeple) {
-      $safe = false;
-      if( $this->getGameStateValue("warmask-played") == 1 ) {
-        $cards = $this->sqlWrapper->getCards($playerMeeple, 'play', 'art');
-        foreach ($cards as $card) {
-          if ($card["info"] == Artifact::War_Mask) {
-            $safe = true;
-            break;
-          }
-        }
-      }
-
-      if ($safe) {
+      if ($this->effectActive($playerMeeple, Effect::War_Mask)) {
         $this->notifyAllPlayers("noFear", clienttranslate('${player_name} does not get fear thanks to the War Mask'), array("player_name" =>$this->loadPlayersBasicInfos()[$playerMeeple]["player_name"]));
       }
       else {
         $this->gainResource("fear", $playerMeeple, 1);
       }
     }
-    $this->setGameStateValue("warmask-played", 0);
-    $this->setGameStateValue("ocarina-played", 0);
+    $this->sqlWrapper->resetPlayerEffects();
 
     if (intval($this->getGameStateValue("round")) >= "5") {
       $this->gameEnd();
@@ -2697,6 +2680,45 @@ class arnak extends Table
     if ($from_version <= 2609130043) {
       //Set global for small site with 'buyfreeitem' effect
       $this->setGameStateValue("free-item-site-id", 1);
+
+      $variables = [
+        31 => 'warmask-played',
+        32 => 'ocarina-played',
+      ];
+
+      $globals = [];
+      foreach ($variables as $idx => $token) {
+        $values = self::getObjectListFromDB("SELECT * FROM global WHERE global_id = $idx");
+        $globals[$token] = (count($values) > 0 )? $values[0]['global_value'] : 0;
+      }
+
+      //New Effects Globals
+      $this->sqlWrapper->initPlayerEffects();
+
+      //Old War Mask
+      if ($globals["warmask-played"] == "1") {
+        foreach ($this->loadPlayersBasicInfos() as $playerId => $infos) {
+          $cards = $this->sqlWrapper->getCards($playerId, 'play', 'art');
+          foreach ($cards as $card) {
+            if ($card["info"] == Artifact::War_Mask) {
+              $this->sqlWrapper->setPlayerEffects($playerId, Effect::War_Mask);
+              break;
+            }
+          }
+        }
+      }
+      //Old Guardian's Ocarina
+      if ($globals["ocarina-played"] == "1") {
+        foreach ($this->loadPlayersBasicInfos() as $playerId => $infos) {
+          $cards = $this->sqlWrapper->getCards($playerId, 'play', 'art');
+          foreach ($cards as $card) {
+            if ($card["info"] == Artifact::Guardians_Ocarina) {
+              $this->sqlWrapper->setPlayerEffects($playerId, Effect::Guardians_Ocarina);
+              break;
+            }
+          }
+        }
+      }
     }
   }
 }

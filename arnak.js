@@ -252,6 +252,10 @@ function (dojo, declare) {
         dojo.place(travelIconsWrap, playerBoard);
         this.updateTravelIcons(player_id);
 
+        var effectsWrap = dojo.create("div", {class: "effects-wrap"});
+        dojo.place(effectsWrap, playerBoard);
+        this.updateEffects(player_id);
+
         var templeWrap = dojo.create("div", {class: "temple-wrap"});
         dojo.place(templeWrap, playerBoard);
         for (var color of ["gold", "silver", "bronze"]) {
@@ -1201,6 +1205,37 @@ function (dojo, declare) {
           }
         }
       }
+    },
+    updateEffects(playerId) {
+      var effectsWrap = dojo.query("#player_board_" + playerId + " .effects-wrap")[0];
+      var playerEffects = this.gamedatas.players[playerId].effects;
+      for (var i = 0; i < playerEffects.length; i++) {
+        var effect =  playerEffects[i];
+        var effectDiv = dojo.query(".effect." + effect, effectsWrap)[0];
+        if (!effectDiv)
+          effectDiv = this.effectDiv(effect);
+        dojo.place(effectDiv, effectsWrap, i);
+      }
+      var allEffectsDiv = dojo.query(".effect", effectsWrap);
+      for (var i = playerEffects.length; i < allEffectsDiv.length; i++)
+        this.fadeOutAndDestroy(allEffectsDiv[i]);
+    },
+    effectDiv(effect) {
+      var effectDiv = dojo.create("div", {class: "effect " + effect});
+      if (effect == "guardians-ocarina") {
+        dojo.place(dojo.create("div", {class: "icon boot"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "icon ship"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "icon car"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "arrow", innerHTML: "➞"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "icon plane"}), effectDiv);
+      }
+      if (effect == "war-mask") {
+        dojo.place(dojo.create("div", {class: "icon archeologist"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "icon guardian"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "cross", innerHTML: "✖"}), effectDiv);
+        dojo.place(dojo.create("div", {class: "icon fear"}), effectDiv);
+      }
+      return effectDiv;
     },
     updateScore() {
 
@@ -2830,6 +2865,8 @@ function (dojo, declare) {
       dojo.subscribe("getAssistant", this, "notif_getAssistant");
       dojo.subscribe("returnAss", this, "notif_returnAssistant");
       dojo.subscribe("upgradeAss", this, "notif_upgradeAss");
+      dojo.subscribe("effect", this, "notif_effect");
+      dojo.subscribe("resetAllEffects", this, "notif_resetAllEffects");
       dojo.subscribe("passStartMarker", this, "notif_passStartMarker");
       dojo.subscribe("endTurn", this, "notif_endTurn");
       dojo.subscribe("deckDisplay", this, "notif_deckDisplay");
@@ -3268,6 +3305,18 @@ function (dojo, declare) {
       innerDiv.toggleClass("gold gold-animate", notif.args.gold);
       var assDiv = dojo.query(".assistant[data-num=" + notif.args.assNum + "]")[0];
       this.addTooltipHtml(assDiv.id, this.tooltips.assistant(notif.args.assNum, notif.args.gold));
+    },
+    notif_effect: function(notif) {
+      var playerEffects = this.gamedatas.players[notif.args.player_id].effects;
+      if (!playerEffects.includes(notif.args.effect))
+        playerEffects.push(notif.args.effect);
+      this.updateEffects(notif.args.player_id);
+    },
+    notif_resetAllEffects: function(notif) {
+      for (var playerId in this.gamedatas.players) {
+        this.gamedatas.players[playerId].effects = [];
+        this.updateEffects(playerId);
+      }
     },
     setAssistantPosition: function(div, pos) {
       div.classList.forEach((c)=>{

@@ -578,9 +578,19 @@ For back boons
     display: flex;
     flex-wrap: wrap;
 }
+.effects-wrap{
+    display: block;
+}
+
 .travel-icons-wrap .icon {
     transform: scale(0.4);
     margin: -20px -20px;
+}
+
+.effects-wrap .effect {
+    display: flex;
+    flex-wrap: wrap;
+    margin: 5px;
 }
 
 .temple-wrap {

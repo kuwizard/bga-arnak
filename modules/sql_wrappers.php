@@ -832,5 +832,34 @@ class SqlWrapper {
       $this->game->DbQuery("INSERT INTO player ($keysStr) VALUES ($propsStr)");
     }
   }
+
+  public function getPlayerEffects($playerId) {
+    $arr = $this->game->globals->get("effects-".$playerId);
+    return array_map(function($effect){return Effect::from($effect);}, $arr);
+  }
+
+  public function setPlayerEffects($playerId, $effect) {
+    $gobalName = "effects-".$playerId;
+    $effects = $this->game->globals->get($gobalName);
+    if (!in_array($effect->value, $effects)) {
+      array_push($effects, $effect->value);
+      $this->game->globals->set($gobalName, $effects);
+      $this->game->notifyAllPlayers("effect", "", array(
+        "player_id" => $playerId,
+        "effect" => $effect
+      ));
+    }
+  }
+
+  public function resetPlayerEffects() {
+    $this->initPlayerEffects();
+    $this->game->notifyAllPlayers("resetAllEffects", "", array());
+  }
+
+  public function initPlayerEffects() {
+    foreach($this->game->loadPlayersBasicInfos() as $playerId => $player) {
+      $this->game->globals->set("effects-".$playerId, []);
+    }
+  }
 }
 ?>

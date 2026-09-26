@@ -114,6 +114,11 @@ enum Basic: string {
   }
 }
 
+enum Effect: string {
+  case War_Mask = "war-mask";
+  case Guardians_Ocarina = "guardians-ocarina";
+}
+
 class GameData {
   public function __construct($game) {
     $this->game = $game;

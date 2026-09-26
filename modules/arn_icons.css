@@ -85,7 +85,7 @@
     background: url('../img/icons_css_sprite.png') -10px -498px;
 }
 
-.counter.icon.guardian {
+.icon.guardian {
     width: 105px; height: 82px;
     background: url('../img/icons_css_sprite.png') -417px -707px;
 }
@@ -101,6 +101,20 @@
     background: url('../img/icons_css_sprite.png') -416px -254px;
     clip-path: url(#idol-path);
 }
+
+/* TODO */
+/* These icons are very small ones extracted from playeraid.png
+/* Try to update from official icons from CGE */
+.icon.archeologist {
+    width: 13px; height: 20px;
+    background: url('../img/misc_icons.png') -6px -6px;
+}
+
+.icon.fear {
+    width: 23px; height: 33px;
+    background: url('../img/misc_icons.png') -25px -6px;
+}
+/****/
 
 .arnak-board .idol, .player-camp .idol {
     clip-path: url(#idol-path);
@@ -271,3 +285,36 @@
 .action-button .icon.tablet {
     margin: -30px -19px;
 }
+
+.effect .icon:is(.boot,.ship,.car) {
+    transform: scale(0.25);
+    margin: -28px -35px -26px -28px;
+}
+
+.effect .arrow {
+    transform: scale(1.2);
+    margin: -3px 1px 0px 10px;
+}
+
+.effect .cross {
+    transform: scale(1.2);
+    margin: -1px 1px 0px 10px;
+}
+
+
+.effect .icon.plane {
+    transform: scale(0.25);
+    margin: -28px -28px -26px -28px;
+}
+
+.effect .icon.guardian {
+    transform: scale(0.2);
+    margin: -30px -48px -32px -41px;
+}
+
+.effect .icon.fear {
+    transform: scale(0.6);
+    margin: -5px -3px -5px -0px;
+}
+
+
