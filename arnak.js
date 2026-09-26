@@ -3048,10 +3048,10 @@ function (dojo, declare) {
           revealedDiv = this.assistantDiv(newAss.num, newAss.gold, newAss.ready);
           dojo.place(revealedDiv, board);
           dojo.connect(revealedDiv, "click", this, "assistantClick");
-          var pos = (notif.args.revealedStack == 4)?"special1":("stack" + notif.args.revealedStack);
-          this.setAssistantPosition(revealedDiv, pos);
           this.addTooltipHtml(revealedDiv.id, this.tooltips.assistant(newAss.num, newAss.gold, notif.args.newHeight));
         }
+        var pos = (notif.args.revealedStack == 4)?"special1":("stack" + notif.args.revealedStack);
+        this.setAssistantPosition(revealedDiv, pos);
       }
 
       setTimeout(() => {
