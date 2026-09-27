@@ -73,6 +73,10 @@ class CardEffects {
         break;
       case Artefact::Monkey_Medallion:
         $game->setGameStateValue("discount-coins", 9999);
+        $card = $this->game->sqlWrapper->getCardFromId($arg);
+        if ($card["position"] != "supply" || $card["info"]->type() != "item") {
+          throw new BgaUserException(clienttranslate("You must select an item from the supply"));
+        }
         $game->buyCard($arg, true, false, true);
         $game->resetDiscount();
         break;
@@ -471,6 +475,10 @@ class CardEffects {
         break;
       case Item::Whip:
         $game->setGameStateValue("discount-compass", 4);
+        $card = $this->game->sqlWrapper->getCardFromId($arg);
+        if ($card["position"] != "supply" || $card["info"]->type() != "art") {
+          throw new BgaUserException(clienttranslate("You must select an artefact from the supply"));
+        }
         $game->buyCard($arg, false, false, true);
         break;
       case Item::Rough_Map:
@@ -478,6 +486,10 @@ class CardEffects {
         break;
       case Item::Airdrop:
         $game->setGameStateValue("discount-coins", 999);
+        $card = $this->game->sqlWrapper->getCardFromId($arg);
+        if ($card["position"] != "supply" || $card["info"]->type() != "item") {
+          throw new BgaUserException(clienttranslate("You must select an item from the supply"));
+        }
         $game->buyCard($arg, true, false, true);
         $this->gainCardResource("card", 1);
         break;
