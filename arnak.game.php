@@ -264,16 +264,22 @@ class arnak extends Table
     }
     $this->sqlWrapper->initPlayerEffects();
 
-    $idolBonus = [
-    "coins", "coins", "coins",
-    "compass", "compass", "compass",
-    "tablet", "tablet", "tablet",
-    "exile", "exile", "exile",
-    "upgrade", "upgrade",
-    "refresh", "refresh"
-    ];
-    shuffle($idolBonus);
+    $idolBonus = $this->createIdols();
+    $this->createPositions(count($players), $idolBonus);
+    $this->createBonusTokens(count($players));
+    $this->sqlWrapper->createTempleTiles(count($players));
+    $this->createGuardians();
+    $this->createSites();
+    $this->createCards();
+    $this->createAssistants(count($players));
 
+    // we need some player active for giveExtraTime()
+    $this->activeNextPlayer();
+    $this->activePrevPlayer();
+
+  }
+
+  function createPositions($numPlayers, $idolBonus) {
     $blocked = range(0, 4);
     shuffle($blocked);
     array_pop($blocked);
@@ -282,7 +288,7 @@ class arnak extends Table
     foreach(range(0, 16) as $i) {
       $position = ["numSlots" => 1, "idol" => NULL];
       if ($i < 5) {
-        if (count($players) == 4 || (count($players) == 3 && !in_array($i, $blocked))) {
+        if ($numPlayers == 4 || ($numPlayers == 3 && !in_array($i, $blocked))) {
           $position["numSlots"] = 2;
         }
       }
@@ -292,96 +298,76 @@ class arnak extends Table
       $boardPositions[$i] = $position;
     }
     $this->sqlWrapper->createBoardPositions($boardPositions);
+  }
 
-    $researchBonus = [
-      "coins", "coins", "coins",
-      "compass", "compass", "compass",
-      "tablet", "tablet", "tablet",
-      "exile", "exile", "exile",
-      "card", "card", "card",
-      "upgrade", "upgrade", "upgrade"
-    ];
-    shuffle($researchBonus);
-    if ($this->birdTemple()) {
-      switch(count($players)) {
-        case 2: $positionIds = [3, 4, 6, 7, 8, 10, 11, 14, 14]; break;
-        case 3: $positionIds = [3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 14, 14]; break;
-        case 4: $positionIds = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 14, 14]; break;
-
-      }
-    }
-    else {
-      switch(count($players)) {
-        case 2: $positionIds = [3, 5, 6, 7, 11, 12, 13, 13, 14, 14]; break;
-        case 3: $positionIds = [3, 4, 5, 6, 7, 11, 12, 13, 13, 13, 14, 14, 14]; break;
-        case 4: $positionIds = [3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 13, 13, 14, 14, 14, 14]; break;
-
-      }
-    }
-    $this->sqlWrapper->createResearchTokens($positionIds, $researchBonus);
-
-    $this->sqlWrapper->createTempleTiles(count($players));
-
-    $bigLocationIds = range(1, 6);
-    shuffle($bigLocationIds);
-    $this->sqlWrapper->createLocations($bigLocationIds, "big", true);
-
-    $smallLocationIds = range(1, 10);
-    shuffle($smallLocationIds);
+  function createCards() {
+    $cards = [];
     if ($this->debugMode()) {
-      $smallLocationIds = [5, 7, 8, 9, 1, 2, 3, 4];
-    }
-    $this->sqlWrapper->createLocations($smallLocationIds, "small", true);
-
-    $this->sqlWrapper->createLocations(range(0, 4), "basic", false);
-
-    $guardianIds = range(1, 15);
-    shuffle($guardianIds);
-    if ($this->debugMode()) {
-      $guardianIds = [7, 8, 9, 1, 2, 3, 4];
-    }
-    $this->sqlWrapper->createGuardians($guardianIds);
-
-    $arts = Artifact::cases();
-    shuffle($arts);
-    if ($this->debugMode()) {
-      $arts = [
+      $cards = [
         Artifact::Pathfinders_Sandals,
         Artifact::Ornate_Hammer,
         Artifact::War_Mask,
         Artifact::Idol_of_AraAnu,
         Artifact::Inscribed_Blade,
         Artifact::Cleansing_Cauldron,
-        Artifact::Treasure_Chest
+        Artifact::Treasure_Chest,
+
+        Item::Theodolite,
+        Item::Ostrich,
+        Item::Hot_Air_Balloon,
+        Item::Tent,
+        Item::Revolver,
+        Item::Bear_Trap,
+        Item::Lantern
       ];
     }
+    $this->sqlWrapper->createCards($cards, NULL, 'deck');
+  }
 
-    $this->sqlWrapper->createCards($arts, NULL, 'deck');
+  function createSites() {
+    $bigLocationIds = array_keys($this->material["sites"]["big"]);
+    shuffle($bigLocationIds);
+    $this->sqlWrapper->createLocations($bigLocationIds, "big", true);
 
-    $items = Item::cases();
-    shuffle($items);
+    $smallLocationIds = [];
     if ($this->debugMode()) {
-      $items = [
-          Item::Theodolite,
-          Item::Ostrich,
-          Item::Hot_Air_Balloon,
-          Item::Tent,
-          Item::Revolver,
-          Item::Bear_Trap,
-          Item::Lantern
-        ];
+      $smallLocationIds = [5, 7, 8, 9, 1, 2, 3, 4];
     }
+    else {
+      $smallLocationIds = array_keys($this->material["sites"]["small"]);
+      shuffle($smallLocationIds);
+    }
+    $this->sqlWrapper->createLocations($smallLocationIds, "small", true);
 
-    $this->sqlWrapper->createCards($items, NULL, 'deck');
+    $basicLocationIds = array_keys($this->material["sites"]["basic"]);
+    $this->sqlWrapper->createLocations($basicLocationIds, "basic", false);
+  }
 
-    $assistantIds = range(1, 12);
-    shuffle($assistantIds);
+  function createGuardians() {
+    $guardianIds = [];
+    shuffle($guardianIds);
+    if ($this->debugMode()) {
+      $guardianIds = [7, 8, 9, 1, 2, 3, 4];
+    }
+    else {
+      $guardianIds = array_keys($this->material["guardians"]);
+      shuffle($guardianIds);
+    }
+    $this->sqlWrapper->createGuardians($guardianIds);
+  }
+
+  function createAssistants($numPlayers) {
+    $assistantIds = [];
     if ($this->debugMode()) {
       $assistantIds = [1, 2, 10, 3, 4, 5, 6, 7, 8, 9, 11, 12];
     }
+    else {
+      $assistantIds = array_keys($this->material["assistants"]);
+      shuffle($assistantIds);
+    }
     $stacks = [1 => [], 2 => [], 3 => [], 4 => []];
     if (!$this->birdTemple()) {
-      for ($i = 0; $i < count($players); ++$i) {
+      for ($i = 0; $i < $numPlayers; ++$i) {
         array_push($stacks[4], array_shift($assistantIds));
       }
     }
@@ -395,12 +381,48 @@ class arnak extends Table
       array_push($stacks[3], array_shift($assistantIds));
     }
     $this->sqlWrapper->createAssistants($stacks);
-
-    // we need some player active for giveExtraTime()
-    $this->activeNextPlayer();
-    $this->activePrevPlayer();
-
   }
+
+  function createIdols() {
+    $idolBonus = [
+    "coins", "coins", "coins",
+    "compass", "compass", "compass",
+    "tablet", "tablet", "tablet",
+    "exile", "exile", "exile",
+    "upgrade", "upgrade",
+    "refresh", "refresh"
+    ];
+    shuffle($idolBonus);
+    return $idolBonus;
+  }
+
+  function createBonusTokens($numPlayers) {
+    $researchBonus = [
+      "coins", "coins", "coins",
+      "compass", "compass", "compass",
+      "tablet", "tablet", "tablet",
+      "exile", "exile", "exile",
+      "card", "card", "card",
+      "upgrade", "upgrade", "upgrade"
+    ];
+    shuffle($researchBonus);
+    if ($this->birdTemple()) {
+      switch($numPlayers) {
+        case 2: $positionIds = [3, 4, 6, 7, 8, 10, 11, 14, 14]; break;
+        case 3: $positionIds = [3, 4, 6, 7, 8, 10, 11, 12, 13, 14, 14, 14]; break;
+        case 4: $positionIds = [3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 14, 14, 14]; break;
+      }
+    }
+    else {
+      switch($numPlayers) {
+        case 2: $positionIds = [3, 5, 6, 7, 11, 12, 13, 13, 14, 14]; break;
+        case 3: $positionIds = [3, 4, 5, 6, 7, 11, 12, 13, 13, 13, 14, 14, 14]; break;
+        case 4: $positionIds = [3, 4, 5, 6, 7, 9, 10, 11, 12, 13, 13, 13, 14, 14, 14, 14]; break;
+      }
+    }
+    $this->sqlWrapper->createResearchTokens($positionIds, $researchBonus);
+  }
+
   protected function getAllDatas() {
     $result = array();
 
