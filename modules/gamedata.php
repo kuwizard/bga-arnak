@@ -122,27 +122,44 @@ enum Effect: string {
 class GameData {
   public function __construct($game) {
     $this->game = $game;
+    $this->material = &$this->game->material;
+  }
+
+  public function mergedMaterial() {
+    $merged = [
+      "cards" => $this->material["cards"],
+      "assistants" => $this->material["assistants"],
+      "research" => $this->research(),
+      "travelCost" => $this->travelCost(),
+      "sites" => $this->material["sites"],
+      "guardians" => $this->material["guardians"]
+    ];
+    return $merged;
+  }
+
+  private function card($card) {
+    return $this->material["cards"][$card->type()][$card->value];
   }
 
   public function cardName($card) {
-    return $this->game->material["cards"][$card->type()][$card->value]["name"];
+    return $this->card($card)["name"];
   }
 
   public function cardCost($card) {
-    return $this->game->material["cards"][$card->type()][$card->value]["cost"];
+    return $this->card($card)["cost"];
   }
 
   public function cardTravel($card) {
-    return $this->game->material["cards"][$card->type()][$card->value]["travel"];
+    return $this->card($card)["travel"];
   }
 
   public function cardPoints($card) {
-    return $this->game->material["cards"][$card->type()][$card->value]["points"];
+    return $this->card($card)["points"];
   }
 
   public function cardExileItself($card) {
     if ($card->type() == "item") {
-      return $this->game->material["cards"][$card->type()][$card->value]["exileItself"];
+      return $this->card($card)["exileItself"];
     }
     else {
       return false;
@@ -151,7 +168,7 @@ class GameData {
 
   public function cardAction($card) {
     if ($card->type() == "item" || $card->type() == "basic") {
-      return $this->game->material["cards"][$card->type()][$card->value]["action"];
+      return $this->card($card)["action"];
     }
     else {
       return "complex";
@@ -159,73 +176,72 @@ class GameData {
   }
 
   public function cardVarname($card) {
-    return $this->game->material["cards"][$card->type()][$card->value]["varname"];
+    return $this->card($card)["varname"];
   }
 
   public function assistantPower($num, $gold) {
-    return $this->game->material["assistants"][$num][$gold?"gold":"silver"];
+    return $this->material["assistants"][$num][$gold?"gold":"silver"];
+  }
+
+  private function travelCost() {
+    return $this->game->birdTemple() ? $this->material["travelCost"]["bird"] : $this->material["travelCost"]["snake"];
   }
 
   public function siteTravelCost($no, $slot) {
-    $travelCosts = $this->game->birdTemple() ? $this->game->material["birdTravelCost"] : $this->game->material["snakeTravelCost"];
-    return $travelCosts[$no][$slot];
+    return $this->travelCost()[$no][$slot];
   }
 
   public function guardianCost($num) {
-    return $this->game->material["guardians"][$num]["cost"];
+    return $this->material["guardians"][$num]["cost"];
   }
 
   public function guardianBoon($num) {
-    return $this->game->material["guardians"][$num]["boon"];
+    return $this->material["guardians"][$num]["boon"];
   }
 
   public function siteEffects($size, $num) {
-    return $this->game->material["sites"][$size][$num];
+    return $this->material["sites"][$size][$num];
+  }
+
+  private function research() {
+    return $this->game->birdTemple() ? $this->material["research"]["bird"] : $this->material["research"]["snake"];
   }
 
   public function researchCost($to) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["squares"][$to]["cost"];
+    return $this->research()["squares"][$to]["cost"];
   }
 
   public function researchPossibilities($from) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["squares"][$from]["possibilities"];
+    return $this->research()["squares"][$from]["possibilities"];
   }
 
   public function researchStep($spaceId) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["squares"][$spaceId]["step"];
+    return $this->research()["squares"][$spaceId]["step"];
   }
 
   public function stepPoints($book, $step, $rank = NULL) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
     if ($step < 8) {
-      return $research["steps"][$step][$book?"book":"glass"]["points"];
+      return $this->research()["steps"][$step][$book?"book":"glass"]["points"];
     }
     else {
-      return $research["lastSteps"][$rank];
+      return $this->research()["lastSteps"][$rank];
     }
   }
 
   public function researchBonus($step, $book) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["steps"][$step][$book?"book":"glass"]["bonus"];
+    return $this->research()["steps"][$step][$book?"book":"glass"]["bonus"];
   }
 
   public function templeTileCost($id) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["tiles"][$id]["cost"];
+    return $this->research()["tiles"][$id]["cost"];
   }
 
   public function templeTileColor($id) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["tiles"][$id]["color"];
+    return $this->research()["tiles"][$id]["color"];
   }
 
   public function templeTilePoints($id) {
-    $research = $this->game->birdTemple() ? $this->game->material["birdResearch"] : $this->game->material["snakeResearch"];
-    return $research["tiles"][$id]["points"];
+    return $this->research()["tiles"][$id]["points"];
   }
 }
 

@@ -296,10 +296,8 @@ $guardians = [
 $this->material = [
   "cards" => $cards,
   "assistants" => $assistants,
-  "birdResearch" => $birdResearch,
-  "snakeResearch" => $snakeResearch,
-  "birdTravelCost" => $birdTravelCost,
-  "snakeTravelCost" => $snakeTravelCost,
+  "research" => ["bird" => $birdResearch, "snake" => $snakeResearch],
+  "travelCost" => ["bird" => $birdTravelCost, "snake" => $snakeTravelCost],
   "sites" => $sites,
   "guardians" => $guardians
 ];
