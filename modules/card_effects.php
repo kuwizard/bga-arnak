@@ -111,7 +111,8 @@ class CardEffects {
         $game->resetDiscount();
         break;
       case Artifact::Guardians_Ocarina:
-        $game->moveToSite("home", "", $arg);
+        $sites = JSON_DECODE($arg);
+        $game->moveToSite("home", "", $sites[0]);
         $game->sqlWrapper->setPlayerEffects($this->playerId, Effect::Guardians_Ocarina);
         break;
       case Artifact::Tigerclaw_Hairpin:
@@ -129,7 +130,8 @@ class CardEffects {
         $game->siteEffect("basic", $site["location_num"]);
         break;
       case Artifact::War_Club:
-        $game->freeOvercome($arg);
+        $sites = JSON_DECODE($arg);
+        $game->freeOvercome($sites[0]);
         break;
       case Artifact::Sundial:
         if ($arg == "pass") {
@@ -143,7 +145,11 @@ class CardEffects {
         }
         break;
       case Artifact::Traders_Scales:
-        $game->upgrade($arg, true);
+        $choices = JSON_DECODE($arg);
+        if (count($choices) != 1) {
+          throw new BgaUserException("Invalid upgrade count");
+        }
+        $game->upgrade($choices[0], true);
         $this->gainCardResource("coins", 3);
         break;
       case Artifact::Hunting_Arrows:
@@ -208,11 +214,11 @@ class CardEffects {
       case Artifact::Star_Charts:
         $this->gainCardResource("coins", -1);
         $siteIds = JSON_DECODE($arg);
+        if (count($siteIds) != 2 || $siteIds[0] > 4 || $siteIds[1] > 4) {
+          throw new BgaUserException(clienttranslate("You must select 2 basic sites"));
+        }
         if ($siteIds[0] == $siteIds[1]) {
           throw new BgaUserException(clienttranslate("You must select 2 different sites"));
-        }
-        if ($siteIds[0] > 4 || $siteIds[1] > 4) {
-          throw new BgaUserException(clienttranslate("You must select 2 basic sites"));
         }
         if ($siteIds[0] == 4) {
           $game->siteEffect("basic", $siteIds[1], true);
@@ -251,7 +257,11 @@ class CardEffects {
         }
         break;
       case Artifact::Traders_Coins:
-        $game->upgrade($arg, true);
+        $choices = JSON_DECODE($arg);
+        if (count($choices) != 1) {
+          throw new BgaUserException("Invalid upgrade count");
+        }
+        $game->upgrade($choices[0], true);
         $this->gainCardResource("coins", 2);
         break;
       case Artifact::Stone_Key:
@@ -428,14 +438,16 @@ class CardEffects {
         }
         break;
       case Item::Binoculars:
-        $site = $game->sqlWrapper->getSite($arg);
+        $sites = JSON_DECODE($arg);
+        $site = $game->sqlWrapper->getSite($sites[0]);
         if (!$game->checkSiteSize($site, ["small"])) {
           throw new BgaUserException(clienttranslate("That is not a small discovered site"));
         }
         $game->siteEffect("small", $site["location_num"]);
         break;
       case Item::Tent:
-        $site = $game->sqlWrapper->getSite($arg);
+        $sites = JSON_DECODE($arg);
+        $site = $game->sqlWrapper->getSite($sites[0]);
         if (!$game->isOccupied($site, $this->playerId)) {
           throw new BgaUserException(clienttranslate("You must have an archaeologist on the site"));
         }
@@ -507,15 +519,17 @@ class CardEffects {
         $this->gainCardResource("card", 2);
         break;
       case Item::Revolver:
+        $sites = JSON_DECODE($arg);
         $this->gainCardResource("compass", -1);
-        $game->freeOvercome($arg);
+        $game->freeOvercome($sites[0]);
         break;
       case Item::Hat:
         $this->gainCardResource("compass", 1);
         $this->gainCardResource("coins", 1);
         break;
       case Item::Bear_Trap:
-        $guards = $game->availableGuardians($arg, true);
+        $sites = JSON_DECODE($arg);
+        $guards = $game->availableGuardians($sites[0], true);
         switch (count($guards)) {
           case 0: throw new BgaUserException(clienttranslate("Select a valid guardian"));
           case 1: $game->overcomeGuard($guards[0], "", true); break;
@@ -529,14 +543,16 @@ class CardEffects {
         $game->gamestate->nextState("cardExile");
         break;
       case Item::Lantern:
-        $site = $game->sqlWrapper->getSite($arg);
+        $sites = JSON_DECODE($arg);
+        $site = $game->sqlWrapper->getSite($sites[0]);
         if (!$game->checkSiteSize($site, ["basic"])) {
           throw new BgaUserException(clienttranslate("That is not a basecamp site"));
         }
         $game->siteEffect("basic", $site["location_num"]);
         break;
       case Item::Dog:
-        $site = $game->sqlWrapper->getSite($arg);
+        $sites = JSON_DECODE($arg);
+        $site = $game->sqlWrapper->getSite($sites[0]);
         if (!$game->isUnoccupied($site)) {
           throw new BgaUserException(clienttranslate("That is not an unoccupied basecamp site"));
         }

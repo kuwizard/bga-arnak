@@ -20,7 +20,8 @@ define([
   "ebg/core/gamegui",
   "ebg/counter",
   g_gamethemeurl + "modules/tooltips.js",
-  g_gamethemeurl + "modules/card_place.js"
+  g_gamethemeurl + "modules/card_place.js",
+  g_gamethemeurl + "modules/state_args.js"
 ],
 function (dojo, declare) {
   return declare("bgagame.arnak", ebg.core.gamegui, {
@@ -112,14 +113,7 @@ function (dojo, declare) {
       ]
     ],
     restoreGlobals: function() {
-      this.chartsSelected = undefined;
-      this.siteSelected = undefined;
-      this.travelSelected.clear();
-      this.knifeBonuses = {};
-      this.keepSelection = [];
       this.turnEnded = false;
-      this.relocateFrom = undefined;
-      this.relocateToArt = undefined;
     },
     setup: function( gamedatas )
     {
@@ -142,7 +136,6 @@ function (dojo, declare) {
       this.tooltipDelay = 700;
       this.templeTilePicker = this.createTempleTilesPicker();
       this.round = this.gamedatas.round;
-      this.travelSelected = this.createTravelSelector();
       this.boonsBeingShown = {};
       this.restoreGlobals();
 
@@ -1383,10 +1376,11 @@ function (dojo, declare) {
         return;
       }
 
+      var stateArgs = this.stateArgs.get();
       switch(this.gamedatas.gamestate.name) {
         case "payTravel":
           //TODO: check if travel is enough
-          this.travelSelected.push({type: "card", id: cardDiv.dataset.cardid});
+          this.stateArgs.pushTravel({type: "card", id: cardDiv.dataset.cardid});
           dojo.addClass(cardDiv, "selected");
           this.paidTravel();
           break;
@@ -1409,7 +1403,7 @@ function (dojo, declare) {
           break;
         case "researchExile":
           this.ajaxcall("/arnak/arnak/useResearchToken.html", {
-            tokenId: this.selectedToken,
+            tokenId: stateArgs.selectedToken,
             arg: btoa(cardId),
             lock: true
           }, this, function(result) {});
@@ -1417,20 +1411,20 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa(cardId),
-            assNum: this.stateAssistantNum,
+            assNum: stateArgs.assistantNum,
             lock: true
           }, this, function(result) {});
           break;
         case "guardExile":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardArg: btoa(cardId),
-            guardNum: this.selectedGuard,
+            guardNum: stateArgs.selectedGuard,
             lock: true
           }, this, function(result) {});
           break;
         case "guardDiscard":
           this.ajaxcall("/arnak/arnak/moveToSite.html", {
-            siteId: this.siteSelected,
+            siteId: stateArgs.guardianSelected,
             movePayment: btoa(JSON.stringify([{type: "card", id: cardId}])),
             lock: true
           }, this, function(result) {});
@@ -1438,13 +1432,13 @@ function (dojo, declare) {
         case "exileForCard": case "discardForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa(cardId),
-            cardId: this.selectedCard,
+            cardId: stateArgs.card.id,
             lock: true
           }, this, function(result) {});
           break;
         case "hairpinExile":
-          this.hairpinExile = cardId;
-          this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate")});
+          this.stateArgs.set({hairpinExile: cardId});
+          this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate"), args: this.stateArgs.get()});
           for( var site of dojo.query(".location-wrap.basic") ) {
             var position = dojo.attr(site,"data-position");
             if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
@@ -1463,15 +1457,16 @@ function (dojo, declare) {
           break;
 
         case "decideKeep":
+          var keepSelection = this.stateArgs.get().keepSelection;
           if (dojo.hasClass(cardDiv, "selected")) {
-            this.keepSelection.splice(this.keepSelection.indexOf(cardId), 1);
+            keepSelection.splice(keepSelection.indexOf(cardId), 1);
             dojo.removeClass(cardDiv, "selected");
           }
           else {
-            this.keepSelection.push(cardId);
+            keepSelection.push(cardId);
             dojo.addClass(cardDiv, "selected");
           }
-          dojo.byId("keep-num").innerHTML = this.keepSelection.length;
+          dojo.byId("keep-num").innerHTML = keepSelection.length;
           break;
         default:
           this.playCard(cardId);
@@ -1489,7 +1484,7 @@ function (dojo, declare) {
       var cardDiv = dojo.byId("card-" + cardId);
       var type = cardDiv.dataset.cardtype;
       var num = cardDiv.dataset.cardnum;
-      this.selectedCard = cardId;
+      this.stateArgs.set({card: {id: cardId, type: type, num: num}});
 
       var cardInfo = this.material.cards[type][num];
 
@@ -1504,32 +1499,34 @@ function (dojo, declare) {
         switch(cardInfo.varname) {
           case "Item_Watch":
           case "Item_Chronometer":
-            this.setClientState("choosePass", {descriptionmyturn: _("Select one option")});
+            this.setClientState("choosePass", {descriptionmyturn: _("Select one option"), args: this.stateArgs.get()});
             break;
           case "Item_Parrot":
           case "Item_Rope":
           case "Item_Grappling_Hook":
-            this.setClientState("discardForCard", {descriptionmyturn: _("Discard a card for the effect")});
+            this.setClientState("discardForCard", {descriptionmyturn: _("Discard a card for the effect"), args: this.stateArgs.get()});
             break;
           case "Item_Machete":
           case "Item_Torch":
           case "Item_Axe":
-            this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card")});
+            this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card"), args: this.stateArgs.get()});
             break;
           case "Item_Airdrop":
-            this.setClientState("selectItem", {descriptionmyturn: _("Select an item from the supply")});
+            this.setClientState("selectItem", {descriptionmyturn: _("Select an item from the supply"), args: this.stateArgs.get()});
             dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
             break;
           case "Item_Whip":
-            this.setClientState("selectArt", {descriptionmyturn: _("Select an artifact from the supply")});
+            this.setClientState("selectArt", {descriptionmyturn: _("Select an artifact from the supply"), args: this.stateArgs.get()});
             dojo.query(".card.supply[data-cardtype='art']").addClass("highlight-turn");
             break;
           case "Item_Binoculars":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             dojo.query(".location-wrap.small").addClass("highlight-turn");
             break;
           case "Item_Tent":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             for (var candidate of dojo.query(".location-wrap")) {
               var pos = candidate.dataset.position;
               if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`)[0]) {
@@ -1538,7 +1535,8 @@ function (dojo, declare) {
             }
             break;
           case "Item_Revolver":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             for (var candidate of dojo.query(".guardian-wrap")) {
               var pos = candidate.parentNode.dataset.position;
               if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
@@ -1547,7 +1545,8 @@ function (dojo, declare) {
             }
             break;
           case "Item_Bear_Trap":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             for (var candidate of dojo.query(".guardian-wrap")) {
               var pos = candidate.parentNode.dataset.position;
               if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length == dojo.query(`.meeple.onboard[data-position=${pos}]`).length) {
@@ -1556,11 +1555,13 @@ function (dojo, declare) {
             }
             break;
           case "Item_Lantern":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             dojo.query(".location-wrap.basic").addClass("highlight-turn");
             break;
           case "Item_Dog":
-            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site")});
+            this.stateArgs.selectedSites(1);
+            this.setClientState("selectCardSite", {descriptionmyturn: _("Select a site"), args: this.stateArgs.get()});
             for( var site of dojo.query(".location-wrap.basic") ) {
               var position = dojo.attr(site,"data-position");
               if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
@@ -1569,11 +1570,12 @@ function (dojo, declare) {
             }
             break;
           case "Item_Journal":
-            this.setClientState("selectResearch", {descriptionmyturn: _("Select a research space")});
+            this.setClientState("selectResearch", {descriptionmyturn: _("Select a research space"), args: this.stateArgs.get()});
             //dojo.query(".research-box").addClass("highlight-turn");
             break;
           case "Item_Army_Knife":
-            this.setClientState("selectKnife", {descriptionmyturn: _("Select 2 bonuses (click a card to exile)")});
+            this.stateArgs.set({knifeBonuses:{}});
+            this.setClientState("selectKnife", {descriptionmyturn: _("Select 2 bonuses (click a card to exile)"), args: this.stateArgs.get()});
             break;
           default:
             dojo.removeClass(cardDiv, "active");
@@ -1613,26 +1615,24 @@ function (dojo, declare) {
       switch(cardInfo.varname) {
         case "Artifact_Pathfinders_Sandals":
         case "Artifact_Pathfinders_Staff":
-          this.relocateToArt = cardInfo.varname;
           var workersOnBoard = dojo.query(".meeple.onboard." + this.playerColor(this.player_id));
           switch(workersOnBoard.length) {
             case 0:
               this.showMessage("No workers on board to relocate", "error");
               break;
             case 1:
-              this.relocateFrom = workersOnBoard[0].dataset.position;
-              this.setClientState("selectRelocateTo", {descriptionmyturn: _("Select space to relocate to")});
+              this.stateArgs.set({relocateFrom: workersOnBoard[0].dataset.position});
+              this.setClientState("selectRelocateTo", {descriptionmyturn: _("Select space to relocate to"), args: this.stateArgs.get()});
               this.highlightRelocateTo();
               break;
             default:
-              this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select space to relocate from")});
+              this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select space to relocate from"), args: this.stateArgs.get()});
               this.highlightRelocateFrom();
               break;
           }
           break;
         case "Artifact_Guardians_Crown":
-          this.relocateToArt = cardInfo.varname;
-          this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
+          this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate"), args: this.stateArgs.get()});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
             if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
@@ -1642,27 +1642,31 @@ function (dojo, declare) {
           break;
         case "Artifact_Ritual_Dagger":
         case "Artifact_Mortar":
-          this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card")});
+          this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card"), args: this.stateArgs.get()});
           break;
         case "Artifact_Crystal_Earring":
-          this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 3}});
+          this.stateArgs.set({maxAmt: 3});
+          this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: this.stateArgs.get()});
           break;
         case "Artifact_Inscribed_Blade":
-          this.setClientState("selectResearchDiscount", {descriptionmyturn: _("You must select discount")});
+          this.setClientState("selectResearchDiscount", {descriptionmyturn: _("You must select discount"), args: this.stateArgs.get()});
           break;
         case "Artifact_Obsidian_Earring":
-          this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 2}});
+          this.stateArgs.set({maxAmt: 2});
+          this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: this.stateArgs.get()});
           break;
         case "Artifact_Monkey_Medallion":
-          this.setClientState("selectItem", {descriptionmyturn: _("You must select an item from the supply")});
+          this.setClientState("selectItem", {descriptionmyturn: _("You must select an item from the supply"), args: this.stateArgs.get()});
           dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
           break;
         case "Artifact_Guardians_Ocarina":
-          this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
+          this.stateArgs.selectedSites(1);
+          this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site"), args: this.stateArgs.get()});
           this.highlightRelocateFrom();
           break;
         case "Artifact_War_Club":
-          this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
+          this.stateArgs.selectedSites(1);
+          this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site"), args: this.stateArgs.get()});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
             if (dojo.query(`.meeple.onboard.${color}[data-position=${pos}]`).length > 0) {
@@ -1672,37 +1676,40 @@ function (dojo, declare) {
 
           break;
         case "Artifact_Tigerclaw_Hairpin":
-          this.setClientState("hairpinExile", {descriptionmyturn: _("You may exile a card")});
+          this.setClientState("hairpinExile", {descriptionmyturn: _("You may exile a card"), args: this.stateArgs.get()});
           break;
         case "Artifact_Sundial":
-          this.setClientState("choosePass", {descriptionmyturn: _("Select one option")});
+          this.setClientState("choosePass", {descriptionmyturn: _("Select one option"), args: this.stateArgs.get()});
           break;
         case "Artifact_Decorated_Horn":
-          this.setClientState("hornSelectAss", {descriptionmyturn: _("Select an asssistant to replace")});
+          this.setClientState("hornSelectAss", {descriptionmyturn: _("Select an asssistant to replace"), args: this.stateArgs.get()});
 
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
         case "Artifact_Star_Charts":
-          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 coin"), args: {cost: "coin"}});
+          this.stateArgs.set({cost: "coin"});
+          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 coin"), args: this.stateArgs.get()});
           break;
         case "Artifact_Traders_Scales":
         case "Artifact_Traders_Coins":
-          this.setClientState("cardUpgrade", {descriptionmyturn: _("You may select one option")});
+          this.stateArgs.upgrades(1);
+          this.setClientState("cardUpgrade", {descriptionmyturn: _("You may select one option"), args: this.stateArgs.get()});
           break;
         case "Artifact_Ceremonial_Rattle":
-          this.setClientState("artSelectAss", {descriptionmyturn: _("You must choose an assistant to refresh")});
+          this.setClientState("artSelectAss", {descriptionmyturn: _("You must choose an assistant to refresh"), args: this.stateArgs.get()});
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
         case "Artifact_Sacred_Drum":
-          this.setClientState("discardForCard", {descriptionmyturn: _("You must discard a card for the effect")});
+          this.setClientState("discardForCard", {descriptionmyturn: _("You must discard a card for the effect"), args: this.stateArgs.get()});
           break;
         case "Artifact_Idol_of_Ara_Anu":
         case "Artifact_Inscribed_Blade":
-          this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space (or a temple tile)")});
+          this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space (or a temple tile)"), args: this.stateArgs.get()});
           //dojo.query(".research-box, .temple-tile").addClass("highlight-turn");
           break;
         case "Artifact_Guiding_Skull":
-          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 compass"), args: {cost: "compass"}});
+          this.stateArgs.set({cost: "compass"});
+          this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 compass"), args: this.stateArgs.get()});
           break;
         default:
           stateSet = false;
@@ -1719,7 +1726,9 @@ function (dojo, declare) {
       }
     },
     highlightRelocateTo() {
-      if( this.relocateToArt == "Artifact_Guardians_Crown" ) {
+      var artifact = this.stateArgs.get().card;
+      var artVarName = this.material.cards[artifact.type][artifact.num].varname;
+      if( artVarName == "Artifact_Guardians_Crown" ) {
         var guardianPositions = []
         for (var candidate of dojo.query(".guardian-wrap")) {
           guardianPositions.push(candidate.parentNode.dataset.position);
@@ -1731,14 +1740,14 @@ function (dojo, declare) {
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == "Artifact_Pathfinders_Sandals" || this.relocateToArt == "Artifact_Pathfinders_Staff") {
+      if( artVarName == "Artifact_Pathfinders_Sandals" || artVarName == "Artifact_Pathfinders_Staff") {
         for( var site of dojo.query(".location-wrap.basic") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}], .blocking-tile[data-position=${position}]`).length < 2 )
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == "Artifact_Pathfinders_Staff" ) {
+      if( artVarName == "Artifact_Pathfinders_Staff" ) {
         for( var site of dojo.query(".location-wrap.small") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}]`).length < 1 )
@@ -1747,20 +1756,21 @@ function (dojo, declare) {
       }
     },
     paidTravel: function() {
-      var params = this.travelSelected.getParams();
+      var travelSelected = this.stateArgs.get().travelSelected;
+      var params = travelSelected.getParams();
       if (params) {
         switch(params.mode) {
           case "site":
             this.ajaxcall("/arnak/arnak/moveToSite.html", {
               siteId: params.id,
-              movePayment: btoa(JSON.stringify(this.travelSelected.get())),
+              movePayment: btoa(JSON.stringify(travelSelected.get())),
               lock: true
             }, this, function(result) {});
             break;
           case "assistant":
             this.ajaxcall("/arnak/arnak/useAssistant.html", {
               assNum: params.id,
-              assArg: btoa(JSON.stringify(this.travelSelected.get())),
+              assArg: btoa(JSON.stringify(travelSelected.get())),
               lock: true
             }, this, function(result) {});
             break;
@@ -1804,17 +1814,18 @@ function (dojo, declare) {
       // TODO: check state
 
       var cardDiv = evt.target;
+      var stateArgs = this.stateArgs.get();
       switch(this.gamedatas.gamestate.name) {
         case "selectArt": case "selectItem":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa(cardDiv.dataset.cardid),
-            cardId: this.selectedCard,
+            cardId: stateArgs.card.id,
             lock: true
           }, this, function(result) {});
           break;
         case "selectSupply":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.stateAssistantNum,
+            assNum: stateArgs.assistantNum,
             assArg: btoa(cardDiv.dataset.cardid),
             lock: true
           }, this, function(result) {});
@@ -1840,83 +1851,76 @@ function (dojo, declare) {
         return;
       }
 
-      this.travelSelected.setParams({mode: "site", id: siteDiv.dataset.id});
-      this.siteSelected = siteDiv.dataset.id;
+      var siteSelected = +siteDiv.dataset.id;
+      var stateArgs = this.stateArgs.get();
       switch(this.gamedatas.gamestate.name) {
         case "selectCardSite":
-          if (this.chartsSelected) {
-            arg = JSON.stringify([this.chartsSelected, this.siteSelected]);
+          this.stateArgs.addSelectedSite(+siteDiv.dataset.id);
+          if (!this.stateArgs.enoughSelectedSites()) {
+            switch (this.material.cards[stateArgs.card.type][stateArgs.card.num].varname) {
+              case "Artifact_Star_Charts":
+                this.setClientState("selectCardSite", {descriptionmyturn: _("Select second basecamp site to activate"), args: stateArgs});
+                break;
+            }
           }
           else {
-            arg = this.siteSelected;
-          }
-          this.ajaxcall("/arnak/arnak/playCard.html", {
-            cardId: this.selectedCard,
-            arg: btoa(arg),
-            lock: true
-          }, this, function(result) {}, this.cancelClientstate );
-          break;
-        case "selectCardSite1":
-          this.chartsSelected = this.siteSelected;
-          this.setClientState("selectCardSite", {descriptionmyturn: _("Select second basecamp site to activate")});
-          var sites = dojo.query(".location-wrap.basic");
-          for(var site of sites) {
-            if( dojo.attr(site,"data-position") != this.chartsSelected) {
-               site.classList.add("highlight-turn");
-            }
+            this.ajaxcall("/arnak/arnak/playCard.html", {
+              cardId: stateArgs.card.id,
+              arg: btoa(JSON.stringify(stateArgs.selectedSites.selected)),
+              lock: true
+            }, this, function(result) {}, this.cancelClientstate );
           }
           break;
         case "selectRelocateFrom":
-          this.relocateFrom = this.siteSelected;
-          this.setClientState("selectRelocateTo", {descriptionmyturn: _("You must select space to relocate to")});
+          this.stateArgs.set({relocateFrom: siteSelected});
+          this.setClientState("selectRelocateTo", {descriptionmyturn: _("You must select space to relocate to"), args: stateArgs});
           this.highlightRelocateTo();
           break;
         case "selectRelocateTo":
           this.ajaxcall("/arnak/arnak/playCard.html", {
-            cardId: this.selectedCard,
-            arg: btoa(JSON.stringify({from: this.relocateFrom, to: this.siteSelected})),
+            cardId: stateArgs.card.id,
+            arg: btoa(JSON.stringify({from: stateArgs.relocateFrom, to: siteSelected})),
             lock: true
           }, this, function(result) {}, this.cancelClientstate);
           break;
         case "hairpinSite":
           this.ajaxcall("/arnak/arnak/playCard.html", {
-            cardId: this.selectedCard,
-            arg: btoa(JSON.stringify({site: this.siteSelected, exile: this.hairpinExile})),
+            cardId: stateArgs.card.id,
+            arg: btoa(JSON.stringify({site: siteSelected, exile: stateArgs.hairpinExile})),
             lock: true
           }, this, function(result) {});
           break;
         default:
-          var siteDiscovered = dojo.query(".location-position-" + this.siteSelected)[0];
+          var siteDiscovered = dojo.query(".location-position-" + siteSelected)[0];
           if (dojo.hasClass(siteDiv, "selected") || (siteDiscovered && dojo.hasClass(siteDiscovered, "selected"))) {
             this.cancelClientstate();
             return;
           }
 
+          this.stateArgs.setTravelParams({mode: "site", id: siteSelected});
+          this.stateArgs.set({guardianSelected: siteSelected});
           dojo.query(".site-box.selected, .location.selected").removeClass("selected");
-          if (this.siteSelected > 4 && siteDiscovered) {
+          if (siteSelected > 4 && siteDiscovered) {
             dojo.addClass(siteDiscovered, "selected");
           }
           else {
             dojo.addClass(evt.target, "selected");
           }
-          this.ajaxcall("/arnak/arnak/moveToSite.html", {
-            siteId: this.siteSelected,
-            movePayment: btoa(JSON.stringify(this.travelSelected.get())),
-            lock: true
-          }, this, function(result) {});
+          this.paidTravel();
       }
     },
     researchClick: function(evt) {
+      var stateArgs = this.stateArgs.get();
       if (dojo.hasClass(evt.target, "research-bonus")) {
         var id = evt.target.dataset.id;
         var type = evt.target.dataset.type;
-        this.selectedToken = id;
+        this.stateArgs.set({selectedToken: id});
         switch(type) {
           case "upgrade":
-            this.setClientState("researchUpgrade", {descriptionmyturn: _("Choose upgrade")});
+            this.setClientState("researchUpgrade", {descriptionmyturn: _("Choose upgrade"), args: this.stateArgs.get()});
             break;
           case "exile":
-            this.setClientState("researchExile", {descriptionmyturn: _("Choose a card to exile")});
+            this.setClientState("researchExile", {descriptionmyturn: _("Choose a card to exile"), args: this.stateArgs.get()});
             break;
           default:
             this.ajaxcall("/arnak/arnak/useResearchToken.html", {
@@ -1929,10 +1933,9 @@ function (dojo, declare) {
         var id = evt.target.dataset.research_id;
         switch(this.gamedatas.gamestate.name) {
           case "selectResearch":
-            var arg = this.researchDiscount ? JSON.stringify({discount: this.researchDiscount, research: id}) : id;
-            this.researchDiscount = null;
+            var arg = stateArgs.researchDiscount ? JSON.stringify({discount: stateArgs.researchDiscount, research: id}) : id;
             this.ajaxcall("/arnak/arnak/playCard.html", {
-              cardId: this.selectedCard,
+              cardId: stateArgs.card.id,
               arg: btoa(arg),
               lock: true
             }, this, function(result) {});
@@ -1946,13 +1949,14 @@ function (dojo, declare) {
       }
     },
     templeClick: function(evt) {
+      var stateArgs = this.stateArgs.get();
       if (this.gamedatas.gamestate.name == "selectResearch") {
         var args = {temple: evt.target.dataset.tileId};
-        if (this.researchDiscount) {
-          args.discount = this.researchDiscount;
+        if (stateArgs.researchDiscount) {
+          args.discount = stateArgs.researchDiscount;
         }
         this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
+          cardId: stateArgs.card.id,
           arg: btoa(JSON.stringify(args)),
           lock: true
         }, this, function(result) {});
@@ -1975,25 +1979,26 @@ function (dojo, declare) {
         // activating gold side of assistant on the board
         gold = true;
       }
+      var stateArgs = this.stateArgs.get();
       var exhausted = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "exhausted");
       var inHand = dojo.hasClass(evt.target.parentNode, "player-camp");
       if (inHand && this.gamedatas.gamestate["name"] == "hornSelectAss") {
-        this.hornOld = num;
-        this.setClientState("hornSelectNew", {descriptionmyturn: _("Select a new assistant")});
+        this.stateArgs.set({hornOld: num});
+        this.setClientState("hornSelectNew", {descriptionmyturn: _("Select a new assistant"), args: this.stateArgs.get()});
         dojo.query(".arnak-board .assistant:is(.position-stack1, .position-stack2, .position-stack3)").addClass("highlight-turn");
         return;
       }
       if (!inHand && this.gamedatas.gamestate["name"] == "hornSelectNew") {
         this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
-          arg: btoa(JSON.stringify({oldAss: this.hornOld, newAss: num})),
+          cardId: stateArgs.card.id,
+          arg: btoa(JSON.stringify({oldAss: stateArgs.hornOld, newAss: num})),
           lock: true
         }, this, function(result) {});
         return;
       }
       if (this.gamedatas.gamestate["name"] == "artSelectAss") {
         this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
+          cardId: stateArgs.card.id,
           arg: btoa(num),
           lock: true
         }, this, function(result) {});
@@ -2011,30 +2016,30 @@ function (dojo, declare) {
         var assistantEffect = this.material.assistants[num][gold?"gold":"silver"];
         var state = this.gamedatas.gamestate.name;
         if ("travel" in assistantEffect && state == "payTravel") {
-          this.travelSelected.push({type: "assistant", num: num});
+          this.stateArgs.pushTravel({type: "assistant", num: num});
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
         }
         else if ("payboot" in assistantEffect) {
-          this.travelSelected.setParams({mode: "assistant", id: num});
+          this.stateArgs.setTravelParams({mode: "assistant", id: num});
           this.paidTravel();
         }
         else if ("resourcesChoice" in assistantEffect) {
-          this.stateAssistantNum = num;
-          this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource")});
+          this.stateArgs.set({assistantNum: num});
+          this.setClientState("assJewelArrowhead", {descriptionmyturn: _("Select resource"), args: this.stateArgs.get()});
         }
         else if ("exile" in assistantEffect) {
-          this.stateAssistantNum = num;
-          this.setClientState("assExile", {descriptionmyturn: _("Select card to exile")});
+          this.stateArgs.set({assistantNum: num});
+          this.setClientState("assExile", {descriptionmyturn: _("Select card to exile"), args: this.stateArgs.get()});
         }
         else if ("discount" in assistantEffect && (playAtBoard || state == "selectAction")) {
-          this.stateAssistantNum = num;
-          this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy")});
+          this.stateArgs.set({assistantNum: num});
+          this.setClientState("selectSupply", {descriptionmyturn: _("Select card to buy"), args: this.stateArgs.get()});
           dojo.query(".card.supply").addClass("highlight-turn");
         }
         else if ("upgrade" in assistantEffect) {
-          this.stateAssistantNum = num;
-          this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade")});
+          this.stateArgs.set({assistantNum: num});
+          this.setClientState("assUpgrade", {descriptionmyturn: _("Select upgrade"), args: this.stateArgs.get()});
         }
         else {
           callAction = true;
@@ -2053,7 +2058,7 @@ function (dojo, declare) {
     },
     boonEffect: function(evt) {
       var num = +evt.target.dataset.num;
-      this.selectedGuard = num;
+      this.stateArgs.set({selectedGuard: num});
       var boonEffect = Object.keys(this.material.guardians[num].boon)[0];
       switch(boonEffect) {
         case "card":
@@ -2064,13 +2069,13 @@ function (dojo, declare) {
           }, this, function(result) {});
           break;
         case "exile":
-          this.setClientState("guardExile", {descriptionmyturn: _("Select card to exile")});
+          this.setClientState("guardExile", {descriptionmyturn: _("Select card to exile"), args: this.stateArgs.get()});
           break;
         case "upgrade":
-          this.setClientState("guardUpgrade", {descriptionmyturn: _("Select upgrade")});
+          this.setClientState("guardUpgrade", {descriptionmyturn: _("Select upgrade"), args: this.stateArgs.get()});
           break;
         case "travel":
-          this.travelSelected.push({type: "guardian", num: num});
+          this.stateArgs.pushTravel({type: "guardian", num: num});
           dojo.addClass(evt.target, "selected");
           this.paidTravel();
           break;
@@ -2097,18 +2102,18 @@ function (dojo, declare) {
       dojo.query(".blueSelection").removeClass("blueSelection");
     },
     buyPlane: function(evt) {
-      this.travelSelected.push({type: "buyplane"});
+      this.stateArgs.pushTravel({type: "buyplane"});
       this.paidTravel();
     },
     playerTravelIconFn: function(travelType) {
       return (evt) => {
-        this.travelSelected.push({type: "playedTokens", token: travelType});
+        this.stateArgs.pushTravel({type: "playedTokens", token: travelType});
         this.paidTravel();
       };
     },
     cancelExile: function(evt) {
+      var stateArgs = this.stateArgs.get();
       switch(this.gamedatas.gamestate.name) {
-
         case "idolExile":
           this.ajaxcall("/arnak/arnak/cancelIdolExile.html", {  lock: true
           }, this, function(result) {});
@@ -2119,7 +2124,7 @@ function (dojo, declare) {
           break;
         case "researchExile":
           this.ajaxcall("/arnak/arnak/useResearchToken.html", {
-            tokenId: this.selectedToken,
+            tokenId: stateArgs.selectedToken,
             arg: btoa("cancel"),
             lock: true
           }, this, function(result) {});
@@ -2127,20 +2132,20 @@ function (dojo, declare) {
         case "assExile":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
             assArg: btoa("cancel"),
-            assNum: this.stateAssistantNum,
+            assNum: stateArgs.assistantNum,
             lock: true
           }, this, function(result) {});
           break;
         case "exileForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
             arg: btoa("cancel"),
-            cardId: this.selectedCard,
+            cardId: stateArgs.card.id,
             lock: true
           }, this, function(result) {});
           break;
         case "hairpinExile":
-          this.hairpinExile = "cancel";
-          this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate")});
+          this.stateArgs.set({hairpinExile: "cancel"});
+          this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate"), args: this.stateArgs.get()});
           for( var site of dojo.query(".location-wrap.basic") ) {
             var position = dojo.attr(site,"data-position");
             if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
@@ -2150,7 +2155,7 @@ function (dojo, declare) {
           break;
         case "exileForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
+          cardId: stateArgs.card.id,
           arg: btoa("cancel"),
           lock: true
         }, this, function(result) {});
@@ -2167,17 +2172,18 @@ function (dojo, declare) {
       }, this, function(result) {});
     },
     upgrade: function(type) {
+      var stateArgs = this.stateArgs.get();
       switch(this.gamedatas.gamestate.name) {
         case "assUpgrade":
           this.ajaxcall("/arnak/arnak/useAssistant.html", {
-            assNum: this.stateAssistantNum,
+            assNum: stateArgs.assistantNum,
             assArg: btoa(type),
             lock: true
           }, this, function(result) {});
           break;
         case "researchUpgrade":
           this.ajaxcall("/arnak/arnak/useResearchToken.html", {
-            tokenId: this.selectedToken,
+            tokenId: stateArgs.selectedToken,
             arg: btoa(type),
             lock: true
           }, this, function(result) {});
@@ -2185,16 +2191,22 @@ function (dojo, declare) {
         case "guardUpgrade":
           this.ajaxcall("/arnak/arnak/useGuard.html", {
             guardArg: btoa(type),
-            guardNum: this.selectedGuard,
+            guardNum: stateArgs.selectedGuard,
             lock: true
           }, this, function(result) {});
           break;
         case "cardUpgrade":
-          this.ajaxcall("/arnak/arnak/playCard.html", {
-            cardId: this.selectedCard,
-            arg: btoa(type),
-            lock: true
-          }, this, function(result) {});
+          this.stateArgs.addUpgrade(type);
+          if (!this.stateArgs.enoughUpgrades()) {
+            this.setClientState("cardUpgrade", {descriptionmyturn: _("You may select one option"), args: this.stateArgs.get()});
+          }
+          else {
+            this.ajaxcall("/arnak/arnak/playCard.html", {
+              cardId: stateArgs.card.id,
+              arg: btoa(JSON.stringify(this.stateArgs.get().upgrades.choices)),
+              lock: true
+            }, this, function(result) {});
+          }
           break;
         default:
           this.ajaxcall("/arnak/arnak/upgrade.html", {
@@ -2223,7 +2235,7 @@ function (dojo, declare) {
     },
     selectCardAmt(amt) {
       this.ajaxcall("/arnak/arnak/playCard.html", {
-        cardId: this.selectedCard,
+        cardId: this.stateArgs.get().card.id,
         arg: btoa(amt),
         lock: true
       }, this, function(result) {});
@@ -2235,40 +2247,41 @@ function (dojo, declare) {
       this.useJewelArrowheadAssistant("jewel");
     },
     addKnifeBonus(resName, cardId) {
+      var knifeBonuses = this.stateArgs.get().knifeBonuses;
       if (resName == "exile") {
         var cardDivs = dojo.query(".camp-" + this.getActivePlayerId() + " :is(.hand.card, .play.card)");
         cardDivs.removeClass("blueSelection");
-        if(this.knifeBonuses.hasOwnProperty("exile") && this.knifeBonuses["exile"] == cardId) {
-          delete this.knifeBonuses["exile"];
+        if(knifeBonuses.hasOwnProperty("exile") && knifeBonuses["exile"] == cardId) {
+          delete knifeBonuses["exile"];
         }
         else {
           dojo.query(`.camp-${this.getActivePlayerId()} .card[data-cardid=${cardId}] `).addClass("blueSelection");
-          this.knifeBonuses["exile"] = cardId;
+          knifeBonuses["exile"] = cardId;
         }
       }
       else {
         var button = dojo.byId("button_knife_" + resName);
-        if (this.knifeBonuses.hasOwnProperty(resName)) {
-          delete this.knifeBonuses[resName];
+        if (knifeBonuses.hasOwnProperty(resName)) {
+          delete knifeBonuses[resName];
           dojo.removeClass(button,"bgabutton_gray");
           dojo.addClass(button,"bgabutton_blue");
         }
         else {
-          this.knifeBonuses[resName] = 1;
+          knifeBonuses[resName] = 1;
           dojo.removeClass(button,"bgabutton_blue");
           dojo.addClass(button,"bgabutton_gray");
         }
       }
-      if (Object.keys(this.knifeBonuses).length == 2) {
+      if (Object.keys(knifeBonuses).length == 2) {
         var bonuses = [];
-        for(var bonus of Object.keys(this.knifeBonuses)) {
+        for(var bonus of Object.keys(knifeBonuses)) {
           if( bonus == "exile" )
-            bonuses.push(parseInt(this.knifeBonuses["exile"]));
+            bonuses.push(parseInt(knifeBonuses["exile"]));
           else
             bonuses.push(bonus);
         }
         this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
+          cardId: this.stateArgs.get().card.id,
           arg: btoa(JSON.stringify(bonuses)),
           lock: true
         }, this, function(result) {}, this.cancelClientstate);
@@ -2288,7 +2301,8 @@ function (dojo, declare) {
         this.showMessage("Not enough coins", "error");
         return;
       }
-      this.setClientState("selectCardSite1", {descriptionmyturn: _("Select first site to activate")});
+      this.stateArgs.selectedSites(2);
+      this.setClientState("selectCardSite", {descriptionmyturn: _("Select first site to activate"), args: this.stateArgs.get()});
       dojo.query(".location-wrap.basic").addClass("highlight-turn");
     },
     guidingSkull_compass(evt) {
@@ -2297,21 +2311,21 @@ function (dojo, declare) {
         return;
       }
       this.ajaxcall("/arnak/arnak/playCard.html", {
-        cardId: this.selectedCard,
+        cardId: this.stateArgs.get().card.id,
         lock: true
       }, this, function(result) {}, this.cancelClientstate );
     },
     discountResearchArrowhead(evt) {
-      this.researchDiscount = "arrowhead";
-      this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space")});
+      this.stateArgs.set({researchDiscount: "arrowhead"});
+      this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space"), args: this.stateArgs.get()});
     },
     discountResearchTablet(evt) {
-      this.researchDiscount = "tablet";
-      this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space")});
+      this.stateArgs.set({researchDiscount: "tablet"});
+      this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space"), args: this.stateArgs.get()});
     },
     useJewelArrowheadAssistant: function(type) {
       this.ajaxcall("/arnak/arnak/useAssistant.html", {
-        assNum: this.stateAssistantNum,
+        assNum: this.stateArgs.get().assistantNum,
         assArg: btoa(type),
         lock: true
       }, this, function(result) {});
@@ -2365,7 +2379,7 @@ function (dojo, declare) {
     },
     confirmKeep: function() {
       this.ajaxcall("/arnak/arnak/confirmKeep.html", {
-        cards: btoa(JSON.stringify(this.keepSelection)),
+        cards: btoa(JSON.stringify(this.stateArgs.get().keepSelection)),
         lock: true
       }, this, function(result) {});
     },
@@ -2376,11 +2390,12 @@ function (dojo, declare) {
     },
     choosePass: function() {
       var confirmString = this.passConfirmString(true);
+      var stateArgs = this.stateArgs.get();
       if (confirmString) {
         this.confirmationDialog( confirmString, dojo.hitch(
           this, function() {
             this.ajaxcall("/arnak/arnak/playCard.html", {
-              cardId: this.selectedCard,
+              cardId: stateArgs.card.id,
               arg: btoa("pass"),
               lock: true
             }, this, function(result) {});
@@ -2389,7 +2404,7 @@ function (dojo, declare) {
       }
       else {
         this.ajaxcall("/arnak/arnak/playCard.html", {
-          cardId: this.selectedCard,
+          cardId: stateArgs.card.id,
           arg: btoa("pass"),
           lock: true
         }, this, function(result) {});
@@ -2397,7 +2412,7 @@ function (dojo, declare) {
     },
     chooseNotPass: function() {
       this.ajaxcall("/arnak/arnak/playCard.html", {
-        cardId: this.selectedCard,
+        cardId: this.stateArgs.get().card.id,
         lock: true
       }, this, function(result) {});
     },
@@ -2471,11 +2486,12 @@ function (dojo, declare) {
         try {
           for (var state of Object.keys(parsed)) {
             if (state == "discard") {
-              this.setClientState("guardDiscard", {descriptionmyturn: _("Select a card to discard")});
+              this.setClientState("guardDiscard", {descriptionmyturn: _("Select a card to discard"), args: this.stateArgs.get()});
               dojo.query(".hand.card").addClass("discardable");
             }
             else if (state == "travel")  {
-              this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>", args: {resources: parsed.travel.resources}});
+              this.stateArgs.set({resources: parsed.travel.resources});
+              this.setClientState("payTravel", {descriptionmyturn: _("Pay travel: ") + "<div class='travel-costs'></div>", args: this.stateArgs.get()});
               var travelCostsDiv = dojo.query(".travel-costs")[0];
               for (var i = 0; i < parsed.travel.current.length; ++i)
                 dojo.place(dojo.create("div", {class: "travel-icon icon " + parsed.travel.current[i]}), travelCostsDiv);
@@ -2500,6 +2516,7 @@ function (dojo, declare) {
     },
     onEnteringState: function( stateName, args )
     {
+      this.stateArgs = StateArgs(args.args);
       dojo.query(".highlight-turn").removeClass("highlight-turn");
       switch(stateName) {
         case "selectAction":
@@ -2530,8 +2547,22 @@ function (dojo, declare) {
           }
           break;
         case "artWaitArgs":
-          this.selectedCard = args.args.id;
+          this.stateArgs.set({card : {id: +args.args.id, type: "art", num: +args.args.num}});
           this.artClientState(args.args.num);
+          break;
+        case "selectCardSite":
+          var card = args.args.card;
+          var selected = args.args.selectedSites.selected;
+          switch (this.material.cards[card.type][card.num].varname) {
+            case "Artifact_Star_Charts":
+              var sites = dojo.query(".location-wrap.basic");
+              for (var site of sites) {
+                if (selected.length == 0 || dojo.attr(site,"data-position") != selected[0]) {
+                  site.classList.add("highlight-turn");
+                }
+              }
+              break;
+          }
           break;
         case "artDone":
           dojo.query(".blueSelection").removeClass("blueSelection");
@@ -2556,7 +2587,7 @@ function (dojo, declare) {
           dojo.query(".selected").removeClass("selected");
           break;
         case "decideKeep":
-          this.keepSelection = [];
+          this.stateArgs.set({keepSelection: []});
           break;
         case "scoring": case "gameEnd":
           dojo.query(".active").removeClass("active");
@@ -2612,6 +2643,7 @@ function (dojo, declare) {
         case 'dummmy':
           break;
       }
+      this.stateArgs.clear();
     },
     onUpdateActionButtons: function( stateName, args )
     {
@@ -2654,11 +2686,13 @@ function (dojo, declare) {
             this.addActionButton("button_cancel_exile", _("I don't want to exile anything"), 'cancelExile');
             break;
           case 'choosePass':
-            var buttonText = _("Use as free action");
-            var cardDiv = $("card-" + this.selectedCard);
-            if (cardDiv && cardDiv.dataset.cardtype == "art" && cardDiv.dataset.cardnum == 16) {
+            var buttonText = "";
+            var card = args.card;
+            var varname = this.material.cards[card.type][card.num].varname;
+            if (varname == "Item_Watch" || varname == "Item_Chronometer")
+              buttonText = _("Use as free action");
+            else if (varname == "Artifact_Sundial")
               buttonText = _("Use as main action");
-            }
             this.addActionButton("button_choose_pass", _("Use to pass"), 'choosePass', null, false, "red");
             this.addActionButton("button_choose_notpass", buttonText, 'chooseNotPass');
             break;
@@ -2683,7 +2717,7 @@ function (dojo, declare) {
             this.addActionButton("button_jewel", jewelIcon, 'getJewel');
             break;
           case "selectCardAmt":
-            for (var cardAmt = 1; cardAmt <= this.gamedatas.gamestate.args.maxAmt; ++cardAmt) {
+            for (var cardAmt = 1; cardAmt <= args.maxAmt; ++cardAmt) {
               this.addActionButton("button_draw_" + cardAmt, _("Draw ") + cardAmt, 'selectCardAmt' + cardAmt);
             }
             break;
@@ -3124,9 +3158,6 @@ function (dojo, declare) {
         delete meepleDiv.dataset.slot;
       }
       dojo.toggleClass(meepleDiv, "onboard", a.siteTo !== null)
-
-      this.siteSelected = undefined;
-      this.travelSelected.clear();
     },
     notif_guardMove: function(notif) {
       var num = notif.args.guardNum;
