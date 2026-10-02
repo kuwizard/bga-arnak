@@ -1981,6 +1981,12 @@ function (dojo, declare) {
         case "hairpinExile":
           this.hairpinExile = "cancel";
           this.setClientState("hairpinSite", {descriptionmyturn: _("You must select a site to activate")});
+          for( var site of dojo.query(".location-wrap.basic") ) {
+            var position = dojo.attr(site,"data-position");
+            if( dojo.query(`.meeple[data-position=${position}]`) == 0 ) {
+              site.classList.add("highlight-turn");
+            }
+          }
           break;
         case "exileForCard":
           this.ajaxcall("/arnak/arnak/playCard.html", {
