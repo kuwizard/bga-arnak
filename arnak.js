@@ -754,10 +754,10 @@ function (dojo, declare) {
         dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
         dojo.query(".card-rotate-wrap", card.div).style("transform", "");
 
+        dojo.addClass(card.div, "hand");
         setTimeout ((x,y) => {
           dojo.style(card.div, "left", x + "%");
           dojo.style(card.div, "top", y + "%");
-          dojo.addClass(card.div, "hand");
           var f = dojo.query(".flipped", card.div)[0];
           if (f) {
             dojo.removeClass(f, "flipped");
