@@ -251,7 +251,7 @@ $machinestates = array(
       "name" => "artActivateAss",
       "type" => "activeplayer",
       "description" => clienttranslate('${actplayer} must activate an assistant'),
-      "args" => "activeArt",
+      "args" => "activeAssArgs",
       "descriptionmyturn" => clienttranslate('${you} must activate an assistant'),
       "possibleactions" => array("playCard", "useAssistant", "useIdol", "useGuardPower", "undo"),
       "transitions" => array("artDone" => ART_DONE, "assistantDiscard" => MUST_DISCARD, "artWaitArgs" => ART_WAIT_ARGS, "playArt" => ART_EFFECT, "main_action_done" => AFTER_MAIN)

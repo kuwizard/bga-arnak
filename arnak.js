@@ -1971,13 +1971,9 @@ function (dojo, declare) {
     assistantClick: function(evt) {
       var num = +evt.target.dataset.num;
       var gold = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "gold");
-      if (this.gamedatas.gamestate.name == "artActivateAss" &&
-      this.gamedatas.gamestate &&
-      this.gamedatas.gamestate.args &&
-      this.gamedatas.gamestate.args.num == 21
-      ) {
+      if (this.gamedatas.gamestate.name == "artActivateAss") {
         // activating gold side of assistant on the board
-        gold = true;
+        gold = this.gamedatas.gamestate.args.gold;
       }
       var stateArgs = this.stateArgs.get();
       var exhausted = dojo.hasClass(dojo.query(".assistant-inner", evt.target)[0], "exhausted");

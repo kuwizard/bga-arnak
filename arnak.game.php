@@ -105,8 +105,8 @@ class arnak extends Table
       "research-token-done" => 27,
       "research-curr-type" => 28,
       "art-active" => 29,
-      "artifact-mainaction" => 30,
       "free-item-site-id" => 33,
+      "art-active-assistant-gold" => 34,
 
       //  "my_second_global_variable" => 11,
       //    ...
@@ -736,7 +736,6 @@ class arnak extends Table
       $notif = [["msg" => clienttranslate('${playerName} plays ${cardName}')]];
       $this->sqlWrapper->moveCard($cardBought, $player, 'play', $notif);
 
-      $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
       if ($cardInfo == Artifact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player)) == 0) {
         $clientArgs = false;
@@ -828,6 +827,9 @@ class arnak extends Table
   function activeArt() {
     $num = $this->getGameStateValue("art-active");
     return array("num" => $num, "id" => $this->sqlWrapper->getCardId('art',$num));
+  }
+  function activeAssArgs() {
+    return array("gold" => ($this->getGameStateValue("art-active-assistant-gold") > 0));
   }
   function freeItemFallback () {
     $siteId = $this->getGameStateValue("free-item-site-id");
@@ -1749,27 +1751,17 @@ class arnak extends Table
       return;
     }
     if ($this->gamestate->state()["name"] == "artActivateAss") {
-      $artActive = $this->getGameStateValue("art-active");
       if ($assistant["in_offer"] == 4) {
         throw new BgaUserException(clienttranslate("You cannot use artifacts with survivors from the first expedition (this is not a bug, this rule is confirmed with the game designers)"));
       }
-      if ($artActive >=0 && is_null($assistant["in_hand"])) {
-        if (Artifact::from($artActive) == Artifact::Ancient_Wine) {
-          $effect = $this->gameData->assistantPower($assNum, true);
-          $this->assistantEffect($assNum, $assArg, true);
-          if (!isset($effect["discount"])) {
-            $this->artDone();
-          }
-          return;
+      if (is_null($assistant["in_hand"])) {
+        $goldPower = $this->getGameStateValue("art-active-assistant-gold") > 0;
+        $effect = $this->gameData->assistantPower($assNum, $goldPower);
+        $this->assistantEffect($assNum, $assArg, $goldPower);
+        if (!isset($effect["discount"]) && !isset($effect["discard"])) {
+          $this->artDone();
         }
-        if (Artifact::from($artActive) == Artifact::Coconut_Flask) {
-          $effect = $this->gameData->assistantPower($assNum, false);
-          $this->assistantEffect($assNum, $assArg, false);
-          if (!isset($effect["discount"]) && !isset($effect["discard"])) {
-            $this->artDone();
-          }
-          return;
-        }
+        return;
       }
     }
     throw new BgaUserException(clienttranslate("Nothing to do with that assistant right now"));
@@ -1844,12 +1836,8 @@ class arnak extends Table
     if (isset($effect["discount"])) {
       $this->setGameStateValue("discount-coins", $effect["discount"]);
       $this->setGameStateValue("discount-compass", $effect["discount"]);
-      $artActive = $this->getGameStateValue("art-active");
-      $freeAction = false;
       $card = $this->sqlWrapper->getCardFromId($assArg);
-      if ($artActive >=0 && (Artifact::from($artActive) == Artifact::Coconut_Flask || Artifact::from($artActive) == Artifact::Ancient_Wine) && $card["info"]->type() == "art") {
-        $freeAction = true;
-      }
+      $freeAction = ($this->gamestate->state()["name"] == "artActivateAss") && $card["info"]->type() == "art";
       $this->buyCard($assArg, false, !$freeAction);
       // not main action if on board
     }
@@ -2731,6 +2719,20 @@ class arnak extends Table
               $this->sqlWrapper->setPlayerEffects($playerId, Effect::Guardians_Ocarina);
               break;
             }
+          }
+        }
+      }
+
+      //Set global argument "gold" needed for "artActivateAss" state
+      if ($this->gamestate->state()["name"] == "artActivateAss") {
+        $artActive = $this->getGameStateValue("art-active");
+        if ($artActive >= 0) {
+          $artifact = Artifact::from($artActive);
+          if ($artifact == Artifact::Ancient_Wine) {
+            $this->setGameStateValue("art-active-assistant-gold", 1);
+          }
+          if ($artifact == Artifact::Coconut_Flask) {
+            $this->setGameStateValue("art-active-assistant-gold", 0);
           }
         }
       }

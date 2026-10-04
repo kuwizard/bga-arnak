@@ -159,6 +159,7 @@ class CardEffects {
       case Artifact::Coconut_Flask:
         $this->gainCardResource("coins", 2);
         $game->setGameStateValue("art-active", $artifact->value);
+        $game->setGameStateValue("art-active-assistant-gold", 0);
         $game->gamestate->nextstate("activateAss");
         break;
       case Artifact::Cleansing_Cauldron:
@@ -168,6 +169,7 @@ class CardEffects {
       case Artifact::Ancient_Wine:
         $this->gainCardResource("coins", 1);
         $game->setGameStateValue("art-active", $artifact->value);
+        $game->setGameStateValue("art-active-assistant-gold", 1);
         $game->gamestate->nextstate("activateAss");
         break;
       case Artifact::Decorated_Horn:
