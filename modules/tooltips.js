@@ -328,8 +328,8 @@ class Tooltips {
 
     var glassText = "<li>" + _("If a player reaches this space with their magnifying glass, they take the left-most free space and select 1 bonus token from the stack") + "</li>";
     var bookText = "";
-    if (id <= 7) {
-      var step = this.material.research.squares[id].step;
+    var step = this.material.research.squares[id].step;
+    if (step <= 7) {
       glassText = "<li>" + _("When a player's magnifying glass reaches this space, they ") + this.effectText(step, "glass") + "</li>";
       bookText = "<li>" + _("When a player's notebook reaches this space, they ") + this.effectText(step, "book") + "</li>";
     }
