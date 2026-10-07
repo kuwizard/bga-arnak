@@ -21,36 +21,36 @@ class CardEffects {
   function gainCardResource($resName, $amt) {
     $this->game->gainResource($resName, $this->playerId, $amt, array("component" => "card", "arg" => $this->activeCard));
   }
-  function artEffect($artefact, $arg) {
+  function artEffect($artifact, $arg) {
     $game = $this->game;
     $game->gamestate->nextState("playArt");
 
-    switch($artefact) {
-      case Artefact::Pathfinders_Sandals:
-      case Artefact::Pathfinders_Staff:
+    switch($artifact) {
+      case Artifact::Pathfinders_Sandals:
+      case Artifact::Pathfinders_Staff:
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
         $site = $game->sqlWrapper->getSite($to);
-        if (($artefact == Artefact::Pathfinders_Sandals && !$game->checkSiteSize($site, ["basic"])) ||
-            ($artefact == Artefact::Pathfinders_Staff && !$game->checkSiteSize($site, ["basic", "small"]))) {
+        if (($artifact == Artifact::Pathfinders_Sandals && !$game->checkSiteSize($site, ["basic"])) ||
+            ($artifact == Artifact::Pathfinders_Staff && !$game->checkSiteSize($site, ["basic", "small"]))) {
           throw new BgaUserException(clienttranslate("The site you are trying to move to is not valid"));
         }
         $game->moveToSite($to, [], $from);
         break;
-      case Artefact::War_Mask:
+      case Artifact::War_Mask:
         $this->gainCardResource("arrowhead", 1);
         $game->setGameStateValue("warmask-played", 1);
         break;
-      case Artefact::Treasure_Chest:
+      case Artifact::Treasure_Chest:
         $this->gainCardResource("card", 1);
         $this->gainCardResource("coins", 1);
         break;
-      case Artefact::Ritual_Dagger:
+      case Artifact::Ritual_Dagger:
         $game->exile($arg);
         $this->gainCardResource("arrowhead", 1);
         break;
-      case Artefact::Crystal_Earring:
+      case Artifact::Crystal_Earring:
         if (count($game->sqlWrapper->getCards($this->playerId, 'deck')) == 0) {
           $game->artDone();
         }
@@ -59,19 +59,19 @@ class CardEffects {
         }
         $game->gamestate->nextState("earring");
         break;
-      case Artefact::Mortar:
+      case Artifact::Mortar:
         $game->exile($arg);
         $this->gainCardResource("coins", 2);
         break;
-      case Artefact::Serpents_Gold:
+      case Artifact::Serpents_Gold:
         $this->gainCardResource("fear", 1);
         $this->gainCardResource("coins", 4);
         break;
-      case Artefact::Serpent_Idol:
+      case Artifact::Serpent_Idol:
         $this->gainCardResource("fear", 1);
         $this->gainCardResource("jewel", 1);
         break;
-      case Artefact::Monkey_Medallion:
+      case Artifact::Monkey_Medallion:
         $game->setGameStateValue("discount-coins", 9999);
         $card = $this->game->sqlWrapper->getCardFromId($arg);
         if ($card["position"] != "supply" || $card["info"]->type() != "item") {
@@ -80,7 +80,7 @@ class CardEffects {
         $game->buyCard($arg, true, false, true);
         $game->resetDiscount();
         break;
-      case Artefact::Idol_of_AraAnu:
+      case Artifact::Idol_of_AraAnu:
         $game->setGameStateValue("discount-jewel", 1);
         $arg = JSON_DECODE($arg);
         if (isset($arg->temple)) {
@@ -92,7 +92,7 @@ class CardEffects {
         }
         $game->resetDiscount();
         break;
-      case Artefact::Inscribed_Blade:
+      case Artifact::Inscribed_Blade:
         $args = JSON_DECODE($arg);
         if ($args->discount == "arrowhead") {
           $game->setGameStateValue("discount-arrowhead", 1);
@@ -110,11 +110,11 @@ class CardEffects {
         }
         $game->resetDiscount();
         break;
-      case Artefact::Guardians_Ocarina:
+      case Artifact::Guardians_Ocarina:
         $game->moveToSite("home", "", $arg);
         $game->setGameStateValue("ocarina-played", 1);
         break;
-      case Artefact::Tigerclaw_Hairpin:
+      case Artifact::Tigerclaw_Hairpin:
         $arg = JSON_DECODE($arg);
         $siteId = $arg->site;
         $exile = $arg->exile;
@@ -128,10 +128,10 @@ class CardEffects {
         }
         $game->siteEffect("basic", $site["location_num"]);
         break;
-      case Artefact::War_Club:
+      case Artifact::War_Club:
         $game->freeOvercome($arg);
         break;
-      case Artefact::Sundial:
+      case Artifact::Sundial:
         if ($arg == "pass") {
           $this->gainCardResource("jewel", 1);
           $game->pass(true);
@@ -142,29 +142,29 @@ class CardEffects {
           $game->artDone();
         }
         break;
-      case Artefact::Traders_Scales:
+      case Artifact::Traders_Scales:
         $game->upgrade($arg, true);
         $this->gainCardResource("coins", 3);
         break;
-      case Artefact::Hunting_Arrows:
+      case Artifact::Hunting_Arrows:
         $this->gainCardResource("fear", 1);
         $this->gainCardResource("arrowhead", 2);
         break;
-      case Artefact::Coconut_Flask:
+      case Artifact::Coconut_Flask:
         $this->gainCardResource("coins", 2);
-        $game->setGameStateValue("art-active", $artefact->value);
+        $game->setGameStateValue("art-active", $artifact->value);
         $game->gamestate->nextstate("activateAss");
         break;
-      case Artefact::Cleansing_Cauldron:
+      case Artifact::Cleansing_Cauldron:
         $this->gainCardResource("card", 1);
         $game->gamestate->nextstate("artExile");
         break;
-      case Artefact::Ancient_Wine:
+      case Artifact::Ancient_Wine:
         $this->gainCardResource("coins", 1);
-        $game->setGameStateValue("art-active", $artefact->value);
+        $game->setGameStateValue("art-active", $artifact->value);
         $game->gamestate->nextstate("activateAss");
         break;
-      case Artefact::Decorated_Horn:
+      case Artifact::Decorated_Horn:
         $args = JSON_DECODE($arg);
         $old = $args->oldAss;
         $new = $args->newAss;
@@ -197,7 +197,7 @@ class CardEffects {
         $game->sqlWrapper->swapAssistants($old, $new, $this->playerId, '${player_name} returns his assistant to the supply', clienttranslate('${player_name} got an assistant'), $numAssistants, $stackId);
         $game->sqlWrapper->changeAssistantUpgarded($args->newAss, $gold);
         break;
-      case Artefact::Ornate_Hammer:
+      case Artifact::Ornate_Hammer:
         $cards = $game->sqlWrapper->getCards(null, 'supply', 'item');
         if(count($cards) > 0) {
           $toExile = end($cards);
@@ -205,7 +205,7 @@ class CardEffects {
         }
         $game->gamestate->nextState("discardSelect");
         break;
-      case Artefact::Star_Charts:
+      case Artifact::Star_Charts:
         $this->gainCardResource("coins", -1);
         $siteIds = JSON_DECODE($arg);
         if ($siteIds[0] == $siteIds[1]) {
@@ -223,14 +223,14 @@ class CardEffects {
           $game->siteEffect("basic", $siteIds[1]);
         }
         break;
-      case Artefact::Stone_Jar:
+      case Artifact::Stone_Jar:
         $this->gainCardResource("card", 1);
         break;
-      case Artefact::Passage_Shell:
+      case Artifact::Passage_Shell:
         $game->setGameStateValue("discount-boot", 2);
         $game->gamestate->nextState("mayTravel");
         break;
-      case Artefact::Ceremonial_Rattle:
+      case Artifact::Ceremonial_Rattle:
         if (!$arg) {
           break;
         }
@@ -241,7 +241,7 @@ class CardEffects {
         }
         $game->refreshAssistant($arg);
         break;
-      case Artefact::Sacred_Drum:
+      case Artifact::Sacred_Drum:
         $game->discardCard($arg);
         $assistants = $game->sqlWrapper->getPlayerAssistants($this->playerId);
         foreach($assistants as $assId => $ass) {
@@ -250,11 +250,11 @@ class CardEffects {
           }
         }
         break;
-      case Artefact::Traders_Coins:
+      case Artifact::Traders_Coins:
         $game->upgrade($arg, true);
         $this->gainCardResource("coins", 2);
         break;
-      case Artefact::Stone_Key:
+      case Artifact::Stone_Key:
         if ($game->sqlWrapper->getPlayerResources($this->playerId)["idol_slot"] >= 4) {
           $game->notifyAllPlayers("cantIdol", "No idols in slots", array());
         }
@@ -263,7 +263,7 @@ class CardEffects {
           $this->gainCardResource("idol", 1);
         }
         break;
-      case Artefact::Obsidian_Earring:
+      case Artifact::Obsidian_Earring:
         if (count($game->sqlWrapper->getCards($this->playerId, 'deck')) == 0) {
           $game->artDone();
         }
@@ -272,10 +272,10 @@ class CardEffects {
         }
         $game->gamestate->nextState("earring");
         break;
-      case Artefact::Guiding_Stone:
-      case Artefact::Guiding_Skull:
+      case Artifact::Guiding_Stone:
+      case Artifact::Guiding_Skull:
         $size = "small";
-        if ($artefact == Artefact::Guiding_Skull) {
+        if ($artifact == Artifact::Guiding_Skull) {
           $size = "big";
           $this->gainCardResource("compass", -1);
         }
@@ -285,18 +285,18 @@ class CardEffects {
           "player_name" => $game->getActivePlayerName(),
           "player_id" => $this->playerId,
           "num" => $newSite["location_num"],
-          "cardNum" => $artefact
+          "cardNum" => $artifact
         ));
         $game->sqlWrapper->setSiteOnBottomDeck($newSite["location_id"], $size);
         $game->undoSavePoint();
         $game->siteEffect($size, $newSite["location_num"]);
         break;
-      case Artefact::Runes_of_the_Dead:
+      case Artifact::Runes_of_the_Dead:
         $this->gainCardResource("fear", 1);
         $this->gainCardResource("coins", 1);
         $this->gainCardResource("tablet", 3);
         break;
-      case Artefact::Guardians_Crown:
+      case Artifact::Guardians_Crown:
         $movement = JSON_DECODE($arg);
         $to = $movement->to;
         $from = $movement->from;
@@ -315,28 +315,28 @@ class CardEffects {
         $game->siteEffect($siteTo["size"], $siteTo["location_num"]);
         break;
     }
-    if( $artefact == Artefact::War_Mask ||
-        $artefact == Artefact::Treasure_Chest ||
-        $artefact == Artefact::Ritual_Dagger ||
-        $artefact == Artefact::Mortar ||
-        $artefact == Artefact::Serpents_Gold ||
-        $artefact == Artefact::Serpent_Idol ||
-        $artefact == Artefact::Monkey_Medallion ||
-        $artefact == Artefact::Guardians_Ocarina ||
-        $artefact == Artefact::War_Club ||
-        $artefact == Artefact::Traders_Scales ||
-        $artefact == Artefact::Hunting_Arrows ||
-        $artefact == Artefact::Decorated_Horn ||
-        $artefact == Artefact::Stone_Jar ||
-        $artefact == Artefact::Ceremonial_Rattle ||
-        $artefact == Artefact::Sacred_Drum ||
-        $artefact == Artefact::Traders_Coins ||
-        $artefact == Artefact::Stone_Key ||
-        $artefact == Artefact::Runes_of_the_Dead ) {
+    if( $artifact == Artifact::War_Mask ||
+        $artifact == Artifact::Treasure_Chest ||
+        $artifact == Artifact::Ritual_Dagger ||
+        $artifact == Artifact::Mortar ||
+        $artifact == Artifact::Serpents_Gold ||
+        $artifact == Artifact::Serpent_Idol ||
+        $artifact == Artifact::Monkey_Medallion ||
+        $artifact == Artifact::Guardians_Ocarina ||
+        $artifact == Artifact::War_Club ||
+        $artifact == Artifact::Traders_Scales ||
+        $artifact == Artifact::Hunting_Arrows ||
+        $artifact == Artifact::Decorated_Horn ||
+        $artifact == Artifact::Stone_Jar ||
+        $artifact == Artifact::Ceremonial_Rattle ||
+        $artifact == Artifact::Sacred_Drum ||
+        $artifact == Artifact::Traders_Coins ||
+        $artifact == Artifact::Stone_Key ||
+        $artifact == Artifact::Runes_of_the_Dead ) {
       $game->artDone();
     }
     else {
-      $game->setGameStateValue("art-active", $artefact->value);
+      $game->setGameStateValue("art-active", $artifact->value);
     }
   }
   function itemEffect($item, $arg) {
@@ -477,7 +477,7 @@ class CardEffects {
         $game->setGameStateValue("discount-compass", 4);
         $card = $this->game->sqlWrapper->getCardFromId($arg);
         if ($card["position"] != "supply" || $card["info"]->type() != "art") {
-          throw new BgaUserException(clienttranslate("You must select an artefact from the supply"));
+          throw new BgaUserException(clienttranslate("You must select an artifact from the supply"));
         }
         $game->buyCard($arg, false, false, true);
         break;

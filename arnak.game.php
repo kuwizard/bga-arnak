@@ -342,17 +342,17 @@ class arnak extends Table
     }
     $this->sqlWrapper->createGuardians($guardianIds);
 
-    $arts = Artefact::cases();
+    $arts = Artifact::cases();
     shuffle($arts);
     if ($this->debugMode()) {
       $arts = [
-        Artefact::Pathfinders_Sandals,
-        Artefact::Ornate_Hammer,
-        Artefact::War_Mask,
-        Artefact::Idol_of_AraAnu,
-        Artefact::Inscribed_Blade,
-        Artefact::Cleansing_Cauldron,
-        Artefact::Treasure_Chest
+        Artifact::Pathfinders_Sandals,
+        Artifact::Ornate_Hammer,
+        Artifact::War_Mask,
+        Artifact::Idol_of_AraAnu,
+        Artifact::Inscribed_Blade,
+        Artifact::Cleansing_Cauldron,
+        Artifact::Treasure_Chest
       ];
     }
 
@@ -545,7 +545,7 @@ class arnak extends Table
         $notif = [["msg" => clienttranslate('You keep ${cardName} in your hand')], ["msg" => clienttranslate('${playerName} keeps 1 card in hand')]];
         $this->sqlWrapper->moveCard($card, $this->getActivePlayerId(), 'hand', $notif);
         $artActive = $this->getGameStateValue("art-active");
-        if ($artActive >= 0 && Artefact::from($artActive) == Artefact::Crystal_Earring) {
+        if ($artActive >= 0 && Artifact::from($artActive) == Artifact::Crystal_Earring) {
           $this->gamestate->nextState("selectTopdeck");
         }
         else {
@@ -589,7 +589,7 @@ class arnak extends Table
     }
     $inhand = $cardPosition == "hand";
     $artActive = $this->getGameStateValue("art-active");
-    $supplyArtWaited = $cardPosition == "play" && $cardInfo->type() == "art" && $artActive >=0 && $cardInfo == Artefact::from($artActive);
+    $supplyArtWaited = $cardPosition == "play" && $cardInfo->type() == "art" && $artActive >=0 && $cardInfo == Artifact::from($artActive);
     if (!$inhand && !$supplyArtWaited) {
       throw new BgaUserException(clienttranslate("Invalid attempt to play a card"));
     }
@@ -661,24 +661,24 @@ class arnak extends Table
 
       $this->setGameStateValue("artifact-mainaction", $mainAction ? 1 : 0);
       $clientArgs = true;
-      if ($cardInfo == Artefact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player)) == 0) {
+      if ($cardInfo == Artifact::Ceremonial_Rattle && count($this->sqlWrapper->getPlayerAssistants($player)) == 0) {
         $clientArgs = false;
       }
 
-      if( $cardInfo == Artefact::War_Mask ||
-          $cardInfo == Artefact::Treasure_Chest ||
-          $cardInfo == Artefact::Serpents_Gold ||
-          $cardInfo == Artefact::Serpent_Idol ||
-          $cardInfo == Artefact::Hunting_Arrows ||
-          $cardInfo == Artefact::Coconut_Flask ||
-          $cardInfo == Artefact::Cleansing_Cauldron ||
-          $cardInfo == Artefact::Ancient_Wine ||
-          $cardInfo == Artefact::Ornate_Hammer ||
-          $cardInfo == Artefact::Stone_Jar ||
-          $cardInfo == Artefact::Passage_Shell ||
-          $cardInfo == Artefact::Stone_Key ||
-          $cardInfo == Artefact::Guiding_Stone ||
-          $cardInfo == Artefact::Runes_of_the_Dead ) {
+      if( $cardInfo == Artifact::War_Mask ||
+          $cardInfo == Artifact::Treasure_Chest ||
+          $cardInfo == Artifact::Serpents_Gold ||
+          $cardInfo == Artifact::Serpent_Idol ||
+          $cardInfo == Artifact::Hunting_Arrows ||
+          $cardInfo == Artifact::Coconut_Flask ||
+          $cardInfo == Artifact::Cleansing_Cauldron ||
+          $cardInfo == Artifact::Ancient_Wine ||
+          $cardInfo == Artifact::Ornate_Hammer ||
+          $cardInfo == Artifact::Stone_Jar ||
+          $cardInfo == Artifact::Passage_Shell ||
+          $cardInfo == Artifact::Stone_Key ||
+          $cardInfo == Artifact::Guiding_Stone ||
+          $cardInfo == Artifact::Runes_of_the_Dead ) {
         $clientArgs = false;
       }
       if ($clientArgs) {
@@ -738,7 +738,7 @@ class arnak extends Table
   function getFromExile($cardId) {
     $this->checkAction("selectExileCard");
     $artActive = $this->getGameStateValue("art-active");
-    if ($artActive >= 0 && Artefact::from($artActive) != Artefact::Ornate_Hammer) {
+    if ($artActive >= 0 && Artifact::from($artActive) != Artifact::Ornate_Hammer) {
       throw new BgaUserException("Weird, you are trying to get card from exile without the hammer");
     }
     $card = $this->sqlWrapper->getCardFromId($cardId);
@@ -1045,7 +1045,7 @@ class arnak extends Table
     if ($this->getGameStateValue("ocarina-played") == "1" ) {
       $cards = $this->sqlWrapper->getCards($playerId, 'play', 'art');
       foreach ($cards as $card) {
-        if ($card["info"] == Artefact::Guardians_Ocarina) {
+        if ($card["info"] == Artifact::Guardians_Ocarina) {
           return true;
         }
       }
@@ -1219,7 +1219,7 @@ class arnak extends Table
     }
 
     $artActive = $this->getGameStateValue("art-active");
-    if ($artActive >= 0 && Artefact::from($artActive) == Artefact::Passage_Shell && $siteId > 4) {
+    if ($artActive >= 0 && Artifact::from($artActive) == Artifact::Passage_Shell && $siteId > 4) {
       throw new BgaUserException(clienttranslate("You must travel to a basecamp site"));
     }
 
@@ -1352,7 +1352,7 @@ class arnak extends Table
     $playerId = $this->getActivePlayerId();
     $gains = $this->gameData->siteEffects($size, $num);
     $artActive = $this->getGameStateValue("art-active");
-    $double = $size == "basic" && $artActive >= 0 && Artefact::from($artActive) == Artefact::Passage_Shell;
+    $double = $size == "basic" && $artActive >= 0 && Artifact::from($artActive) == Artifact::Passage_Shell;
     $iters = 1;
     if ($double) {
       $iters = 2;
@@ -1556,7 +1556,7 @@ class arnak extends Table
         throw new BgaUserException(clienttranslate("You cannot use artifacts with survivors from the first expedition (this is not a bug, this rule is confirmed with the game designers)"));
       }
       if ($artActive >=0 && is_null($assistant["in_hand"])) {
-        if (Artefact::from($artActive) == Artefact::Ancient_Wine) {
+        if (Artifact::from($artActive) == Artifact::Ancient_Wine) {
           $effect = $this->gameData->assistantPower($assNum, true);
           $this->assistantEffect($assNum, $assArg, true);
           if (!isset($effect["discount"])) {
@@ -1564,7 +1564,7 @@ class arnak extends Table
           }
           return;
         }
-        if (Artefact::from($artActive) == Artefact::Coconut_Flask) {
+        if (Artifact::from($artActive) == Artifact::Coconut_Flask) {
           $effect = $this->gameData->assistantPower($assNum, false);
           $this->assistantEffect($assNum, $assArg, false);
           if (!isset($effect["discount"]) && !isset($effect["discard"])) {
@@ -1649,7 +1649,7 @@ class arnak extends Table
       $artActive = $this->getGameStateValue("art-active");
       $freeAction = false;
       $card = $this->sqlWrapper->getCardFromId($assArg);
-      if ($artActive >=0 && (Artefact::from($artActive) == Artefact::Coconut_Flask || Artefact::from($artActive) == Artefact::Ancient_Wine) && $card["info"]->type() == "art") {
+      if ($artActive >=0 && (Artifact::from($artActive) == Artifact::Coconut_Flask || Artifact::from($artActive) == Artifact::Ancient_Wine) && $card["info"]->type() == "art") {
         $freeAction = true;
       }
       $this->buyCard($assArg, false, !$freeAction);
@@ -1973,7 +1973,7 @@ class arnak extends Table
       if( $this->getGameStateValue("warmask-played") == 1 ) {
         $cards = $this->sqlWrapper->getCards($playerMeeple, 'play', 'art');
         foreach ($cards as $card) {
-          if ($card["info"] == Artefact::War_Mask) {
+          if ($card["info"] == Artifact::War_Mask) {
             $safe = true;
             break;
           }

@@ -246,7 +246,7 @@ class SqlWrapper {
     unset($card["num"]);
     $type = $cardData["type"];
     if ($type == "art") {
-      $card["info"] = Artefact::from($cardData["num"]);
+      $card["info"] = Artifact::from($cardData["num"]);
     }
     else if ($type == "item") {
       $card["info"] = Item::from($cardData["num"]);

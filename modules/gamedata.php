@@ -1,6 +1,6 @@
 <?php
 
-enum Artefact: int {
+enum Artifact: int {
   case Pathfinders_Sandals = 1;
   case Pathfinders_Staff = 2;
   case War_Mask = 3;

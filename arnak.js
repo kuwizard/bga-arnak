@@ -1460,8 +1460,8 @@ function (dojo, declare) {
       dojo.query(`.card[data-cardtype=art][data-cardnum=${artNum}] .card.front`).addClass("active");
       var cardInfo = this.material.cards["art"][artNum];
       switch(cardInfo.varname) {
-        case "Artefact_Pathfinders_Sandals":
-        case "Artefact_Pathfinders_Staff":
+        case "Artifact_Pathfinders_Sandals":
+        case "Artifact_Pathfinders_Staff":
           this.relocateToArt = cardInfo.varname;
           var workersOnBoard = dojo.query(".meeple.onboard." + this.playerColor(this.player_id));
           switch(workersOnBoard.length) {
@@ -1479,7 +1479,7 @@ function (dojo, declare) {
               break;
           }
           break;
-        case "Artefact_Guardians_Crown":
+        case "Artifact_Guardians_Crown":
           this.relocateToArt = cardInfo.varname;
           this.setClientState("selectRelocateFrom", {descriptionmyturn: _("Select a guardian to relocate")});
           for (var candidate of dojo.query(".guardian-wrap")) {
@@ -1489,28 +1489,28 @@ function (dojo, declare) {
             }
           }
           break;
-        case "Artefact_Ritual_Dagger": 
-        case "Artefact_Mortar":
+        case "Artifact_Ritual_Dagger":
+        case "Artifact_Mortar":
           this.setClientState("exileForCard", {descriptionmyturn: _("You may exile a card")});
           break;
-        case "Artefact_Crystal_Earring":
+        case "Artifact_Crystal_Earring":
           this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 3}});
           break;
-        case "Artefact_Inscribed_Blade":
+        case "Artifact_Inscribed_Blade":
           this.setClientState("selectResearchDiscount", {descriptionmyturn: _("You must select discount")});
           break;
-        case "Artefact_Obsidian_Earring":
+        case "Artifact_Obsidian_Earring":
           this.setClientState("selectCardAmt", {descriptionmyturn: _("You must select how many cards to draw"), args: {maxAmt: 2}});
           break;
-        case "Artefact_Monkey_Medallion":
+        case "Artifact_Monkey_Medallion":
           this.setClientState("selectItem", {descriptionmyturn: _("You must select an item from the supply")});
           dojo.query(".card.supply[data-cardtype='item']").addClass("highlight-turn");
           break;
-        case "Artefact_Guardians_Ocarina":
+        case "Artifact_Guardians_Ocarina":
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
           this.highlightRelocateFrom();
           break;
-        case "Artefact_War_Club":
+        case "Artifact_War_Club":
           this.setClientState("selectCardSite", {descriptionmyturn: _("You must select a site")});
           for (var candidate of dojo.query(".guardian-wrap")) {
             var pos = candidate.parentNode.dataset.position;
@@ -1520,37 +1520,37 @@ function (dojo, declare) {
           }
 
           break;
-        case "Artefact_Tigerclaw_Hairpin":
+        case "Artifact_Tigerclaw_Hairpin":
           this.setClientState("hairpinExile", {descriptionmyturn: _("You may exile a card")});
           break;
-        case "Artefact_Sundial":
+        case "Artifact_Sundial":
           this.setClientState("choosePass", {descriptionmyturn: _("Select one option")});
           break;
-        case "Artefact_Decorated_Horn":
+        case "Artifact_Decorated_Horn":
           this.setClientState("hornSelectAss", {descriptionmyturn: _("Select an asssistant to replace")});
 
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
-        case "Artefact_Star_Charts":
+        case "Artifact_Star_Charts":
           this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 coin"), args: {cost: "coin"}});
           break;
-        case "Artefact_Traders_Scales":
-        case "Artefact_Traders_Coins":
+        case "Artifact_Traders_Scales":
+        case "Artifact_Traders_Coins":
           this.setClientState("cardUpgrade", {descriptionmyturn: _("You may select one option")});
           break;
-        case "Artefact_Ceremonial_Rattle":
+        case "Artifact_Ceremonial_Rattle":
           this.setClientState("artSelectAss", {descriptionmyturn: _("You must choose an assistant to refresh")});
           dojo.query(".camp-" + playerId + " .assistant").addClass("highlight-turn");
           break;
-        case "Artefact_Sacred_Drum":
+        case "Artifact_Sacred_Drum":
           this.setClientState("discardForCard", {descriptionmyturn: _("You must discard a card for the effect")});
           break;
-        case "Artefact_Idol_of_Ara_Anu":
-        case "Artefact_Inscribed_Blade":
+        case "Artifact_Idol_of_Ara_Anu":
+        case "Artifact_Inscribed_Blade":
           this.setClientState("selectResearch", {descriptionmyturn: _("You must select a research space (or a temple tile)")});
           //dojo.query(".research-box, .temple-tile").addClass("highlight-turn");
           break;
-        case "Artefact_Guiding_Skull":
+        case "Artifact_Guiding_Skull":
           this.setClientState("payArtExtra", {descriptionmyturn: _("Pay 1 compass"), args: {cost: "compass"}});
           break;
         default:
@@ -1568,7 +1568,7 @@ function (dojo, declare) {
       }
     },
     highlightRelocateTo() {
-      if( this.relocateToArt == "Artefact_Guardians_Crown" ) {
+      if( this.relocateToArt == "Artifact_Guardians_Crown" ) {
         var guardianPositions = []
         for (var candidate of dojo.query(".guardian-wrap")) {
           guardianPositions.push(candidate.parentNode.dataset.position);
@@ -1580,14 +1580,14 @@ function (dojo, declare) {
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == "Artefact_Pathfinders_Sandals" || this.relocateToArt == "Artefact_Pathfinders_Staff") {
+      if( this.relocateToArt == "Artifact_Pathfinders_Sandals" || this.relocateToArt == "Artifact_Pathfinders_Staff") {
         for( var site of dojo.query(".location-wrap.basic") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}], .blocking-tile[data-position=${position}]`).length < 2 )
             site.classList.add("highlight-turn");
         }
       }
-      if( this.relocateToArt == "Artefact_Pathfinders_Staff" ) {
+      if( this.relocateToArt == "Artifact_Pathfinders_Staff" ) {
         for( var site of dojo.query(".location-wrap.small") ) {
           var position = dojo.attr(site,"data-position");
           if( dojo.query(`.meeple[data-position=${position}]`).length < 1 )
@@ -2533,7 +2533,7 @@ function (dojo, declare) {
             dojo.destroy("button_undo");
             break;
           case "buyArt":
-            this.addActionButton("cancel_buy", _("Don't buy Artefact"), "cancelBuy");
+            this.addActionButton("cancel_buy", _("Don't buy Artifact"), "cancelBuy");
             dojo.destroy("button_undo");
             break;
           case "buyItem":
@@ -2542,9 +2542,9 @@ function (dojo, declare) {
             break;
           case "payArtExtra":
             if( args.cost == "compass" )
-              this.addActionButton("button_artefact_extra_cost", compassIcon, 'guidingSkull_compass');
+              this.addActionButton("button_artifact_extra_cost", compassIcon, 'guidingSkull_compass');
             else
-              this.addActionButton("button_artefact_extra_cost", coinIcon, 'starChart_coin');
+              this.addActionButton("button_artifact_extra_cost", coinIcon, 'starChart_coin');
             break;
         }
         if (this.last_server_state.name == "artWaitArgs" && !["exileForCard", "cardUpgrade"].includes(stateName)) {
