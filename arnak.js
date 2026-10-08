@@ -776,21 +776,16 @@ function (dojo, declare) {
     updateHand: function(playerId = this.player_id) {
       var handDiv = dojo.query(".camp-" + playerId)[0];
       var areaDiv = dojo.query(".area-" + playerId)[0];
-      dojo.removeClass(areaDiv, "hand-2row hand-3row");
-      var x = 2;
-      var dx = [0, 0, 29, 27, 21, 18][this.keep.size() + this.hand.size() + this.earring.size()] || 18;
-      var y = -90;
+      var size = this.keep.size() + this.hand.size() + this.earring.size();
+      var dx = [0, 0, 29, 27, 21, 18][Math.min(size,5)];
       var scaleRatio = 0.48;
-      var z = 0;
+      var endGame = (this.gamedatas.gamestate.name == "gameEnd" || this.gamedatas.gamestate.name == "scoring");
       var cardsPlaced = 0;
+      var numRows = Math.floor((size - 1) / 5) + 1;
+
+      dojo.style(areaDiv, "padding-top", (endGame ? 300 : 25 + 255 * Math.max(numRows,1)) + "px");
 
       var placeCard = (card) => {
-        if (cardsPlaced % 5 === 0 && cardsPlaced) {
-          if (dojo.hasClass(areaDiv, "hand-2row")) {
-            dojo.addClass(areaDiv, "hand-3row");
-          }
-          dojo.addClass(areaDiv, "hand-2row");
-        }
         if (!card.div) {
           if (card.fromDiv) {
             card.div = this.cardToHand(card);
@@ -806,6 +801,9 @@ function (dojo, declare) {
         dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
         dojo.query(".card-rotate-wrap", card.div).style("transform", "");
 
+        x = 2 + (cardsPlaced % 5) * dx;
+        y = -(85 + Math.floor(cardsPlaced / 5) * 85);
+
         dojo.addClass(card.div, "hand");
         setTimeout ((x,y) => {
           dojo.style(card.div, "left", x + "%");
@@ -817,19 +815,12 @@ function (dojo, declare) {
           
         },0,x,y);
 
-        x += dx;
-
-        dojo.style(card.div, "z-index", z++);
+        dojo.style(card.div, "z-index", cardsPlaced);
 
         card.div.dataset.cardtype = card.type;
         card.div.dataset.cardnum = card.num;
 
-
         ++cardsPlaced;
-        if (cardsPlaced % 5 === 0 && cardsPlaced) {
-          x = 2;
-          y -= 85;
-        }
       }
       this.keep.foreach(function(card) {
         placeCard(card);
@@ -939,31 +930,16 @@ function (dojo, declare) {
     updatePlay: function(playerId) {
       var handDiv = dojo.query(".camp-" + playerId)[0];
       var areaDiv = dojo.query(".area-" + playerId)[0];
-      dojo.removeClass(areaDiv, "play-2row play-3row");
-      var x = 2;
       var play = this.plays[playerId];
-      var dx = [0,0, 25, 18, 17, 16, 15][play.size()] || 15;
-      var y = 110;
+      var dx = [0,0, 25, 18, 17, 16, 15][Math.min(play.size(),6)];
       var scaleRatio = 0.38;
-      var z = 5;
-      var pos = "last";
-      if (this.gamedatas.gamestate.name == "gameEnd" || this.gamedatas.gamestate.name == "scoring") {
-        pos = "first"
-      }
-      if (pos == "first") {
-        z = 100;
-      }
+      var endGame = (this.gamedatas.gamestate.name == "gameEnd" || this.gamedatas.gamestate.name == "scoring");
       var cardsPlaced = 0;
+      var numRows = Math.floor((play.size() - 1) / 6) + 1;
+
+      dojo.style(areaDiv, "padding-bottom", 222 * Math.max(numRows,1) + "px");
+
       play.foreach((card) => {
-        if (cardsPlaced % 6 === 0 && cardsPlaced) {
-          if (dojo.hasClass(areaDiv, "play-3row")) {
-            dojo.addClass(areaDiv, "play-4row");
-          }
-          else if (dojo.hasClass(areaDiv, "play-2row")) {
-            dojo.addClass(areaDiv, "play-3row");
-          }
-          dojo.addClass(areaDiv, "play-2row");
-        }
         if(!card.div) {
           if (card.fromDiv) {
             var newElement = card.fromDiv.cloneNode(true);
@@ -978,9 +954,13 @@ function (dojo, declare) {
           }
 
           dojo.connect(card.div, "click", this, "handClick");
-          dojo.place(card.div, handDiv, pos);
+          dojo.place(card.div, handDiv, endGame ? "last" : "first");
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
         }
+
+        var x = 2 + (cardsPlaced % 6) * dx;
+        var y = 110 + Math.floor(cardsPlaced / 6) * 70;
+        var z = (endGame ? (100 - cardsPlaced) : (5 + cardsPlaced));
 
         var rx = (Math.random()-.5) * 0.5;
         var ry = (Math.random()-.5) * 0.2;
@@ -993,18 +973,8 @@ function (dojo, declare) {
         dojo.style(card.div, "z-index", z);
         dojo.removeClass(card.div, "selected hand supply");
         dojo.addClass(card.div, "play");
-        if (pos == "first") {
-          --z;
-        }
-        else {
-          ++z;
-        }
-        x += dx;
+
         ++cardsPlaced;
-        if (cardsPlaced % 6 === 0) {
-          x = 2;
-          y += 70;
-        }
       });
     },
     makeDiscards(cards, player_id) {
@@ -3250,7 +3220,6 @@ function (dojo, declare) {
     notif_shufflePlay: function(notif) {
       for (var p in this.gamedatas.players) {
         var areaDiv = dojo.query(".area-" + p)[0];
-        dojo.removeClass(areaDiv, "play-2row play-3row");
         this.plays[p].foreach((card) => {
           this.decks[p].add(card, true);
         });

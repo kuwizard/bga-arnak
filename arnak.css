@@ -285,27 +285,10 @@ table#score-table {
 .player-area {
     width: 720px;
     float: left;
-    padding-top: 300px;
-    padding-bottom: 221px;
     transition: padding-bottom 1s, padding-top 1s;
     z-index: 5;
     position: relative;
     transform-origin: center;
-}
-.player-area.play-2row {
-    padding-bottom: 444px;
-}
-.player-area.play-3row {
-    padding-bottom: 666px;
-}
-.player-area.play-4row {
-    padding-bottom: 888px;
-}
-.player-area.hand-2row {
-    padding-top: 530px;
-}
-.player-area.hand-3row {
-    padding-top: 800px;
 }
 
 .player-area .deck-amt {
