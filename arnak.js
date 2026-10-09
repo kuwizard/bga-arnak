@@ -786,13 +786,19 @@ function (dojo, declare) {
       dojo.style(areaDiv, "padding-top", (endGame ? 300 : 25 + 255 * Math.max(numRows,1)) + "px");
 
       var placeCard = (card) => {
-        if (!card.div) {
-          if (card.fromDiv) {
+        var placed = true;
+        if (card.moveFrom) {
+          if (card.moveFrom == "deck") {
             card.div = this.cardToHand(card);
-            delete card.fromDiv;
+            placed = false;
           }
-          else
-            card.div = this.cardDiv(card);
+          delete card.moveFrom;
+        }
+        if (!card.div) {
+          card.div = this.cardDiv(card);
+          placed = false;
+        }
+        if (!placed) {
           dojo.connect(card.div, "click", this, "handClick");
           dojo.place(card.div, handDiv);
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
@@ -837,15 +843,20 @@ function (dojo, declare) {
     updateDeck: function(playerId) {
         var pos = 0;
         this.decks[playerId].foreach((card) => {
-          if (!card.div) {
-            if (card.fromDiv) {
+          var placed = true;
+          if (card.moveFrom) {
+            if (card.moveFrom == "supply" || card.moveFrom == "play") {
               card.div = this.cardToDeck(card, playerId);
-              delete card.fromDiv;
+              placed = false;
             }
-            else {
-              card.div = this.cardDiv(card);
-              this.deckTransform(card.div);
-            }
+            delete card.moveFrom;
+          }
+          if (!card.div) {
+            card.div = this.cardDiv(card);
+            this.deckTransform(card.div);
+            placed = false;
+          }
+          if (!placed) {
             var handDiv = dojo.query(".camp-" + playerId)[0];
             dojo.place(card.div, handDiv, pos++);
           }
@@ -940,19 +951,23 @@ function (dojo, declare) {
       dojo.style(areaDiv, "padding-bottom", 222 * Math.max(numRows,1) + "px");
 
       play.foreach((card) => {
-        if(!card.div) {
-          if (card.fromDiv) {
-            var newElement = card.fromDiv.cloneNode(true);
-            card.fromDiv.parentElement.replaceChild(newElement, card.fromDiv);
+        var placed = true;
+        if (card.moveFrom) {
+          if (card.moveFrom == "supply") {
+            var newElement = card.div.cloneNode(true);
+            card.div.parentElement.replaceChild(newElement, card.div);
             card.div = newElement;
-            delete card.fromDiv;
+            placed = false;
           }
-          else {
-            card.div = this.cardDiv(card, playerId);
-            if (card.justPlayed)
-              dojo.addClass(card.div, "just-played");
-          }
-
+          delete card.moveFrom;
+        }
+        if(!card.div) {
+          card.div = this.cardDiv(card, playerId);
+          if (card.justPlayed)
+            dojo.addClass(card.div, "just-played");
+          placed = false;
+        }
+        if (!placed) {
           dojo.connect(card.div, "click", this, "handClick");
           dojo.place(card.div, handDiv, endGame ? "last" : "first");
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
@@ -1242,15 +1257,14 @@ function (dojo, declare) {
     cardToDeck: function(card, player) {
       var targetBoard = dojo.query(".camp-" + player)[0];
       var targetB = targetBoard.getBoundingClientRect();
-      var cardB = card.fromDiv.getBoundingClientRect();
+      var cardB = card.div.getBoundingClientRect();
       var x = cardB.x - targetB.x;
       var y = cardB.y - targetB.y;
       var s = targetB.width / targetBoard.offsetWidth;
       x += (1-s) * (x) * (1/s);
       y += (1-s) * (y) * (1/s);
 
-      var newCardDiv = card.fromDiv;
-      newCardDiv = card.fromDiv.cloneNode(true);
+      var newCardDiv = card.div.cloneNode(true);
       newCardDiv.id = "";
       delete newCardDiv.dataset.cardid;
       delete newCardDiv.dataset.cardtype;
@@ -1261,12 +1275,17 @@ function (dojo, declare) {
       dojo.style(newCardDiv, "left", x + "px");
       dojo.style(newCardDiv, "top", y + "px");
 
-      dojo.destroy(card.fromDiv);
+      dojo.destroy(card.div);
       newCardDiv.style["z-index"] = "";
 
       setTimeout(function(thisArg, newDiv) {
         thisArg.deckTransform(newDiv);
       }, 0, this, newCardDiv);
+
+      card.type = "back";
+      delete card.id;
+      delete card.num;
+      delete card.moveFrom;
 
       return newCardDiv;
     },
@@ -1287,8 +1306,8 @@ function (dojo, declare) {
       dojo.addClass(cardDiv, "deck");
     },
     cardToHand(card) {
-      var newEl = card.fromDiv.cloneNode(true);
-      card.fromDiv.parentNode.replaceChild(newEl, card.fromDiv);  // remove events, because official ways simply don't work
+      var newEl = card.div.cloneNode(true);
+      card.div.parentNode.replaceChild(newEl, card.div);  // remove events, because official ways simply don't work
 
       newEl.id = "card-" + card.id;
       newEl.dataset.cardid = card.id;
@@ -1296,7 +1315,8 @@ function (dojo, declare) {
 
       var front = dojo.query(".front", newEl)[0];
       this.addCardClass(front, card.type, card.num);
-      dojo.destroy(card.fromDiv);
+      dojo.destroy(card.div);
+      delete card.moveFrom;
 
       return newEl;
     },
@@ -2921,17 +2941,18 @@ function (dojo, declare) {
         if ((notif.args.source == 'hand' || notif.args.source == 'earring') && notif.args.destination == 'play')
           card.justPlayed = true;
       }
-      else if (card.type == "back")
-        card = {id: notif.args.cardId, type: notif.args.cardType, num: notif.args.cardNum, fromDiv: card.div};
+
+      card.moveFrom = notif.args.source;
+
+      if (card.type == "back") {
+        card.id = notif.args.cardId;
+        card.type = notif.args.cardType;
+        card.num = notif.args.cardNum;
+      }
 
       if (notif.args.source == 'hand' && notif.args.destination == 'play')
         //Hack so that free items played (watch, chronometer) reset their client state
         this.restoreServerGameState();
-
-      if (notif.args.source == 'supply' && notif.args.destination == 'play') {
-        card.fromDiv = card.div;
-        delete card.div;
-      }
 
       destinationPlace.add(card, notif.args.top);
 
@@ -2957,6 +2978,9 @@ function (dojo, declare) {
           this.remover.add(card);
           card = c;
         }
+
+        card.moveFrom = notif.args.source;
+
         destinationPlace.add(card);
       }
 
@@ -3221,6 +3245,7 @@ function (dojo, declare) {
       for (var p in this.gamedatas.players) {
         var areaDiv = dojo.query(".area-" + p)[0];
         this.plays[p].foreach((card) => {
+          card.moveFrom = "play";
           this.decks[p].add(card, true);
         });
         this.plays[p].clear();

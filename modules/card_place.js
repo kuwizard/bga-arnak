@@ -40,11 +40,7 @@ function BackCardPlace (num) {
   }
 
   return {
-    add : function(fromCard, topdeck = false) {
-      card = {type: "back"};
-      if (fromCard)
-        card.fromDiv = fromCard.div;
-
+    add : function(card, topdeck = false) {
       if(topdeck)
         cards.push(card);
       else
@@ -78,8 +74,6 @@ function CardCounter (val = 0) {
       if (card) {
         if (card.div)
           pendingDivs.push(card.div);
-        if (card.fromDiv)
-          pendingDivs.push(card.fromDiv);
       }
       count+=1;
     },
