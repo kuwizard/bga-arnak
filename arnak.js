@@ -206,7 +206,6 @@ function (dojo, declare) {
           });
           dojo.place(handAmtDiv, handDiv)
         }
-        this.updateDeck(player_id);
 
         var playerBoard = dojo.query("#player_board_" + player_id)[0];
         if (gamedatas.turn_based) {
@@ -698,8 +697,6 @@ function (dojo, declare) {
       frontDiv.className = "card front " + this.playerColor(playerId);
       if (type == "item" || type == "art")
         dojo.addClass(frontDiv, type + " " + type + "-" + num);
-      else if(type == "back") 
-        dojo.addClass(frontDiv, "blank");
       else if (type == "basic") {
         switch(num) {
           case "exploreship":
@@ -786,45 +783,41 @@ function (dojo, declare) {
       dojo.style(areaDiv, "padding-top", (endGame ? 300 : 25 + 255 * Math.max(numRows,1)) + "px");
 
       var placeCard = (card) => {
-        var placed = true;
-        if (card.moveFrom) {
-          if (card.moveFrom == "deck") {
-            card.div = this.cardToHand(card);
-            placed = false;
-          }
+        var moving = card.moveFrom;
+        if (moving) {
+          if (card.moveFrom != "hand")
+            this.moveFromPlace(card, playerId);
           delete card.moveFrom;
         }
+
+        var x = 2 + (cardsPlaced % 5) * dx;
+        var y = -(85 + Math.floor(cardsPlaced / 5) * 85);
+
+        var transformParams = {
+          rr: 0,
+          scaleRatio: 0.48,
+          flipped: false
+        };
+
         if (!card.div) {
           card.div = this.cardDiv(card);
-          placed = false;
-        }
-        if (!placed) {
-          dojo.connect(card.div, "click", this, "handClick");
           dojo.place(card.div, handDiv);
+          this.setCardEvents(card, playerId);
           this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
+
+          this.cardTransform(card.div, transformParams);
+          this.cardSetCoords(card.div,x,y);
         }
-
-        dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`)
-        dojo.query(".card-rotate-wrap", card.div).style("transform", "");
-
-        x = 2 + (cardsPlaced % 5) * dx;
-        y = -(85 + Math.floor(cardsPlaced / 5) * 85);
+        else {
+          setTimeout (() => {
+            if (moving)
+              this.cardTransform(card.div, transformParams);
+            this.cardSetCoords(card.div,x,y);
+          }, 0);
+        }
 
         dojo.addClass(card.div, "hand");
-        setTimeout ((x,y) => {
-          dojo.style(card.div, "left", x + "%");
-          dojo.style(card.div, "top", y + "%");
-          var f = dojo.query(".flipped", card.div)[0];
-          if (f) {
-            dojo.removeClass(f, "flipped");
-          }
-          
-        },0,x,y);
-
         dojo.style(card.div, "z-index", cardsPlaced);
-
-        card.div.dataset.cardtype = card.type;
-        card.div.dataset.cardnum = card.num;
 
         ++cardsPlaced;
       }
@@ -841,29 +834,54 @@ function (dojo, declare) {
       });
     },
     updateDeck: function(playerId) {
-        var pos = 0;
-        this.decks[playerId].foreach((card) => {
-          var placed = true;
-          if (card.moveFrom) {
-            if (card.moveFrom == "supply" || card.moveFrom == "play") {
-              card.div = this.cardToDeck(card, playerId);
-              placed = false;
-            }
-            delete card.moveFrom;
-          }
-          if (!card.div) {
-            card.div = this.cardDiv(card);
-            this.deckTransform(card.div);
-            placed = false;
-          }
-          if (!placed) {
-            var handDiv = dojo.query(".camp-" + playerId)[0];
-            dojo.place(card.div, handDiv, pos++);
-          }
-        });
+      var pos = 0;
+      var handDiv = dojo.query(".camp-" + playerId)[0];
+      this.decks[playerId].foreach((card) => {
+        var moving = card.moveFrom;
+        if (moving) {
+          if (card.moveFrom != "deck") {
+            this.moveFromPlace(card, playerId);
+            card.type = "back";
+            delete card.id;
+            delete card.num;
 
-        var n = dojo.query(".camp-" + playerId + " .deck-amt")[0];
-        n.innerHTML = this.decks[playerId].size();
+            card.div.id = "";
+            delete card.div.dataset.cardid;
+            delete card.div.dataset.cardtype;
+            delete card.div.dataset.cardnum;
+          }
+          delete card.moveFrom;
+        }
+
+        var x = 3  + (Math.random() - 0.5) * 2;
+        var y = 10 + (Math.random() - 0.5) * 0.3
+        var transformParams = {
+          rr: (Math.random() - 0.5) * 17.2,
+          scaleRatio: 0.48,
+          flipped: true
+        };
+
+        if (!card.div) {
+          card.div = this.cardDiv(card);
+          this.cardTransform(card.div, transformParams);
+          this.cardSetCoords(card.div,x,y);
+        }
+        else {
+          if (moving) {
+            setTimeout(() => {
+              this.cardTransform(card.div, transformParams);
+              this.cardSetCoords(card.div,x,y);
+            }, 0);
+          }
+        }
+
+        dojo.addClass(card.div, "deck");
+        card.div.style["z-index"] = "";
+        dojo.place(card.div, handDiv, pos++);
+      });
+
+      var n = dojo.query(".camp-" + playerId + " .deck-amt")[0];
+      n.innerHTML = this.decks[playerId].size();
     },
     updateRemovedCards() {
       for (var player in this.hands) {
@@ -943,7 +961,6 @@ function (dojo, declare) {
       var areaDiv = dojo.query(".area-" + playerId)[0];
       var play = this.plays[playerId];
       var dx = [0,0, 25, 18, 17, 16, 15][Math.min(play.size(),6)];
-      var scaleRatio = 0.38;
       var endGame = (this.gamedatas.gamestate.name == "gameEnd" || this.gamedatas.gamestate.name == "scoring");
       var cardsPlaced = 0;
       var numRows = Math.floor((play.size() - 1) / 6) + 1;
@@ -951,43 +968,45 @@ function (dojo, declare) {
       dojo.style(areaDiv, "padding-bottom", 222 * Math.max(numRows,1) + "px");
 
       play.foreach((card) => {
-        var placed = true;
-        if (card.moveFrom) {
-          if (card.moveFrom == "supply") {
-            var newElement = card.div.cloneNode(true);
-            card.div.parentElement.replaceChild(newElement, card.div);
-            card.div = newElement;
-            placed = false;
-          }
+        var x = 2 + (cardsPlaced % 6) * dx;
+        var y = 110 + Math.floor(cardsPlaced / 6) * 70;
+        var z = (endGame ? (100 - cardsPlaced) : (5 + cardsPlaced));
+
+        var rx = (Math.random() - 0.5) * 0.5;
+        var ry = (Math.random() - 0.5) * 0.2;
+
+        var transformParams = {
+          rr: (Math.random() - 0.5) * 5,
+          scaleRatio: 0.38,
+          flipped: false
+        };
+
+        var moving = card.moveFrom;
+        if (moving) {
+          if (card.moveFrom != "play")
+            this.moveFromPlace(card, playerId);
           delete card.moveFrom;
         }
         if(!card.div) {
           card.div = this.cardDiv(card, playerId);
           if (card.justPlayed)
             dojo.addClass(card.div, "just-played");
-          placed = false;
-        }
-        if (!placed) {
-          dojo.connect(card.div, "click", this, "handClick");
           dojo.place(card.div, handDiv, endGame ? "last" : "first");
-          this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
+          this.setCardEvents(card, playerId);
+
+          this.cardTransform(card.div, transformParams);
+          this.cardSetCoords(card.div, x + rx, y + ry);
+        }
+        else {
+          setTimeout(() => {
+            if (moving)
+              this.cardTransform(card.div, transformParams);
+            this.cardSetCoords(card.div, x + rx, y + ry);
+          });
         }
 
-        var x = 2 + (cardsPlaced % 6) * dx;
-        var y = 110 + Math.floor(cardsPlaced / 6) * 70;
-        var z = (endGame ? (100 - cardsPlaced) : (5 + cardsPlaced));
-
-        var rx = (Math.random()-.5) * 0.5;
-        var ry = (Math.random()-.5) * 0.2;
-        var rr = (Math.random()-.5) * 5;
-
-        dojo.style(card.div, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
-        dojo.query(".card-rotate-wrap", card.div).style("transform", `rotate(${rr}deg)`)
-        dojo.style(card.div, "left", (x + rx) + "%");
-        dojo.style(card.div, "top", (y + ry) + "%");
-        dojo.style(card.div, "z-index", z);
-        dojo.removeClass(card.div, "selected hand supply");
         dojo.addClass(card.div, "play");
+        dojo.style(card.div, "z-index", z);
 
         ++cardsPlaced;
       });
@@ -1254,71 +1273,59 @@ function (dojo, declare) {
         ++position;
       }
     },
-    cardToDeck: function(card, player) {
-      var targetBoard = dojo.query(".camp-" + player)[0];
-      var targetB = targetBoard.getBoundingClientRect();
-      var cardB = card.div.getBoundingClientRect();
-      var x = cardB.x - targetB.x;
-      var y = cardB.y - targetB.y;
-      var s = targetB.width / targetBoard.offsetWidth;
-      x += (1-s) * (x) * (1/s);
-      y += (1-s) * (y) * (1/s);
-
-      var newCardDiv = card.div.cloneNode(true);
-      newCardDiv.id = "";
-      delete newCardDiv.dataset.cardid;
-      delete newCardDiv.dataset.cardtype;
-      delete newCardDiv.dataset.cardnum;
-
-      dojo.removeClass(newCardDiv, "supply");
-      dojo.style(newCardDiv, "transform", "scale(0.25, 0.25)");
-      dojo.style(newCardDiv, "left", x + "px");
-      dojo.style(newCardDiv, "top", y + "px");
-
-      dojo.destroy(card.div);
-      newCardDiv.style["z-index"] = "";
-
-      setTimeout(function(thisArg, newDiv) {
-        thisArg.deckTransform(newDiv);
-      }, 0, this, newCardDiv);
-
-      card.type = "back";
-      delete card.id;
-      delete card.num;
-      delete card.moveFrom;
-
-      return newCardDiv;
+    cardTransform(cardDiv, params) {
+      dojo.style(cardDiv, "transform", `scale(${params.scaleRatio}, ${params.scaleRatio})`);
+      dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${params.rr}deg)`);
+      dojo.query(".card-flip-wrap", cardDiv).toggleClass("flipped", params.flipped);
     },
-    deckTransform(cardDiv) {
-      var scaleRatio = 0.48;
-      var rx = (Math.random() - 0.5) * 2;
-      var ry = (Math.random() - 0.5) * 2;
-      var rr = (Math.random() - 0.5) * 0.3;
-      dojo.style(cardDiv, "transform", `scale(${scaleRatio}, ${scaleRatio})`);
-
-      dojo.query(".card-rotate-wrap", cardDiv).style("transform", `rotate(${rr}rad)`);
-      dojo.query(".card-flip-wrap", cardDiv).addClass("flipped");
-
-      dojo.style(cardDiv, "left", (3 + rx) + "%");
-      dojo.style(cardDiv, "top", (10 + ry) + "%");
-
-      dojo.removeClass(cardDiv, "play hand supply");
-      dojo.addClass(cardDiv, "deck");
+    cardSetCoords(cardDiv, x, y) {
+      dojo.style(cardDiv, "left", x + "%");
+      dojo.style(cardDiv, "top", y + "%");
     },
-    cardToHand(card) {
-      var newEl = card.div.cloneNode(true);
-      card.div.parentNode.replaceChild(newEl, card.div);  // remove events, because official ways simply don't work
+    moveFromPlace(card, playerId) {
+      var handDiv = dojo.query(".camp-" + playerId)[0];
+      dojo.removeClass(card.div, card.moveFrom);
+      if (card.moveFrom == "supply") {
+        var targetB = handDiv.getBoundingClientRect();
+        var divB = card.div.getBoundingClientRect();
+        var x = divB.x - targetB.x;
+        var y = divB.y - targetB.y;
+        var s = targetB.width / handDiv.offsetWidth;
+        x += (1-s) * (x) * (1/s);
+        y += (1-s) * (y) * (1/s);
 
-      newEl.id = "card-" + card.id;
-      newEl.dataset.cardid = card.id;
-      dojo.removeClass(newEl, "deck blank");
+        var newDiv = card.div.cloneNode(true);
+        dojo.destroy(card.div);
+        dojo.style(newDiv, "left", x + "px");
+        dojo.style(newDiv, "top", y + "px");
+        card.div = newDiv;
+        dojo.place(card.div, handDiv);
+        this.setCardEvents(card, playerId);
+      }
+      else if(card.moveFrom == "deck") {
+        var newEl = card.div.cloneNode(true);
+        card.div.parentNode.replaceChild(newEl, card.div);  // remove events, because official ways simply don't work
 
-      var front = dojo.query(".front", newEl)[0];
-      this.addCardClass(front, card.type, card.num);
-      dojo.destroy(card.div);
-      delete card.moveFrom;
+        newEl.id = "card-" + card.id;
+        newEl.dataset.cardid = card.id;
+        newEl.dataset.cardnum = card.num;
+        newEl.dataset.cardtype = card.type;
 
-      return newEl;
+        var front = dojo.query(".front", newEl)[0];
+        this.addCardClass(front, card.type, card.num);
+        dojo.destroy(card.div);
+        card.div = newEl;
+        dojo.place(card.div, handDiv);
+        this.setCardEvents(card, playerId);
+      }
+      else if(card.moveFrom == "play") {
+        delete card.justPlayed;
+        dojo.removeClass(card.div, "just-played");
+      }
+    },
+    setCardEvents(card, playerId) {
+      dojo.connect(card.div, "click", this, "handClick");
+      this.addTooltipHtml("card-" + card.id, this.tooltips.card(card.type, card.num, this.playerColor(playerId)), this.tooltipDelay);
     },
     workerPosition(siteNo, spotIdx) {
       var board = dojo.query(".arnak-board")[0];
@@ -2941,8 +2948,8 @@ function (dojo, declare) {
         if ((notif.args.source == 'hand' || notif.args.source == 'earring') && notif.args.destination == 'play')
           card.justPlayed = true;
       }
-
-      card.moveFrom = notif.args.source;
+      else
+        card.moveFrom = notif.args.source;
 
       if (card.type == "back") {
         card.id = notif.args.cardId;
@@ -2974,12 +2981,14 @@ function (dojo, declare) {
         var card = sourcePlace.remove(c.id);
         if (!card)
           card = c;
-        else if(card.type == "back") {
-          this.remover.add(card);
-          card = c;
-        }
+        else
+          card.moveFrom = notif.args.source;
 
-        card.moveFrom = notif.args.source;
+        if (card.type == "back") {
+          card.id = c.id;
+          card.type = c.type;
+          card.num = c.num;
+        }
 
         destinationPlace.add(card);
       }
