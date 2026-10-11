@@ -817,7 +817,7 @@ function (dojo, declare) {
         }
 
         dojo.addClass(card.div, "hand");
-        dojo.style(card.div, "z-index", cardsPlaced);
+        dojo.style(card.div, "z-index", 51 + cardsPlaced);
 
         ++cardsPlaced;
       }
@@ -970,7 +970,7 @@ function (dojo, declare) {
       play.foreach((card) => {
         var x = 2 + (cardsPlaced % 6) * dx;
         var y = 110 + Math.floor(cardsPlaced / 6) * 70;
-        var z = (endGame ? (100 - cardsPlaced) : (5 + cardsPlaced));
+        var z = (endGame ? (200 - cardsPlaced) : (100 + cardsPlaced));
 
         var rx = (Math.random() - 0.5) * 0.5;
         var ry = (Math.random() - 0.5) * 0.2;
@@ -1078,7 +1078,7 @@ function (dojo, declare) {
         boonDiv.style.left = left + "px";
 
         var top = displayed ? 236 : 222;
-        boonDiv.style["z-index"] = count++;
+        boonDiv.style["z-index"] = 10 + count++;
         boonDiv.style.top = top + "px";
         boonDiv.style.transform = "";
       }

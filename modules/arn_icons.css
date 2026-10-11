@@ -137,7 +137,7 @@
     transform: scale(0.43);
 }
 
-.idol ~ .idol.back {
+.arnak-board .idol.back {
     left: 47px;
     z-index: 1;
 }
