@@ -740,6 +740,28 @@ class SqlWrapper {
     }
   }
 
+  public function increaseIdolUse($playerId, $amt, $notif = NULL) {
+    foreach (["idol", "idol_slot"] as $resource) {
+      $this->game->DbQuery("UPDATE player SET $resource = $resource + $amt WHERE player_id = $playerId");
+    }
+
+    if (!is_null($notif)) {
+      $notif_idolUse = array(
+        "i8n" => [],
+        "player_id" => $playerId,
+        "player_name" => $this->game->loadPlayersBasicInfos()[$playerId]["player_name"],
+        "amt" => $amt
+      );
+      foreach ($notif as $key => $value) {
+        if ($key != "msg") {
+          $notif_idolUse[$key] = $value;
+          $notif_idolUse["i8n"] = $key;
+        }
+      }
+      $this->game->notifyAllPlayers("moveIdol", $notif["msg"], $notif_idolUse);
+    }
+  }
+
   public function setPlayerScore($playerId, $score, $category, $notif) {
     $this->game->DbQuery("UPDATE player SET player_score=player_score + $score WHERE player_id=$playerId");
 

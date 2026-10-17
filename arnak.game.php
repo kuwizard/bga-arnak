@@ -850,8 +850,7 @@ class arnak extends Table
   function idolBonus($bonusName) {
     $this->checkAction("useIdol");
     $playerId = $this->getActivePlayerId();
-    $this->gainResource("idol_slot", $playerId, -1);
-    $this->gainResource("idol", $playerId, -1);
+    $this->moveIdol($playerId, -1);
     $resArg = array("component" => "idol", "type" => $bonusName);
     switch($bonusName) {
       case "jewel":
@@ -2341,7 +2340,6 @@ class arnak extends Table
       ));
       return;
     }
-    $discounted = false;
     if ($amt < 0) {
       $discount = $this->getGameStateValue("discount-$resName");
       if ($discount) {
@@ -2363,6 +2361,9 @@ class arnak extends Table
     if ($current + $amt < 0) {
       throw new BgaUserException(clienttranslate("Not enough ").$this->resText($resName));
     }
+    if ($resName == "idol_slot" && $current + $amt > 4) {
+      throw new BgaUserException(clienttranslate("No idol in slots"));
+    }
     if ($amt != 0) {
       $notif = [
         "msg" => '${player_name} ${verb} ${amtText} ${resText}',
@@ -2377,6 +2378,29 @@ class arnak extends Table
     }
   }
 
+  function moveIdol($player, $amt) {
+    $current = $this->sqlWrapper->getPlayerResources($player);
+    if ($current["idol"] + $amt < 0) {
+      throw new BgaUserException(clienttranslate("Not enough ").$this->resText("idol"));
+    }
+    if ($current["idol_slot"] + $amt < 0) {
+      throw new BgaUserException(clienttranslate("Not enough ").$this->resText("idol_slot"));
+    }
+    if ($current["idol_slot"] + $amt > 4) {
+      throw new BgaUserException(clienttranslate("No idol in slots"));
+    }
+    if ($amt != 0) {
+      $notif = [
+        "msg" => '${player_name} ${verb} ${amtText} idol',
+        "verb" => $amt < 0 ? clienttranslate("uses") : clienttranslate("gets back"),
+        "amtText" => abs($amt)
+      ];
+      $this->sqlWrapper->increaseIdolUse($player, $amt, $notif);
+      if ($amt > 0) {
+        $this->incStat($amt, "gained-idol", $player);
+      }
+    }
+  }
 
 //////////////////////////////////////////////////////////////////////////////
 //////////// Zombie

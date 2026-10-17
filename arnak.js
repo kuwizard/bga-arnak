@@ -136,6 +136,8 @@ function (dojo, declare) {
       this.hands = {};
       this.plays = {};
       this.decks = {};
+      this.idols = {};
+      this.slotted = {};
       this.material = gamedatas.material;
       this.tooltips = new Tooltips(gamedatas.material, this.siteBoxes, this.researchBoxes, gamedatas.bird_temple);
       this.tooltipDelay = 700;
@@ -211,7 +213,9 @@ function (dojo, declare) {
         }
         this.updateDeck(player_id);
 
-        this.updateResources(player_id);
+        this.idols[player_id] = [];
+        this.slotted[player_id] = [];
+        this.updateIdols(player_id);
         var playerBoard = dojo.query("#player_board_" + player_id)[0];
         if (gamedatas.turn_based) {
           dojo.place(dojo.create("button", {class: "display-deck", id: "display-deck-" + player_id, "data-id": player_id, innerHTML: _("Display player's deck")}), playerBoard);
@@ -825,47 +829,41 @@ function (dojo, declare) {
     updateWorkers: function() {
       var boardDiv = dojo.query(".player-camp")[0];
     },
-    updateResources: function(playerId) {
+    updateIdols: function(playerId) {
       var campDiv = dojo.query(".camp-" + playerId)[0];
       var player = this.gamedatas.players[playerId];
-      var empty = player.idol_slot;
-      var idols = player.idol;
-      var idolNum = 0;
-      function addIdol(x, y) {
-        var idolDiv = dojo.query(".idol-num-" + idolNum, campDiv)[0];
-        if (!idolDiv) {
-          idolDiv = dojo.create("div", {class: "idol-wrap idol-num-" + idolNum});
+
+      function setIdolAmount(idolArray, size) {
+        while (idolArray.length > Math.max(0, size))
+          dojo.destroy(idolArray.pop())
+        while (idolArray.length < size) {
+          var idolDiv = dojo.create("div", {class: "idol-wrap"});
+          idolArray.push(idolDiv);
           dojo.place(dojo.create("div", {class: "idol back"}), idolDiv);
           dojo.place(idolDiv, campDiv);
         }
-        ++idolNum;
+      }
+      setIdolAmount(this.slotted[playerId], 4 - player.idol_slot);
+      setIdolAmount(this.idols[playerId], player.idol);
 
+      function setIdolPosition(idolDiv, x, y) {
         idolDiv.style.left = 312 + (x * 60.5) + "px";
         idolDiv.style.top = (17 + y * 70) + "px";
       }
-      for (var i = 0; i < 4 - empty; ++i) {
-        addIdol(i, 0);
+
+      for (var i = 0; i < this.slotted[playerId].length; ++i)
+        setIdolPosition(this.slotted[playerId][i], i, 0);
+
+      var startx = this.slotted[playerId].length % 4;
+      for (var i = 0; i < this.idols[playerId].length; ++i) {
+        var x = (i < 4) ? ((startx + i) % 4) : (i%4);
+        var y = Math.floor(i/4) + 1;
+        setIdolPosition(this.idols[playerId][i], x, y);
       }
-      var startx = (4 - empty) % 4;
-      var y = 1;
-      var x = startx;
-      for (var i = 0; i < idols; ++i) {
-        addIdol(x, y);
-        x += 1;
-        x %= 4;
-        if (x == startx) {
-          x = 0;
-          startx = 0;
-          y += 1;
-        }
-      }
-      while (idolNum < 50) {
-        var oldIdol = dojo.query(".idol-num-" + idolNum++, campDiv)[0];
-        if (oldIdol) {
-          dojo.destroy(oldIdol);
-        }
-        idolNum += 1;
-      }
+    },
+    updateResource: function(playerId, resName) {
+      var resNumber = dojo.query("#player_board_" + playerId + " .counter-number-" + resName)[0];
+      resNumber.innerHTML = this.gamedatas.players[playerId][resName];
     },
     updatePlay: function(playerId) {
       var handDiv = dojo.query(".camp-" + playerId)[0];
@@ -2670,6 +2668,7 @@ function (dojo, declare) {
       dojo.subscribe("moveCards", this, "notif_moveCards");
 
       dojo.subscribe("gainRes", this, "notif_gainRes");
+      dojo.subscribe("moveIdol", this, "notif_moveIdol");
       dojo.subscribe("pass", this, "notif_pass");
       dojo.subscribe("nextRound", this, "notif_nextRound");
       dojo.subscribe("shufflePlay", this, "notif_shufflePlay");
@@ -2792,14 +2791,15 @@ function (dojo, declare) {
     },
     notif_gainRes: function(notif) {
       var args = notif.args;
-      var resNumber = dojo.query("#player_board_" + args.player_id + " .counter-number-" + args.resName)[0];
-      this.gamedatas.players[args.player_id][args.resName] = +this.gamedatas.players[args.player_id][args.resName] + args.amt;
-      resNumber.innerHTML = +resNumber.innerHTML + args.amt;
-      if (args.resName != "idol_slot") {
-        this.updateResources(args.player_id);
-      }
+      this.gamedatas.players[args.player_id][args.resName] += args.amt;
+      this.updateResource(args.player_id, args.resName);
+
+      var resIdol = args.resName == "idol" || args.resName == "idol_slot";
+      if (resIdol)
+        this.updateIdols(args.player_id);
+
       var s = JSON.parse(args.source);
-      if (s && args.resName != "idol" && args.resName != "idol_slot") {
+      if (s && !resIdol) {
         var toId = "overall_player_board_" + args.player_id;
         var fromId;
         var q;
@@ -2844,6 +2844,27 @@ function (dojo, declare) {
           }, t * 100, this)
         }
       }
+    },
+    notif_moveIdol: function(notif) {
+      var args = notif.args;
+      var playerId = args.player_id;
+      for(var resName of ["idol", "idol_slot"]) {
+        this.gamedatas.players[playerId][resName] += args.amt;
+        this.updateResource(playerId, resName);
+      }
+      if (args.amt >= 0) {
+        for (var i = 0; i < Math.abs(args.amt); i++) {
+          if (this.slotted[playerId].length > 0)
+            this.idols[playerId].unshift(this.slotted[playerId].pop());
+        }
+      }
+      else {
+        for (var i = 0; i < Math.abs(args.amt); i++) {
+          if (this.idols[playerId].length > 0)
+            this.slotted[playerId].push(this.idols[playerId].shift());
+        }
+      }
+      this.updateIdols(playerId);
     },
     notif_pass: function(notif) {
       this.playerPass(notif.args.player_id, notif.args.pass);

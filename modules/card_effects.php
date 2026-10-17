@@ -255,13 +255,7 @@ class CardEffects {
         $this->gainCardResource("coins", 2);
         break;
       case Artifact::Stone_Key:
-        if ($game->sqlWrapper->getPlayerResources($this->playerId)["idol_slot"] >= 4) {
-          $game->notifyAllPlayers("cantIdol", "No idols in slots", array());
-        }
-        else {
-          $this->gainCardResource("idol_slot", 1);
-          $this->gainCardResource("idol", 1);
-        }
+        $game->moveIdol($this->playerId, 1);
         break;
       case Artifact::Obsidian_Earring:
         if (count($game->sqlWrapper->getCards($this->playerId, 'deck')) == 0) {
