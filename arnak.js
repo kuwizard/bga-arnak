@@ -133,9 +133,9 @@ function (dojo, declare) {
       dojo.place(aidButton, dojo.query("#maintitlebar_content > div")[0], "first");
 
       this.restoreGlobals();
-      this.hands = [];
-      this.plays = [];
-      this.decks = [];
+      this.hands = {};
+      this.plays = {};
+      this.decks = {};
       this.material = gamedatas.material;
       this.tooltips = new Tooltips(gamedatas.material, this.siteBoxes, this.researchBoxes, gamedatas.bird_temple);
       this.tooltipDelay = 700;
