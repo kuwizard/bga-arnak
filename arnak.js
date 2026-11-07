@@ -2852,21 +2852,21 @@ function (dojo, declare) {
       dojo.query(".site-box.selected, .location.selected").removeClass("selected");
       var a = notif.args;
       var color = this.playerColor(a.playerId);
-      if (!a.siteFrom) {
+      if (a.siteFrom === null) {
         this.fadeOutAndDestroy(dojo.query("#player_board_" + a.playerId + " .counter-wrap .meeple:not(.onboard)")[0]);
       }
       var meepleDiv = dojo.query(".camp-" + a.playerId + " .meeple:not(.onboard)")[0];
-      if (a.siteFrom) {
+      if (a.siteFrom !== null) {
         meepleDiv = dojo.query(`.onboard.meeple[data-position=${a.siteFrom}][data-slot=${a.slotFrom}]`)[0];
       }
       var camp = dojo.query(".camp-" + a.playerId)[0];
       var board = dojo.query(".arnak-board")[0];
-      var destination = a.siteTo ? board : camp;
-      if (!a.siteTo) {
+      var destination = a.siteTo === null ? camp : board;
+      if (a.siteTo === null) {
         this.addOverviewMeeple(a.playerId);
       }
 
-      if (a.siteFrom) {
+      if (a.siteFrom !== null) {
         var b1 = meepleDiv.getBoundingClientRect();
         var b2 = destination.getBoundingClientRect();
         var x = b1.x - b2.x;
@@ -2883,7 +2883,7 @@ function (dojo, declare) {
         dojo.place(meepleDiv, destination);
 
         setTimeout(() => {
-          if (a.siteTo) {
+          if (a.siteTo !== null) {
             var workerPos = this.workerPosition(a.siteTo, a.slotTo);
             meepleDiv.style.left = workerPos.x + "px";
             meepleDiv.style.top = workerPos.y + "px";
@@ -2916,7 +2916,7 @@ function (dojo, declare) {
         }, 1000);
       }
 
-      if (a.siteTo) {
+      if (a.siteTo !== null) {
         meepleDiv.dataset.position = a.siteTo;
         meepleDiv.dataset.slot = a.slotTo;
       }
@@ -2924,7 +2924,7 @@ function (dojo, declare) {
         delete meepleDiv.dataset.position;
         delete meepleDiv.dataset.slot;
       }
-      dojo.toggleClass(meepleDiv, "onboard", a.siteTo)
+      dojo.toggleClass(meepleDiv, "onboard", a.siteTo !== null)
 
       this.siteSelected = undefined;
       this.travelSelected = [];
