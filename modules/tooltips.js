@@ -218,7 +218,6 @@ class Tooltips {
       }[num];
     }
 
-    var whenPlay = "";
     var playExplain = _("The card effect is triggered when you play it from hand.");
     if (type == "basic" && num == "fear") {
       playExplain = null;
@@ -235,7 +234,7 @@ class Tooltips {
     var pointString = this.fsr(_("This card is worth ${pointAmt} points at the end of the game if it is in your deck, hand or play area."), { pointAmt });
 
     return "<div class='card-tooltip'><h3>" + this.cardName(type, num) + typeString + "</h3>" +
-        "<div class='effect-wrap'><ul><li>" + whenPlay + "<span class='effect'>" + this.cardEffect(type, num) + "</span></li>" +
+        "<div class='effect-wrap'><ul><li>" + this.cardEffect(type, num) + "</li>" +
         (playExplain ? "<li>" + playExplain + "</li>" : "") +
         "<li>" + useTravel + "</li>" +
         "<li>" + pointString + "</li></ul>" +
@@ -303,7 +302,7 @@ class Tooltips {
 
     var explanation = _("You can get temple tiles as a main action once you magnifying glass reaches the top of the research track.");
 
-    return header + "<ul><li>" + explanation + "</li><li>" + _("This tile costs ") + resourcesText + "</li><li>" + this.fsr(_("This tile is worth ${score} points at the end of the game"), { score }) + "</li><li>" + this.fsr(_("There are ${amt} tiles left in this stack"), { amt }) + "</li>";
+    return header + "<ul><li>" + explanation + "</li><li>" + _("This tile costs ") + resourcesText + "</li><li>" + this.fsr(_("This tile is worth ${score} points at the end of the game"), { score }) + "</li><li>" + this.fsr(_("There are ${amt} tiles left in this stack"), { amt }) + "</li></ul>";
   }
   effectText(step, type) {
     var special = this.material.research.steps[step][type].bonus;
@@ -375,7 +374,7 @@ class Tooltips {
     var effectText = this.effectText(step, type);
     var typeText = type == "book" ? _("notebook") : _("magnifying glass");
     effectText = effectText[0].toUpperCase() + effectText.substr(1);
-    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, type) + "</ul>";
+    return "<ul><li>" + effectText + "</li><li>" + _("This effect is triggered when a player reaches this row with their ") + typeText + "</li><li>" + _("If your ") + typeText + _(" is on this row at the end of the game, score ") + this.stepScore(step, type) + "</li></ul>";
   }
   assistant(num, gold, height) {
     var header = "<h3>" + _("Assistant") + "</h3>";
@@ -410,7 +409,7 @@ class Tooltips {
     var generalExplanation = "<li>" + _("Assistants are gained and upgraded through effects on the research track.") + "</li><li>" + _("Each assistant can only be used once per round.") + "</li>";
     var stackHeight = "";
     if (height) {
-      stackHeight = "<li>" + this.fsr(_("There are total of ${height} assistants in this stack."), { height });
+      stackHeight = "<li>" + this.fsr(_("There are total of ${height} assistants in this stack."), { height }) + "</li>";
     }
     var image = "<div class='assistant-inner " + (gold ? "gold" : "silver") + " assistant-" + num + "'>";
 
