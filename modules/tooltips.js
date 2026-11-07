@@ -74,113 +74,105 @@ class Tooltips {
     return this.material["cards"][type][num]["name"];
   }
   cardEffect(type, num) {
-    var basicNames = {
-      "fundship": _("Gain 1 coin as a free action"),
-      "fundcar": _("Gain 1 coin as a free action"),
-      "exploreship": _("Gain 1 compass as a free action"),
-      "explorecar": _("Gain 1 compass as a free action"),
-      "fear": _("This card cannot be played and doesn't have any effect.")
-    };
-    if (type == "basic") {
-      return basicNames[num];
-    }
+    var cardName = this.material["cards"][type][num]["varname"];
+    console.log(cardName);
+    switch (cardName) {
+      case "Basic_Funding_Ship":           return _("Gain 1 coin as a free action");
+      case "Basic_Funding_Car":            return _("Gain 1 coin as a free action");
+      case "Basic_Explore_Ship":           return _("Gain 1 compass as a free action");
+      case "Basic_Explore_Car":            return _("Gain 1 compass as a free action");
+      case "Basic_Fear":                   return _("This card cannot be played and doesn't have any effect.");
 
-    if (type == "art") {
-      return ["",
-      _("Relocate one of your placed archaeologists to a basecamp site and activate it."),
-      _("Relocate one of your placed archaeologists to a basecamp or level 1 site and activate it."),
-      _("Gain an arrowhead. Don't gain Fear cards from guardians this round."),
-      _("Draw a card. Gain a coin."),
-      _("You may exile a card. Gain an arrowhead."),
+      case "Artefact_Pathfinders_Sandals": return _("Relocate one of your placed archaeologists to a basecamp site and activate it.");
+      case "Artefact_Pathfinders_Staff":   return _("Relocate one of your placed archaeologists to a basecamp or level 1 site and activate it.");
+      case "Artefact_War_Mask":            return _("Gain an arrowhead. Don't gain Fear cards from guardians this round.");
+      case "Artefact_Treasure_Chest":      return _("Draw a card. Gain a coin.");
+      case "Artefact_Ritual_Dagger":       return _("You may exile a card. Gain an arrowhead.");
 
-      _("Draw up to 3 cards and keep 1. You may return 1 of them to the top of your deck. Discard the rest. (You first decide how many cards to draw, then draw that many cards)"),
-      _("You may exile a card. Gain 2 coins."),
-      _("Gain a fear and 4 coins."),
-      _("Gain a fear and a jewel."),
-      _("Gain an item from the supply for free and place it on the top of your deck."),
+      case "Artefact_Crystal_Earring":     return _("Draw up to 3 cards and keep 1. You may return 1 of them to the top of your deck. Discard the rest. (You first decide how many cards to draw, then draw that many cards)");
+      case "Artefact_Mortar":              return _("You may exile a card. Gain 2 coins.");
+      case "Artefact_Serpents_Gold":       return _("Gain a fear and 4 coins.");
+      case "Artefact_Serpent_Idol":        return _("Gain a fear and a jewel.");
+      case "Artefact_Monkey_Medallion":    return _("Gain an item from the supply for free and place it on the top of your deck.");
 
-      _("Research or get a temple tile with a discount of 1 jewel."),
-      _("Research or get a temple tile with a discount of 1 arrowhead or 2 tablets."),
-      _("Return one of your placed archaeologists to your board. Each of your travel icons counts as a plane this round."),
-      _("Exile a card and activate an unoccupied basecamp site"),
-      _("Overcome a guardian on a site with your archaeologist for free"),
+      case "Artefact_Idol_of_Ara_Anu":     return _("Research or get a temple tile with a discount of 1 jewel.");
+      case "Artefact_Inscribed_Blade":     return _("Research or get a temple tile with a discount of 1 arrowhead or 2 tablets.");
+      case "Artefact_Guardians_Ocarina":   return _("Return one of your placed archaeologists to your board. Each of your travel icons counts as a plane this round.");
+      case "Artefact_Tigerclaw_Hairpin":   return _("Exile a card and activate an unoccupied basecamp site");
+      case "Artefact_War_Club":            return _("Overcome a guardian on a site with your archaeologist for free");
 
-      _("Gain 2 tablets or pass to gain a jewel."),
-      _("Upgrade a resource and gain 3 coins."),
-      _("Gain 1 fear and 2 arrowheads."),
-      _("Gain 2 coins and use the effect on the silver side of one assistant available on the supply board."),
-      _("Draw a card. Then, you may exile a card."),
+      case "Artefact_Sundial":             return _("Gain 2 tablets or pass to gain a jewel.");
+      case "Artefact_Traders_Scales":      return _("Upgrade a resource and gain 3 coins.");
+      case "Artefact_Hunting_Arrows":      return _("Gain 1 fear and 2 arrowheads.");
+      case "Artefact_Coconut_Flask":       return _("Gain 2 coins and use the effect on the silver side of one assistant available on the supply board.");
+      case "Artefact_Cleansing_Cauldron":  return _("Draw a card. Then, you may exile a card.");
 
-      _("Gain 1 coin and use the effect on the gold side of one assistant available on the supply board."),
-      _("Exchange one of your assistants with one available on the supply board. The new one is the same level and refreshed."),
-      _("Exile the rightmost item card in the card row. Gain any item for free from exile to the bottom of your deck."),
-      _("Pay a coin to activate any 2 different basecamp sites."),
-      _("Draw a card."),
+      case "Artefact_Ancient_Wine":        return _("Gain 1 coin and use the effect on the gold side of one assistant available on the supply board.");
+      case "Artefact_Decorated_Horn":      return _("Exchange one of your assistants with one available on the supply board. The new one is the same level and refreshed.");
+      case "Artefact_Ornate_Hammer":       return _("Exile the rightmost item card in the card row. Gain any item for free from exile to the bottom of your deck.");
+      case "Artefact_Star_Charts":         return _("Pay a coin to activate any 2 different basecamp sites.");
+      case "Artefact_Stone_Jar":           return _("Draw a card.");
 
-      _("Travel to a basecamp site for free. You may activate it twice instead of once."),
-      _("Refresh one of your exhausted assistants."),
-      _("Discard another card to refresh both your assistants."),
-      _("Upgrade a resource and gain 2 coins"),
-      _("Move one of your idols on your player board from a slot back into your supply crates."),
+      case "Artefact_Passage_Shell":       return _("Travel to a basecamp site for free. You may activate it twice instead of once.");
+      case "Artefact_Ceremonial_Rattle":   return _("Refresh one of your exhausted assistants.");
+      case "Artefact_Sacred_Drum":         return _("Discard another card to refresh both your assistants.");
+      case "Artefact_Traders_Coins":       return _("Upgrade a resource and gain 2 coins");
+      case "Artefact_Stone_Key":           return _("Move one of your idols on your player board from a slot back into your supply crates.");
 
-      _("Draw up to 2 cards from the bottom of your deck. Keep 1, discard the other."),
-      _("Reveal the top tile of the level 1 stack, activate it, then put it on the bottom."),
-      _("Pay a compass to reveal the top tile of the level 2 stack, activate it, then put it on the bottom."),
-      _("Gain a fear, a coin and 3 tablets."),
-      _("Move a guardian from a site you occupy to an unoccupied basecamp or level 1 site with no guardians. Activate that site.")
+      case "Artefact_Obsidian_Earring":    return _("Draw up to 2 cards from the bottom of your deck. Keep 1, discard the other.");
+      case "Artefact_Guiding_Stone":       return _("Reveal the top tile of the level 1 stack, activate it, then put it on the bottom.");
+      case "Artefact_Guiding_Skull":       return _("Pay a compass to reveal the top tile of the level 2 stack, activate it, then put it on the bottom.");
+      case "Artefact_Runes_of_the_Dead":   return _("Gain a fear, a coin and 3 tablets.");
+      case "Artefact_Guardians_Crown":     return _("Move a guardian from a site you occupy to an unoccupied basecamp or level 1 site with no guardians. Activate that site.")
 
-      ][num];
-    }
-    if (type == "item") {
-      return ["",
-      _("Draw a card, then explore or dig at a site with a discount of 1 ship."),
-      _("Draw a card, then explore or dig at a site with a discount of 1 car."),
-      _("Draw 2 cards."),
-      _("Draw a card, gain a coin and a compass."),
-      _("Gain 2 compasses as a free action."),
+      case "Item_Sea_Turtle":              return _("Draw a card, then explore or dig at a site with a discount of 1 ship.");
+      case "Item_Ostrich":                 return _("Draw a card, then explore or dig at a site with a discount of 1 car.");
+      case "Item_Pack_Donkey":             return _("Draw 2 cards.");
+      case "Item_Horse":                   return _("Draw a card, gain a coin and a compass.");
+      case "Item_Steam_Boat":              return _("Gain 2 compasses as a free action.");
 
-      _("Gain 2 compasses as a free action."),
-      _("Gain a compass, then explore or dig at a site with a discount of 2 boots."),
-      _("Gain 2 coins as a free action."),
-      _("Pay a compass to gain a jewel."),
-      _("Pay a compass to gain a tablet and an arrowhead."),
+      case "Item_Automobile":              return _("Gain 2 compasses as a free action.");
+      case "Item_Sturdy_Boots":            return _("Gain a compass, then explore or dig at a site with a discount of 2 boots.");
+      case "Item_Gold_Pan":                return _("Gain 2 coins as a free action.");
+      case "Item_Trowel":                  return _("Pay a compass to gain a jewel.");
+      case "Item_Pickaxe":                 return _("Pay a compass to gain a tablet and an arrowhead.");
 
-      _("Exile this card to explore or dig at a site with a discount of 1 plane - if discovering a new site, you also have a discount of 3 compasses."),
-      _("Explore or dig at a site with a discount of 1 plane - if discovering a new site, you also have a discount of 2 compasses."),
-      _("Exile this card to research with your notebook token for free (remember, your notebook can never be above the magnifying glass on the research track)."),
-      _("Discard another card to gain a jewel."),
-      _("Gain 2 coins as a free action, or pass to gain 3 coins."),
+      case "Item_Hot_Air_Balloon":         return _("Exile this card to explore or dig at a site with a discount of 1 plane - if discovering a new site, you also have a discount of 3 compasses.");
+      case "Item_Aeroplane":               return _("Explore or dig at a site with a discount of 1 plane - if discovering a new site, you also have a discount of 2 compasses.");
+      case "Item_Journal":                 return _("Exile this card to research with your notebook token for free (remember, your notebook can never be above the magnifying glass on the research track).");
+      case "Item_Parrot":                  return _("Discard another card to gain a jewel.");
+      case "Item_Watch":                   return _("Gain 2 coins as a free action, or pass to gain 3 coins.");
 
-      _("Choose two different options: exile a card, gain a coin, gain a compass or gain a tablet"),
-      _("Activate any level 1 site"),
-      _("Activate a site you occupy. If it is a level 2 site, you must first pay 2 compasses."),
-      _("Buy an item with a discount of 3 coins. Include the top card of the item deck."),
-      _("Buy an artifact with a discount of 3 compasses. Include the top card of the artifact deck."),
+      case "Item_Army_Knife":              return _("Choose two different options: exile a card, gain a coin, gain a compass or gain a tablet");
+      case "Item_Binoculars":              return _("Activate any level 1 site");
+      case "Item_Tent":                    return _("Activate a site you occupy. If it is a level 2 site, you must first pay 2 compasses.");
+      case "Item_Fishing_Rod":             return _("Buy an item with a discount of 3 coins. Include the top card of the item deck.");
+      case "Item_Precision_Compass":       return _("Buy an artifact with a discount of 3 compasses. Include the top card of the artifact deck.");
 
-      _("Gain a compass for each guardian on sites you occupy and each guardian you have overcome, up to 3."),
-      _("Gain 2 tablets as a free action."),
-      _("Exile this card to buy an artifact with a discount of 4 compasses."),
-      _("Exile this card to gain 3 compasses."),
-      _("Exile this card to gain an item from the general supply to your hand."),
+      case "Item_Bow_and_Arrows":          return _("Gain a compass for each guardian on sites you occupy and each guardian you have overcome, up to 3.");
+      case "Item_Carrier_Pigeon":          return _("Gain 2 tablets as a free action.");
+      case "Item_Whip":                    return _("Exile this card to buy an artifact with a discount of 4 compasses.");
+      case "Item_Rough_Map":               return _("Exile this card to gain 3 compasses.");
+      case "Item_Airdrop":                 return _("Exile this card to gain an item from the general supply to your hand.");
 
-      _("Exile this card to draw 3 cards."),
-      _("Exile a card and gain 2 compasses"),
-      _("Exile a card and gain 1 tablet"),
-      _("Gain a coin and draw a card from the bottom of your deck."),
-      _("Discard another card to draw 2 cards;"),
+      case "Item_Flask":                   return _("Exile this card to draw 3 cards.");
+      case "Item_Machete":                 return _("Exile a card and gain 2 compasses");
+      case "Item_Torch":                   return _("Exile a card and gain 1 tablet");
+      case "Item_Large_Backpack":          return _("Gain a coin and draw a card from the bottom of your deck.");
+      case "Item_Rope":                    return _("Discard another card to draw 2 cards;");
 
-      _("Pay 1 compass to overcome a guardian for free on a site with your archaeologist."),
-      _("Gain a coin and a compass as a free action."),
-      _("Exile this card to overcome a guardian for free on a site not occupied by any other player (the site can be occupied by you)"),
-      _("Discard another card to draw a card. Then, you may exile a card."),
-      _("Activate any basecamp site."),
+      case "Item_Revolver":                return _("Pay 1 compass to overcome a guardian for free on a site with your archaeologist.");
+      case "Item_Hat":                     return _("Gain a coin and a compass as a free action.");
+      case "Item_Bear_Trap":               return _("Exile this card to overcome a guardian for free on a site not occupied by any other player (the site can be occupied by you)");
+      case "Item_Grappling_Hook":          return _("Discard another card to draw a card. Then, you may exile a card.");
+      case "Item_Lantern":                 return _("Activate any basecamp site.");
 
-      _("Gain a compass. Activate any unoccupied basecamp site."),
-      _("Gain a compass for each idol you have, up to 3. Both your free idols and idols in idol slots count."),
-      _("You may exile a card. Gain compass."),
-      _("Gain a coin and a compass as a free action OR pass to gain 3 compasses."),
-      _("Gain a coin. Gain a compass for each of your archaeologists already placed on the board.")
-      ][num];
+      case "Item_Dog":                     return _("Gain a compass. Activate any unoccupied basecamp site.");
+      case "Item_Brush":                   return _("Gain a compass for each idol you have, up to 3. Both your free idols and idols in idol slots count.");
+      case "Item_Axe":                     return _("You may exile a card. Gain compass.");
+      case "Item_Chronometer":             return _("Gain a coin and a compass as a free action OR pass to gain 3 compasses.");
+      case "Item_Theodolite":              return _("Gain a coin. Gain a compass for each of your archaeologists already placed on the board.");
+      default:                             return "(missing tooltip)";
     }
   }
   cardCost(type, num) {
