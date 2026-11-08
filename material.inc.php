@@ -43,7 +43,7 @@ $cards = [
     20 => ["cost" => 3, "points" => 1, "travel" => [PLANE],        "varname" => "Artefact_Cleansing_Cauldron",  "name" => clienttranslate("Cleansing Cauldron")],
     21 => ["cost" => 3, "points" => 1, "travel" => [PLANE],        "varname" => "Artefact_Ancient_Wine",        "name" => clienttranslate("Ancient Wine")],
     22 => ["cost" => 2, "points" => 1, "travel" => [PLANE],        "varname" => "Artefact_Decorated_Horn",      "name" => clienttranslate("Decorated Horn")],
-    23 => ["cost" => 4, "points" => 2, "travel" => [PLANE],        "varname" => "Artefact_Ornate_ammer",        "name" => clienttranslate("Ornate Hammer")],
+    23 => ["cost" => 4, "points" => 2, "travel" => [PLANE],        "varname" => "Artefact_Ornate_Hammer",       "name" => clienttranslate("Ornate Hammer")],
     24 => ["cost" => 4, "points" => 2, "travel" => [PLANE],        "varname" => "Artefact_Star_Charts",         "name" => clienttranslate("Star Charts")],
     25 => ["cost" => 2, "points" => 1, "travel" => [PLANE],        "varname" => "Artefact_Stone_Jar",           "name" => clienttranslate("Stone Jar")],
     26 => ["cost" => 3, "points" => 1, "travel" => [PLANE],        "varname" => "Artefact_Passage_Shell",       "name" => clienttranslate("Passage Shell")],
