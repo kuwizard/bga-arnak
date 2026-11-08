@@ -87,8 +87,8 @@ class Tooltips {
 
     if (type == "art") {
       return ["",
-      _("Relocate one of your placed archaeologists to a camp site and activate it."),
-      _("Relocate one of your placed archaeologists to a camp or level 1 site and activate it."),
+      _("Relocate one of your placed archaeologists to a basecamp site and activate it."),
+      _("Relocate one of your placed archaeologists to a basecamp or level 1 site and activate it."),
       _("Gain an arrowhead. Don't gain Fear cards from guardians this round."),
       _("Draw a card. Gain a coin."),
       _("You may exile a card. Gain an arrowhead."),
@@ -102,7 +102,7 @@ class Tooltips {
       _("Research or get a temple tile with a discount of 1 jewel."),
       _("Research or get a temple tile with a discount of 1 arrowhead or 2 tablets."),
       _("Return one of your placed archaeologists to your board. Each of your travel icons counts as a plane this round."),
-      _("Exile a card and activate an unoccupied camp site"),
+      _("Exile a card and activate an unoccupied basecamp site"),
       _("Overcome a guardian on a site with your archaeologist for free"),
 
       _("Gain 2 tablets or pass to gain a jewel."),
@@ -114,10 +114,10 @@ class Tooltips {
       _("Gain 1 coin and use the effect on the gold side of one assistant available on the supply board."),
       _("Exchange one of your assistants with one available on the supply board. The new one is the same level and refreshed."),
       _("Exile the rightmost item card in the card row. Gain any item for free from exile to the bottom of your deck."),
-      _("Pay a coin to activate any 2 different camp sites."),
+      _("Pay a coin to activate any 2 different basecamp sites."),
       _("Draw a card."),
 
-      _("Travel to a camp site for free. You may activate it twice instead of once."),
+      _("Travel to a basecamp site for free. You may activate it twice instead of once."),
       _("Refresh one of your exhausted assistants."),
       _("Discard another card to refresh both your assistants."),
       _("Upgrade a resource and gain 2 coins"),
@@ -127,7 +127,7 @@ class Tooltips {
       _("Reveal the top tile of the level 1 stack, activate it, then put it on the bottom."),
       _("Pay a compass to reveal the top tile of the level 2 stack, activate it, then put it on the bottom."),
       _("Gain a fear, a coin and 3 tablets."),
-      _("Move a guardian from a site you occupy to an unoccupied camp or level 1 site with no guardians. Activate that site.")
+      _("Move a guardian from a site you occupy to an unoccupied basecamp or level 1 site with no guardians. Activate that site.")
 
       ][num];
     }
@@ -173,9 +173,9 @@ class Tooltips {
       _("Gain a coin and a compass as a free action."),
       _("Exile this card to overcome a guardian for free on a site not occupied by any other player (the site can be occupied by you)"),
       _("Discard another card to draw a card. Then, you may exile a card."),
-      _("Activate any camp site."),
+      _("Activate any basecamp site."),
 
-      _("Gain a compass. Activate any unoccupied camp site."),
+      _("Gain a compass. Activate any unoccupied basecamp site."),
       _("Gain a compass for each idol you have, up to 3. Both your free idols and idols in idol slots count."),
       _("You may exile a card. Gain compass."),
       _("Gain a coin and a compass as a free action OR pass to gain 3 compasses."),

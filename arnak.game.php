@@ -1220,7 +1220,7 @@ class arnak extends Table
 
     $artActive = $this->getGameStateValue("art-active");
     if ($artActive >= 0 && Artefact::from($artActive) == Artefact::Passage_Shell && $siteId > 4) {
-      throw new BgaUserException(clienttranslate("You must travel to a camp site"));
+      throw new BgaUserException(clienttranslate("You must travel to a basecamp site"));
     }
 
     if (is_null($relocateFrom)) {
@@ -1236,7 +1236,7 @@ class arnak extends Table
       }
     }
     $targetSite = ($siteId == "home") ? NULL : $siteId;
-    $msg = ($siteId == "home") ? clienttranslate('${player_name} moves his archaeologist back to the camp') : clienttranslate('${player_name} moves his archaeologist to a site');
+    $msg = ($siteId == "home") ? clienttranslate('${player_name} moves his archaeologist back to the basecamp') : clienttranslate('${player_name} moves his archaeologist to a site');
     $this->sqlWrapper->moveSlotWorker($playerId, $relocateFrom, $fromSlot, $targetSite, $targetSlotNo, ["msg" => $msg]);
 
     if ($siteId == "home") {

@@ -174,7 +174,7 @@ $stats_type = array(
           "name" => totranslate("Total sites activated"),
           "type" => "int" ),
     "sites-activated-basic" => array("id"=> 45,
-          "name" => totranslate("Camp sites activated"),
+          "name" => totranslate("Basecamp sites activated"),
           "type" => "int" ),
     "sites-activated-small" => array("id"=> 46,
           "name" => totranslate("Level 1 sites activated"),

@@ -1703,7 +1703,7 @@ function (dojo, declare) {
           break;
         case "selectCardSite1":
           this.chartsSelected = this.siteSelected;
-          this.setClientState("selectCardSite", {descriptionmyturn: _("Select second camp site to activate")});
+          this.setClientState("selectCardSite", {descriptionmyturn: _("Select second basecamp site to activate")});
           var sites = dojo.query(".location-wrap.basic");
           for(var site of sites) {
             if( dojo.attr(site,"data-position") != this.chartsSelected) {

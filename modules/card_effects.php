@@ -121,10 +121,10 @@ class CardEffects {
         $game->exile($exile);
         $site = $game->sqlWrapper->getSite($siteId);
         if (!$game->isUnoccupied($site)) {
-          throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
+          throw new BgaUserException(clienttranslate("That is not an unoccupied basecamp site"));
         }
         if (!$game->checkSiteSize($site, ["basic"])) {
-          throw new BgaUserException(clienttranslate("That is not a camp site"));
+          throw new BgaUserException(clienttranslate("That is not a basecamp site"));
         }
         $game->siteEffect("basic", $site["location_num"]);
         break;
@@ -443,7 +443,7 @@ class CardEffects {
       case Item::Tent:
         $site = $game->sqlWrapper->getSite($arg);
         if (!$game->isOccupied($site, $this->playerId)) {
-          throw new BgaUserException(clienttranslate("You must have an archeologist on the site"));
+          throw new BgaUserException(clienttranslate("You must have an archaeologist on the site"));
         }
         if ($game->checkSiteSize($site, ["big"])) {
           $this->gainCardResource("compass", -2);
@@ -537,17 +537,17 @@ class CardEffects {
       case Item::Lantern:
         $site = $game->sqlWrapper->getSite($arg);
         if (!$game->checkSiteSize($site, ["basic"])) {
-          throw new BgaUserException(clienttranslate("That is not a camp site"));
+          throw new BgaUserException(clienttranslate("That is not a basecamp site"));
         }
         $game->siteEffect("basic", $site["location_num"]);
         break;
       case Item::Dog:
         $site = $game->sqlWrapper->getSite($arg);
         if (!$game->isUnoccupied($site)) {
-          throw new BgaUserException(clienttranslate("That is not an unoccupied camp site"));
+          throw new BgaUserException(clienttranslate("That is not an unoccupied basecamp site"));
         }
         if (!$game->checkSiteSize($site, ["basic"])) {
-          throw new BgaUserException(clienttranslate("That is not a camp site"));
+          throw new BgaUserException(clienttranslate("That is not a basecamp site"));
         }
         $this->gainCardResource("compass", 1);
         $game->siteEffect("basic", $site["location_num"]);
